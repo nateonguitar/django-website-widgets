@@ -1,5 +1,6 @@
 from django.http import HttpRequest
-from django.utils.safestring import SafeText
+from django.utils.safestring import mark_safe, SafeText
+from functools import cache
 
 class Widget:
     request: HttpRequest
@@ -9,8 +10,5 @@ class Widget:
         self.request = request
         self.context = context
 
-    def styles(self) -> SafeText:
-        return SafeText('')
-    
     def html(self, request: HttpRequest) -> SafeText:
-        return SafeText('')
+        return mark_safe('')
