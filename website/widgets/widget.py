@@ -1,6 +1,5 @@
 from django.http import HttpRequest
 from django.utils.safestring import mark_safe, SafeText
-from functools import cache
 
 class Widget:
     request: HttpRequest
