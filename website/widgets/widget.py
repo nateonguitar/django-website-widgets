@@ -4,11 +4,9 @@ from django.template import Template, Context
 from django.utils.safestring import mark_safe, SafeText
 import os
 
+
 class Widget:
     request: HttpRequest
-
-    def __init__(self, request: HttpRequest):
-        self.request = request
 
     @classmethod
     def get_styles(cls, folder_path: str) -> list[str]:
