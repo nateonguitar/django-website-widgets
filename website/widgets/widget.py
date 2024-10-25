@@ -8,12 +8,12 @@ class Widget:
     request: HttpRequest
 
     @classmethod
-    def get_styles(cls, folder_path: str) -> list[str]:
+    def get_styles(cls, folder_path: str) -> str:
         filepath = os.path.join(settings.BASE_DIR, folder_path, 'styles.css')
         if os.path.exists(filepath):
             with open(filepath, 'r') as file:
-                return [file.read()]
-        return []
+                return file.read()
+        return ''
 
     def html(self) -> SafeText:
         return mark_safe('')
