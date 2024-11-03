@@ -1,11 +1,10 @@
 from django.conf import settings
-from django.http import HttpRequest
 from django.template import Template, Context
 from django.utils.safestring import mark_safe, SafeText
 import os
 
 class Widget:
-    request: HttpRequest
+    request = None
 
     @classmethod
     def get_styles(cls, folder_path: str) -> str:
