@@ -6,8 +6,11 @@ import os
 class Widget:
     request = None
 
-    def html(self) -> SafeText:
-        return mark_safe('')
+    async def html(self) -> SafeText:
+        return mark_safe('(Default)')
+
+    def html_sync(self) -> SafeText:
+        return mark_safe('(Default)')
 
     def render_html(
             self,
