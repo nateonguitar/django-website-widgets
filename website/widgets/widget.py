@@ -4,7 +4,6 @@ from django.template import Template, Context
 from django.utils.safestring import mark_safe, SafeText
 import os
 from api.models.user import User
-from website.page_context import PageContext
 from website.widget_context import WidgetContext
 
 class Widget:
@@ -34,17 +33,6 @@ class Widget:
         if self._user is not None:
             return self._user
         raise RuntimeError("No user found in widget. AppPage should set _user on root before creating children.")
-
-    @property
-    def page_context(self) -> PageContext:
-        """
-        The PageContext for the current page render.
-        Cached from parent during construction to avoid tree traversal.
-        """
-        if self._page_context is not None:
-            return self._page_context
-        raise RuntimeError("No page_context found in widget. AppPage should set _page_context on root before creating children.")
-
 
     async def html(self) -> SafeText:
         return mark_safe('(Default)')
