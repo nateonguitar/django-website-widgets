@@ -1,10 +1,11 @@
 from __future__ import annotations
+import inspect
 from django.conf import settings
 from django.http import HttpRequest
 from django.template import Template, Context
 from django.utils.safestring import mark_safe, SafeText
 import os
-from website.widget_context import WidgetContext
+from website_widgets.widget_context import WidgetContext
 
 class Widget:
     def __init__(self, parent: 'Widget | None' = None):
@@ -37,6 +38,16 @@ class Widget:
 
     def html_sync(self) -> SafeText:
         return mark_safe(f'({self.__class__.__name__})')
+
+    def template_path(self) -> str:
+        """
+        Return the path to this widget's template.html file.
+        Auto-detected from the subclass file location. Override if needed.
+
+        Override this in subclasses if the template is not in the same folder
+        as the widget class file.
+        """
+        return os.path.join(os.path.dirname(inspect.getfile(self.__class__)), 'template.html')
 
     def render_html(
             self,

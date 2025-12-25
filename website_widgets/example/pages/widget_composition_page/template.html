@@ -1,0 +1,43 @@
+<div class="composition-content">
+    <h2>Widget Composition Example</h2>
+    <p class="subtitle">Demonstrating child widget rendering with explicit data passing</p>
+
+    <div class="info-box">
+        <strong>Pattern:</strong> Data is passed to child widgets via <code>html_sync(title=..., content=...)</code>
+        rather than relying on parent context inheritance.
+    </div>
+
+    <p>This page uses <code>base2.html</code> (dark theme) to show how different pages can use different base templates.</p>
+
+    <div class="cards-container">
+        {% for card_html in children.cards %}
+            {{ card_html }}
+        {% endfor %}
+    </div>
+</div>
+
+<style>
+    .composition-content h2 { margin-bottom: 8px; }
+    .composition-content .subtitle { color: #94a3b8; margin-bottom: 24px; }
+    .cards-container {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 16px;
+        margin-top: 20px;
+    }
+    .composition-content code {
+        background: #16213e;
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-size: 14px;
+        color: #e94560;
+    }
+    .info-box {
+        background: #16213e;
+        border-left: 4px solid #e94560;
+        padding: 16px;
+        margin-bottom: 16px;
+        border-radius: 0 4px 4px 0;
+        color: #e2e8f0;
+    }
+</style>

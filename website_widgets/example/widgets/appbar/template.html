@@ -1,0 +1,52 @@
+<style>
+    #appbar {
+        background: rgba(255, 255, 255, 0.1);
+        padding: 16px 24px;
+        color: white;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    #appbar h1 {
+        font-size: 20px;
+        font-weight: 500;
+    }
+
+    .appbar-nav a {
+        color: rgba(255, 255, 255, 0.9);
+        text-decoration: none;
+        margin-left: 24px;
+        font-size: 14px;
+    }
+
+    .appbar-nav a:hover {
+        text-decoration: underline;
+    }
+
+    .appbar-back-link {
+        color: rgba(255, 255, 255, 0.9);
+        text-decoration: none;
+        margin-right: 8px;
+    }
+
+    .appbar-back-link:hover {
+        text-decoration: underline;
+    }
+</style>
+
+<header id="appbar">
+    <h1>
+        {% if page.show_parent_link %}
+            <a href="{% url 'example_index' %}"
+               class="appbar-back-link">← </a>
+        {% endif %}
+        🎨 Base Template 1
+    </h1>
+    <nav class="appbar-nav">
+        <a href="{% url 'example_simple_page' %}">Simple</a>
+        <a href="{% url 'example_widget_composition_page' %}">Composition</a>
+        <a href="{% url 'example_unwrapped_page' %}">Unwrapped</a>
+        <a href="{% url 'example_caching_page' %}">Caching</a>
+    </nav>
+</header>

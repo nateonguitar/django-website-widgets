@@ -1,0 +1,99 @@
+<div class="caching-content">
+    <h2>HTTP Caching Example</h2>
+    <p class="subtitle">Demonstrating ETag and Last-Modified headers</p>
+
+    <div class="info-box">
+        <strong>This page uses ExampleAppPageComplex</strong> which provides:
+        <ul>
+            <li>ETag generation from timestamp + path + user</li>
+            <li>Last-Modified headers</li>
+            <li>304 Not Modified responses for conditional requests</li>
+            <li>Canonical URL generation (strips tracking params)</li>
+        </ul>
+    </div>
+
+    <div class="details">
+        <h3>How to test:</h3>
+        <ol>
+            <li>Open browser DevTools → Network tab</li>
+            <li>Reload this page</li>
+            <li>Check the response headers for <code>ETag</code> and <code>Last-Modified</code></li>
+            <li>Reload again - browser sends <code>If-None-Match</code> / <code>If-Modified-Since</code></li>
+            <li>Server responds with 304 Not Modified (no body)</li>
+        </ol>
+    </div>
+
+    <div class="meta-info">
+        <p><strong>Last Modified:</strong> {{ data.last_modified }}</p>
+        <p><strong>Canonical URL:</strong> {{ page.canonical_url }}</p>
+    </div>
+
+    <a href="{% url 'example_index' %}" class="back-link">← Back to example</a>
+</div>
+
+<style>
+    .caching-content {
+        background: white;
+        border-radius: 8px;
+        padding: 32px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        color: #333;
+    }
+    .caching-content h2 { margin-bottom: 8px; }
+    .caching-content .subtitle { color: #666; margin-bottom: 24px; }
+    .info-box {
+        background: #e8f4fd;
+        border-left: 4px solid #2196f3;
+        padding: 16px;
+        margin-bottom: 24px;
+        border-radius: 0 4px 4px 0;
+    }
+    .info-box ul {
+        margin: 12px 0 0 20px;
+    }
+    .info-box li {
+        margin-bottom: 4px;
+    }
+    .details {
+        background: #f8f9fa;
+        padding: 20px;
+        border-radius: 8px;
+        margin-bottom: 24px;
+    }
+    .details h3 {
+        margin: 0 0 12px 0;
+        font-size: 16px;
+    }
+    .details ol {
+        margin-left: 20px;
+    }
+    .details li {
+        margin-bottom: 8px;
+    }
+    .details code {
+        background: #e9ecef;
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-size: 13px;
+    }
+    .meta-info {
+        background: #f0f0f0;
+        padding: 16px;
+        border-radius: 8px;
+        margin-bottom: 24px;
+        font-family: monospace;
+        font-size: 13px;
+    }
+    .meta-info p {
+        margin: 4px 0;
+    }
+    .back-link {
+        display: inline-block;
+        color: #667eea;
+        text-decoration: none;
+        font-weight: 500;
+    }
+    .back-link:hover {
+        text-decoration: underline;
+    }
+</style>
