@@ -14,14 +14,16 @@ class WidgetCompositionPage(ExampleAppPageSimple):
 
         cards_data = [
             {'title': 'First Card', 'content': 'Data is passed explicitly to each widget via html() parameters.'},
-            {'title': 'Second Card', 'content': 'No parent data inheritance - clean prop drilling.'},
+            {'title': 'Second Card', 'content': 'Widgets are instantiated with parent=self to establish the hierarchy.'},
             {'title': 'Third Card', 'content': 'Each widget manages its own context independently.'},
         ]
 
         card_widgets = []
         for card in cards_data:
-            widget = InfoCard(parent=self)
-            card_html = widget.html_sync(title=card['title'], content=card['content'])
+            card_html = InfoCard(parent=self) \
+                .html_sync(
+                    title=card['title'],
+                    content=card['content'])
             card_widgets.append(card_html)
 
         self.context.children.set('cards', card_widgets)

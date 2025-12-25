@@ -3,11 +3,10 @@
     <p class="subtitle">Demonstrating child widget rendering with explicit data passing</p>
 
     <div class="info-box">
-        <strong>Pattern:</strong> Data is passed to child widgets via <code>html_sync(title=..., content=...)</code>
-        rather than relying on parent context inheritance.
+        <strong>Composition Pattern:</strong> This page creates multiple card widgets in <code>set_context()</code>,
+        renders each with <code>html()</code> or <code>html_sync()</code>, and stores the results in <code>self.context.children</code>
+        for template access.
     </div>
-
-    <p>This page uses <code>base2.html</code> (dark theme) to show how different pages can use different base templates.</p>
 
     <div class="cards-container">
         {% for card_html in children.cards %}

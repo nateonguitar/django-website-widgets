@@ -8,9 +8,9 @@ from website_widgets.example.pages.unwrapped_page.unwrapped_page import Unwrappe
 
 
 urlpatterns = [
-    path('',                    ExampleIndexPage().render_page,      name='example_index'),
-    path('simple/',             SimplePage().render_page,            name='example_simple_page'),
-    path('widget-composition/', WidgetCompositionPage().render_page, name='example_widget_composition_page'),
-    path('unwrapped/',          UnwrappedPage().render_page,         name='example_unwrapped_page'),
-    path('caching/',            CachingPage().render_page,           name='example_caching_page'),
+    path('',                    ExampleIndexPage.as_view(),          name='example_index'),
+    path('simple/',             SimplePage.as_view(),                name='example_simple_page'),
+    path('widget-composition/', WidgetCompositionPage.as_view(),     name='example_widget_composition_page'),
+    path('unwrapped/',          UnwrappedPage.as_view(),             name='example_unwrapped_page'),
+    path('caching/',            CachingPage.as_view(),               name='example_caching_page'),
 ]

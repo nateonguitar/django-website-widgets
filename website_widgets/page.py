@@ -12,11 +12,13 @@ class Page(Widget):
     Base class for pages that render content within a base template.
 
     DEFAULT LIFECYCLE (no overrides):
-    When render_page() is called, the following happens automatically:
-    1. init_page_state() runs - sets up request/user in context
-    2. set_context() runs - does nothing by default
-    3. html_sync() runs - renders the page's template.html
-    4. build_response() runs - wraps content in base template, returns HttpResponse
+    When .as_view() is called in urls.py, it returns a view function that:
+    1. Creates a fresh page instance per request
+    2. Sets self._request (accessible as self.request property)
+    3. Calls init_page_state() - does nothing by default
+    4. Calls set_context() - does nothing by default
+    5. Calls html_sync() - renders the page's template.html
+    6. Calls build_response() - wraps content in base template, returns HttpResponse
 
     LIFECYCLE HOOKS (in execution order):
 
@@ -28,14 +30,15 @@ class Page(Widget):
        - Most pages won't need to override this
 
     2. init_page_state(request, *args, **kwargs)
-       - First hook called - sets up app-wide page state
-       - By default: stores request and user in page context
+       - First hook called - for app-wide page state
+       - By default: does nothing (request/user already set by .as_view())
        - Override in intermediate app classes (e.g., AppPage) to add:
          * Theme detection
          * Default page metadata (title, description)
          * App-wide widgets (header, footer, navigation)
          * Authentication/permission checks
-       - MUST call super().init_page_state() first to maintain the request chain
+       - Note: self.request and self.user are available
+       - No need to call super() - base implementation is empty
 
     3. set_context(*args, **kwargs)
        - Second hook - sets page-specific context
@@ -44,6 +47,7 @@ class Page(Widget):
          * Page-specific data (fetched from database, APIs, etc.)
          * Dynamic children widgets unique to this page
          * Context that varies based on URL parameters
+       - Note: self.request and self.user are available
        - This is where most page-specific logic goes
 
     4. html_sync() -> SafeText
@@ -63,13 +67,33 @@ class Page(Widget):
 
     USAGE:
         # In urls.py:
-        path('my-page/', MyPage().render_page, name='my_page')
+        path('my-page/', MyPage.as_view(), name='my_page')
 
         # The page's template.html renders main content, which gets injected
         # into the base template as {{ main_content_html }}.
     """
 
     status_code: int = 200
+
+    @classmethod
+    def as_view(cls, **initkwargs):
+        """
+        Factory method that creates a fresh page instance per request.
+
+        Returns an async view function compatible with Django URL patterns.
+        Sets up request and user on the instance before calling render_page().
+
+        Usage:
+            path('my-page/', MyPage.as_view(), name='my_page')
+        """
+        async def view(request: HttpRequest, *args, **kwargs):
+            instance = cls(**initkwargs)
+            instance._request = request
+            return await instance.render_page(request, *args, **kwargs)
+
+        view.view_class = cls
+        view.view_initkwargs = initkwargs
+        return view
 
     def html_sync(self) -> SafeText:
         """Render the page's main content template."""
@@ -100,7 +124,7 @@ class Page(Widget):
 
     async def render_page(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
         """
-        Main entry point registered in urls.py.
+        Main entry point registered in urls.py via .as_view().
 
         Override this method for:
         - Exception handling (UnauthorizedException, RedirectException, etc.)
@@ -114,19 +138,10 @@ class Page(Widget):
         - set_context(): Page-specific context
         - build_response(): Customize the response
 
-        When overriding render_page(), call super().init_page_state(request, *args, **kwargs)
-        to ensure self.request and self.user are available throughout the lifecycle.
-        This also makes {{ request }} and {{ user }} accessible in all templates.
+        Note: When using .as_view(), self.request is available throughout the lifecycle.
+        Templates have direct access to {{ request }} and {{ user }} via Django context.
         """
-        self._init_page_state_called = False
-
         await self.init_page_state(request, *args, **kwargs)
-
-        if not self._init_page_state_called:
-            raise RuntimeError(
-                f"{self.__class__.__name__}.init_page_state() must call "
-                "super().init_page_state(request, *args, **kwargs) first."
-            )
 
         await self.set_context(*args, **kwargs)
 
@@ -136,20 +151,17 @@ class Page(Widget):
 
     async def init_page_state(self, request: HttpRequest, *args, **kwargs):
         """
-        Override to add app-wide context that runs before set_context().
+        Hook for app-wide context setup that runs before set_context().
 
-        IMPORTANT: Subclasses must call super().init_page_state(request, *args, **kwargs)
-        as the first line of their override.
-
-        Use for page-level setup such as:
+        Override in intermediate app classes (e.g., AppPage) to add:
         - Theme detection
         - Default page values (title, meta description)
-        - Selected navigation item
+        - App-wide widgets (header, footer, navigation)
+        - Authentication/permission checks
+
+        Note: Base implementation is empty. No need to call super().
         """
-        self._request = request
-        self.context.page.set('request', request)
-        self.context.page.set('user', request.user)
-        self._init_page_state_called = True
+        pass
 
     async def set_context(self, *args, **kwargs):
         """

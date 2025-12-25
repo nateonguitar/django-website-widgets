@@ -22,7 +22,6 @@ class ExampleAppPageSimple(Page):
         return os.path.join(settings.BASE_DIR, 'website_widgets', 'example', 'templates', 'base1.html')
 
     async def init_page_state(self, request: HttpRequest, *args, **kwargs):
-        await super().init_page_state(request, *args, **kwargs)
         self.context.page.set('title', 'Example App')
         self.context.children.set('appbar', ExampleAppbar(parent=self).html_sync())
         self.context.children.set('footer', ExampleFooter(parent=self).html_sync())
@@ -43,8 +42,6 @@ class ExampleAppPageComplex(Page):
         return os.path.join(settings.BASE_DIR, 'website_widgets', 'example', 'templates', 'base1.html')
 
     async def render_page(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
-        self._init_page_state_called = False
-
         # Check for conditional request (304 Not Modified)
         last_modified = await self.get_last_modified(request, *args, **kwargs)
         if last_modified and request.method == 'GET':
@@ -62,12 +59,6 @@ class ExampleAppPageComplex(Page):
 
         await self.init_page_state(request, *args, **kwargs)
 
-        if not self._init_page_state_called:
-            raise RuntimeError(
-                f"{self.__class__.__name__}.init_page_state() must call "
-                "super().init_page_state(request, *args, **kwargs) first."
-            )
-
         await self.set_context(*args, **kwargs)
 
         main_content_html = self.html_sync()
@@ -83,7 +74,6 @@ class ExampleAppPageComplex(Page):
 
     async def init_page_state(self, request: HttpRequest, *args, **kwargs):
         """App-wide defaults for all pages."""
-        await super().init_page_state(request, *args, **kwargs)
         self.context.page.set('title', 'Example App')
         self.context.page.set('canonical_url', self.generate_canonical_url(request))
         self.context.children.set('appbar', ExampleAppbar(parent=self).html_sync())
