@@ -8,6 +8,6 @@ class InfoCard(Widget):
     """
 
     def html_sync(self, title: str, content: str):
-        self.context.data.set('title', title)
-        self.context.data.set('content', content)
+        self.context.data['title'] = title
+        self.context.data['content'] = content
         return self.render_html(self.template_path())

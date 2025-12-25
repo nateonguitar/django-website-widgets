@@ -9,8 +9,8 @@ class WidgetCompositionPage(ExampleAppPageSimple):
     """
 
     async def set_context(self, *args, **kwargs):
-        self.context.page.set('title', 'Widget Composition')
-        self.context.page.set('show_parent_link', True)
+        self.context.page['title'] = 'Widget Composition'
+        self.context.page['show_parent_link'] = True
 
         cards_data = [
             {'title': 'First Card', 'content': 'Data is passed explicitly to each widget via html() parameters.'},
@@ -26,4 +26,4 @@ class WidgetCompositionPage(ExampleAppPageSimple):
                     content=card['content'])
             card_widgets.append(card_html)
 
-        self.context.children.set('cards', card_widgets)
+        self.context.children['cards'] = card_widgets

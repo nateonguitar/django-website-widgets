@@ -22,9 +22,9 @@ class ExampleAppPageSimple(Page):
         return os.path.join(settings.BASE_DIR, 'website_widgets', 'example', 'templates', 'base1.html')
 
     async def init_page_state(self, request: HttpRequest, *args, **kwargs):
-        self.context.page.set('title', 'Example App')
-        self.context.children.set('appbar', ExampleAppbar(parent=self).html_sync())
-        self.context.children.set('footer', ExampleFooter(parent=self).html_sync())
+        self.context.page['title'] = 'Example App'
+        self.context.children['appbar'] = ExampleAppbar(parent=self.html_sync())
+        self.context.children['footer'] = ExampleFooter(parent=self.html_sync())
 
 
 class ExampleAppPageComplex(Page):
@@ -74,10 +74,10 @@ class ExampleAppPageComplex(Page):
 
     async def init_page_state(self, request: HttpRequest, *args, **kwargs):
         """App-wide defaults for all pages."""
-        self.context.page.set('title', 'Example App')
-        self.context.page.set('canonical_url', self.generate_canonical_url(request))
-        self.context.children.set('appbar', ExampleAppbar(parent=self).html_sync())
-        self.context.children.set('footer', ExampleFooter(parent=self).html_sync())
+        self.context.page['title'] = 'Example App'
+        self.context.page['canonical_url'] = self.generate_canonical_url(request)
+        self.context.children['appbar'] = ExampleAppbar(parent=self.html_sync())
+        self.context.children['footer'] = ExampleFooter(parent=self.html_sync())
 
     async def get_last_modified(self, request: HttpRequest, *args, **kwargs) -> datetime | None:
         """Override in page subclasses to enable conditional requests."""

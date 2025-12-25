@@ -17,9 +17,9 @@ class CachingPage(ExampleAppPageComplex):
     LAST_MODIFIED = datetime(2025, 12, 24, 12, 0, 0, tzinfo=timezone.utc)
 
     async def set_context(self, *args, **kwargs):
-        self.context.page.set('title', 'Caching Example')
-        self.context.page.set('show_parent_link', True)
-        self.context.data.set('last_modified', self.LAST_MODIFIED.isoformat())
+        self.context.page['title'] = 'Caching Example'
+        self.context.page['show_parent_link'] = True
+        self.context.data['last_modified'] = self.LAST_MODIFIED.isoformat()
 
     async def get_last_modified(self, request, *args, **kwargs) -> datetime | None:
         """Return the last modified time to enable conditional requests."""
