@@ -3,7 +3,7 @@ import inspect
 from django.conf import settings
 from django.http import HttpRequest
 from django.template import Template, Context
-from django.utils.safestring import mark_safe, SafeText
+from django.utils.safestring import SafeText
 import os
 from website_widgets.widget_context import WidgetContext
 
@@ -34,10 +34,10 @@ class Widget:
         raise RuntimeError("No request found in widget. AppPage should set _request on root before creating children.")
 
     async def html(self) -> SafeText:
-        return mark_safe(f'({self.__class__.__name__})')
+        return self.render_html()
 
     def html_sync(self) -> SafeText:
-        return mark_safe(f'({self.__class__.__name__})')
+        return self.render_html()
 
     def template_path(self) -> str:
         """
@@ -49,16 +49,24 @@ class Widget:
         """
         return os.path.join(os.path.dirname(inspect.getfile(self.__class__)), 'template.html')
 
-    def render_html(
-            self,
-            template_path: str,
-            context: dict = {}) -> SafeText:
+    def _context_dict(self) -> dict:
+        context = {}
         context['request'] = self.request
-        context['data'] = self.context.data.to_dict()
-        context['children'] = self.context.children.to_dict()
         context['user'] = self.request.user
-        context['page'] = self.context.page.to_dict()
-        filepath = os.path.join(settings.BASE_DIR, template_path)
+        context['page'] = self.context.page
+        context['data'] = self.context.data
+        context['children'] = self.context.children
+        return context
+
+    def render_html(
+        self,
+        template_path: str | None = None,
+        extra_context: dict | None = None,
+    ) -> SafeText:
+        context = self._context_dict()
+        if extra_context:
+            context.update(extra_context)
+        filepath = self.template_path() if template_path is None else template_path
         with open(filepath, 'r') as file:
             template = Template(file.read())
         return template.render(Context(context))

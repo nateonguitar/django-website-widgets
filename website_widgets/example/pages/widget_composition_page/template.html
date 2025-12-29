@@ -1,20 +1,6 @@
-<div class="composition-content">
-    <h2>Widget Composition Example</h2>
-    <p class="subtitle">Demonstrating child widget rendering with explicit data passing</p>
-
-    <div class="info-box">
-        <strong>Composition Pattern:</strong> This page creates multiple card widgets in <code>set_context()</code>,
-        renders each with <code>html()</code> or <code>html_sync()</code>, and stores the results in <code>self.context.children</code>
-        for template access.
-    </div>
-
-    <div class="cards-container">
-        {% for card_html in children.cards %}
-            {{ card_html }}
-        {% endfor %}
-    </div>
-</div>
-
+{% comment %}
+Put styles in a stylesheet and import them using static, this is just for simplicity.
+{% endcomment %}
 <style>
     .composition-content h2 { margin-bottom: 8px; }
     .composition-content .subtitle { color: #94a3b8; margin-bottom: 24px; }
@@ -40,3 +26,15 @@
         color: #e2e8f0;
     }
 </style>
+<div class="composition-content">
+    <h2>Widget Composition Example</h2>
+    <p class="subtitle">Demonstrating child widget rendering with explicit data passing</p>
+    <div class="info-box">
+        <strong>Composition Pattern:</strong> This page creates multiple card widgets in <code>set_context()</code>,
+        renders each with <code>html()</code> or <code>html_sync()</code>, and stores the results in <code>self.context.children</code>
+        for template access.
+    </div>
+    <div class="cards-container">
+        {% for card_html in children.cards %}{{ card_html }}{% endfor %}
+    </div>
+</div>

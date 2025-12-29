@@ -1,36 +1,6 @@
-<div class="caching-content">
-    <h2>HTTP Caching Example</h2>
-    <p class="subtitle">Demonstrating ETag and Last-Modified headers</p>
-
-    <div class="info-box">
-        <strong>This page uses ExampleAppPageComplex</strong> which provides:
-        <ul>
-            <li>ETag generation from timestamp + path + user</li>
-            <li>Last-Modified headers</li>
-            <li>304 Not Modified responses for conditional requests</li>
-            <li>Canonical URL generation (strips tracking params)</li>
-        </ul>
-    </div>
-
-    <div class="details">
-        <h3>How to test:</h3>
-        <ol>
-            <li>Open browser DevTools → Network tab</li>
-            <li>Reload this page</li>
-            <li>Check the response headers for <code>ETag</code> and <code>Last-Modified</code></li>
-            <li>Reload again - browser sends <code>If-None-Match</code> / <code>If-Modified-Since</code></li>
-            <li>Server responds with 304 Not Modified (no body)</li>
-        </ol>
-    </div>
-
-    <div class="meta-info">
-        <p><strong>Last Modified:</strong> {{ data.last_modified }}</p>
-        <p><strong>Canonical URL:</strong> {{ page.canonical_url }}</p>
-    </div>
-
-    <a href="{% url 'example_index' %}" class="back-link">← Back to example</a>
-</div>
-
+{% comment %}
+Put styles in a stylesheet and import them using static, this is just for simplicity.
+{% endcomment %}
 <style>
     .caching-content {
         background: white;
@@ -97,3 +67,40 @@
         text-decoration: underline;
     }
 </style>
+
+<div class="caching-content">
+    <h2>HTTP Caching Example</h2>
+    <p class="subtitle">Demonstrating ETag and Last-Modified headers</p>
+    <div class="info-box">
+        <strong>This page uses ExamplePageComplex</strong> which provides:
+        <ul>
+            <li>ETag generation from timestamp + path + user</li>
+            <li>Last-Modified headers</li>
+            <li>304 Not Modified responses for conditional requests</li>
+            <li>Canonical URL generation (strips tracking params)</li>
+        </ul>
+    </div>
+    <div class="details">
+        <h3>How to test:</h3>
+        <ol>
+            <li>Open browser DevTools → Network tab</li>
+            <li>Reload this page</li>
+            <li>
+                Check the response headers for <code>ETag</code> and <code>Last-Modified</code>
+            </li>
+            <li>
+                Reload again - browser sends <code>If-None-Match</code> / <code>If-Modified-Since</code>
+            </li>
+            <li>Server responds with 304 Not Modified (no body)</li>
+        </ol>
+    </div>
+    <div class="meta-info">
+        <p>
+            <strong>Last Modified:</strong> {{ data.last_modified }}
+        </p>
+        <p>
+            <strong>Canonical URL:</strong> {{ page.canonical_url }}
+        </p>
+    </div>
+    <a href="{% url 'example_index' %}" class="back-link">← Back to example</a>
+</div>

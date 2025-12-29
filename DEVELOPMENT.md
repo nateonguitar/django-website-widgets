@@ -6,7 +6,7 @@ This package is installed in the main project via Poetry:
 
 ```bash
 cd /app
-poetry add ./django-website-widgets
+poetry add --editable ./django-website-widgets
 ```
 
 ## Making Changes
@@ -19,7 +19,8 @@ If changes don't appear:
 
 ```bash
 cd /app
-poetry remove django-website-widgets && poetry add ./django-website-widgets
+poetry remove django-website-widgets
+poetry add --editable ./django-website-widgets
 ```
 
 ## Building

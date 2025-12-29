@@ -16,7 +16,7 @@ poetry add django-website-widgets
 
 ## Quick Start
 
-1. Add to your `INSTALLED_APPS` in `settings.py`:
+1. Add to `INSTALLED_APPS` in `settings.py`:
 
 ```python
 INSTALLED_APPS = [
@@ -25,40 +25,97 @@ INSTALLED_APPS = [
 ]
 ```
 
-2. Create a widget:
+2. Create a base.html for all pages to use (customize as needed with stylesheets, an appbar header, a footer, etc.)
 
-```python
-from website_widgets import Widget
-from django.utils.safestring import SafeText
+`website/templates/base.html`
+```html
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>{{ page.title|default:"Foo" }}</title>
+        <link rel="stylesheet" href="{% static 'styles.css' %}">
+    </head>
+    <body>
+        {{ children.appbar }}
 
-class MyWidget(Widget):
-    async def html(self, title: str) -> SafeText:
-        self.context.data['title'] = title
-        return self.render_html(self.template_path())
+        <main id="main-content">
+            {{ main_content_html }}
+        </main>
+    </body>
+</html>
+
 ```
 
-3. Create a page:
+3. Create subclass Page for reusing across all other pages
 
+`website/app_page.py`
 ```python
 from website_widgets import Page
 
-class MyPage(Page):
+class AppPage(Page):
     def base_template_path(self) -> str:
-        return 'path/to/base.html'
+        return 'website/templates/base.html'
 
     async def set_context(self, *args, **kwargs):
-        widget = MyWidget(parent=self)
-        self.context.children['my_widget'] = await widget.html('Hello World')
+        self.context.children['appbar'] = ExampleAppbar(parent=self).html_sync()
 ```
 
-4. Register in `urls.py`:
+4. Create a widget and a `template.html` file next to it:
+
+`website/widgets/project_details_card/project_details_card.py`
+```python
+from website_widgets import Widget
+
+class ProjectDetailsCard(Widget):
+    def html_sync(self, project: Project):
+        self.context.data['project'] = project
+        return self.render_html()
+```
+
+`website/widgets/project_details_card/template.py`
+```html
+<div class="project-details-card">
+    <p>Name: {{ data.project.name }}</p>
+</div>
+```
+
+5. Create a page and a `template.html` file next to it:
+
+`website/pages/project_page/project_page.py`
+```python
+from project.models import Project
+from website_widgets import Page
+
+class ProjectPage(AppPage):
+    async def set_context(self, pk, *args, **kwargs):
+        await super().set_context(*args, **kwargs)
+        project = await Project.objects.aget(pk=pk)
+        self.context.page['title'] = f'Project - {project.name}'
+        self.context.data['project'] = project
+        self.context.children['project_details_card'] = ProjectDetailsCard(parent=self).html_sync(project)
+```
+
+
+`website/widgets/project_page/template.py`
+```html
+<div id="project-details-page">
+    {{ children.project_details_card }}
+
+    <p>Other</p>
+</div>
+```
+
+5. Register in `urls.py`:
 
 ```python
 from django.urls import path
-from .pages.my_page import MyPage
+from .pages.project_page import ProjectPage
 
 urlpatterns = [
-    path('my-page/', MyPage.as_view(), name='my_page'),
+    path('project/<int:pk>', ProjectPage.as_view(), name='project_page'),
 ]
 ```
 
@@ -66,11 +123,18 @@ urlpatterns = [
 
 ### Widget
 
-Base class for reusable UI components. Widgets can:
-- Accept parameters via `html()` method
+Base class for reusable UI components.
+
+Widgets can:
+- Accept parameters
+  - When the widget needs to do async work
+    - `async def html(project_id: int)`
+  - When the widget will not do async work
+    - `def html_sync(project: Project)`
 - Store data in `self.context.data` for templates
 - Store child widgets in `self.context.children`
 - Access request via `self.request`
+- Access request user via `self.user`
 
 ### Page
 
@@ -89,12 +153,12 @@ Each widget has `self.context` with:
 
 ## Templates
 
-Create a `template.html` next to your widget/page class:
+Create a `template.html` next to the widget/page class:
 
 ```html
 <div class="my-widget">
-    <h1>{{ title }}</h1>
-    {{ my_widget }}
+    <h1>{{ data.title }}</h1>
+    {{ children.my_widget }}
 </div>
 ```
 

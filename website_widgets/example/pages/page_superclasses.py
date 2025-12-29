@@ -1,9 +1,7 @@
 import hashlib
 from datetime import datetime
-import os
 from urllib.parse import urlsplit, urlunsplit
 
-from django.conf import settings
 from django.http import HttpRequest, HttpResponse, HttpResponseNotModified
 from django.utils.http import http_date, parse_http_date_safe
 
@@ -11,23 +9,26 @@ from website_widgets import Page
 from website_widgets.example.widgets.appbar import ExampleAppbar
 from website_widgets.example.widgets.footer import ExampleFooter
 
-
-class ExampleAppPageSimple(Page):
+class ExamplePageSimple(Page):
     """
     Minimal intermediate class - just sets a default base template.
     Good for simple apps or getting started quickly.
     """
 
-    def base_template_path(self) -> str:
-        return os.path.join(settings.BASE_DIR, 'website_widgets', 'example', 'templates', 'base1.html')
-
-    async def init_page_state(self, request: HttpRequest, *args, **kwargs):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Sub classes can override in set_context()
         self.context.page['title'] = 'Example App'
-        self.context.children['appbar'] = ExampleAppbar(parent=self.html_sync())
-        self.context.children['footer'] = ExampleFooter(parent=self.html_sync())
+        self.context.page['show_appbar_back_button'] = False
+
+        # Without setting the appbar and footer widgets here,
+        # sub classes can choose whether to include them or not.
+
+    def base_template_path(self) -> str:
+        return self.folder_path() + '/../templates/base.html'
 
 
-class ExampleAppPageComplex(Page):
+class ExamplePageComplex(Page):
     """
     Full-featured intermediate class showing real-world patterns.
 
@@ -38,10 +39,16 @@ class ExampleAppPageComplex(Page):
     - Custom response building with caching headers
     """
 
-    def base_template_path(self) -> str:
-        return os.path.join(settings.BASE_DIR, 'website_widgets', 'example', 'templates', 'base1.html')
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Sub classes can override in set_context()
+        self.context.page['title'] = 'Example App'
+        self.context.page['show_appbar_back_button'] = False
 
-    async def render_page(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
+    def base_template_path(self) -> str:
+        return self.folder_path() + '/../templates/base.html'
+
+    async def handle_request(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
         # Check for conditional request (304 Not Modified)
         last_modified = await self.get_last_modified(request, *args, **kwargs)
         if last_modified and request.method == 'GET':
@@ -57,9 +64,14 @@ class ExampleAppPageComplex(Page):
                 if ims_timestamp and int(last_modified.timestamp()) <= ims_timestamp:
                     return HttpResponseNotModified()
 
-        await self.init_page_state(request, *args, **kwargs)
-
+        # Sub class pages can set `show_appbar_back_button = True` in their own set_context()
         await self.set_context(*args, **kwargs)
+
+        # Render appbar and footer after set_context() so the subclass page can
+        # modify `page.show_appbar_back_button` if desired.
+        # Subclasses of ExamplePageComplex don't need to set appbar/footer manually.
+        self.context.children['appbar'] = ExampleAppbar(parent=self).html_sync()
+        self.context.children['footer'] = ExampleFooter(parent=self).html_sync()
 
         main_content_html = self.html_sync()
 
@@ -72,12 +84,10 @@ class ExampleAppPageComplex(Page):
 
         return response
 
-    async def init_page_state(self, request: HttpRequest, *args, **kwargs):
+    async def set_context(self, *args, **kwargs):
         """App-wide defaults for all pages."""
         self.context.page['title'] = 'Example App'
-        self.context.page['canonical_url'] = self.generate_canonical_url(request)
-        self.context.children['appbar'] = ExampleAppbar(parent=self.html_sync())
-        self.context.children['footer'] = ExampleFooter(parent=self.html_sync())
+        self.context.page['canonical_url'] = self.generate_canonical_url(self.request)
 
     async def get_last_modified(self, request: HttpRequest, *args, **kwargs) -> datetime | None:
         """Override in page subclasses to enable conditional requests."""

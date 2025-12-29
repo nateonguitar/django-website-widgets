@@ -7,4 +7,4 @@ class ExampleFooter(Widget):
     """Footer for the example app."""
 
     def html_sync(self) -> SafeText:
-        return self.render_html(self.template_path())
+        return self.render_html()

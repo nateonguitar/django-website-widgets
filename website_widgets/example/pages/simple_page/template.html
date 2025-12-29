@@ -1,20 +1,6 @@
-<div class="simple-page-content">
-    <h2>{{ data.greeting }}</h2>
-    <p>
-        This page uses <code>base1.html</code> (purple gradient theme).
-    </p>
-    <p>
-        The <code>SimplePage</code> class implements <code>base_template_path()</code>
-        to specify which base template wraps this content.
-    </p>
-
-    <div class="context-debug">
-        <strong>Context available in template:</strong><br>
-        data.greeting = "{{ data.greeting }}"<br>
-        page.title = "{{ page.title }}"<br>
-    </div>
-</div>
-
+{% comment %}
+Put styles in a stylesheet and import them using static, this is just for simplicity.
+{% endcomment %}
 <style>
     .simple-page-content {
         background: white;
@@ -40,3 +26,21 @@
         font-size: 13px;
     }
 </style>
+<div class="simple-page-content">
+    <h2>{{ data.greeting }}</h2>
+    <p>
+        This page uses <code>base.html</code> (purple gradient theme).
+    </p>
+    <p>
+        The <code>SimplePage</code> class implements <code>base_template_path()</code>
+        to specify which base template wraps this content.
+    </p>
+    <div class="context-debug">
+        <strong>Context available in template:</strong>
+        <br>
+        data.greeting = "{{ data.greeting }}"
+        <br>
+        page.title = "{{ page.title }}"
+        <br>
+    </div>
+</div>

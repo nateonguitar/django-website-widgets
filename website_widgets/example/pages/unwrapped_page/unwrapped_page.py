@@ -1,7 +1,7 @@
-from website_widgets.example.pages.app_page import ExampleAppPageSimple
+from website_widgets.page import Page
 
 
-class UnwrappedPage(ExampleAppPageSimple):
+class UnwrappedPage(Page):
     """
     Example of an unwrapped page - no header, nav, or footer.
 
@@ -12,11 +12,12 @@ class UnwrappedPage(ExampleAppPageSimple):
     - Embedded content / iframes
     - Landing pages with custom layouts
 
-    Override base_template_path() to use a minimal base template.
+    Overrides base_template_path() to use a minimal base template.
     """
 
     async def set_context(self, *args, **kwargs):
+        await super().set_context(*args, **kwargs)
         self.context.page['title'] = 'Unwrapped Page'
 
     def base_template_path(self) -> str:
-        return 'website_widgets/example/templates/base_unwrapped.html'
+        return self.folder_path() + '/../templates/base_unwrapped.html'

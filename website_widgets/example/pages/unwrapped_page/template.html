@@ -1,3 +1,6 @@
+{% comment %}
+Put styles in a stylesheet and import them using static, this is just for simplicity.
+{% endcomment %}
 <style type="text/css">
   .unwrapped-content {
     display: flex;
@@ -67,23 +70,16 @@
     text-decoration: underline;
   }
 </style>
-
 <div class="unwrapped-content">
     <div class="card">
-        <a href="{% url 'example_index' %}"
-           class="back-link">← Back to example</a>
-        <h1>
-            Unwrapped Page
-        </h1>
+        <a href="{% url 'example_index' %}" class="back-link">← Back to example</a>
+        <h1>Unwrapped Page</h1>
         <p>
             This page uses <code>base_unwrapped.html</code> — a minimal base template
             with no header, navigation, or footer.
         </p>
-
         <div class="use-cases">
-            <h3>
-                When to use unwrapped pages:
-            </h3>
+            <h3>When to use unwrapped pages:</h3>
             <ul>
                 <li>
                     <strong>Login / Signup pages</strong> — focused UI without distractions
