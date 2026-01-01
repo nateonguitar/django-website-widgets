@@ -134,7 +134,7 @@ Widgets can:
 - Store data in `self.context.data` for templates
 - Store child widgets in `self.context.children`
 - Access request via `self.request`
-- Access request user via `self.user`
+- Access request user via `self.request.user`
 
 ### Page
 

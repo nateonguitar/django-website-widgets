@@ -26,17 +26,17 @@ class Page(Widget):
 
     2. set_context(*args, **kwargs)
        - Main hook for setting up page context and state (data and children for use in template)
-       - By default: does nothing (request/user already set by .as_view())
+       - By default: does nothing
        - Override in intermediate app classes (e.g., AppPage) to add:
          * Theme detection
          * Default page metadata (title, description)
-         * App-wide widgets (header, footer, navigation)
+         * App-wide widgets that don't require on page specific context (header, footer, navigation)
          * Authentication/permission checks
        - Also override in individual page classes to add:
          * Page-specific data (fetched from database, APIs, etc.)
          * Dynamic children widgets unique to this page
          * Context that varies based on URL parameters
-       - Note: self.request and self.user are available
+       - Note: self.request and self.request.user are available
        - Pattern: Call await super().set_context(*args, **kwargs) first in page classes
          to ensure app-wide setup runs before page-specific logic
 
