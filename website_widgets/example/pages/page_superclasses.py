@@ -1,4 +1,6 @@
 import hashlib
+import inspect
+import os
 from datetime import datetime
 from urllib.parse import urlsplit, urlunsplit
 
@@ -25,7 +27,8 @@ class ExamplePageSimple(Page):
         # sub classes can choose whether to include them or not.
 
     def base_template_path(self) -> str:
-        return self.folder_path() + '/../templates/base.html'
+        folder_path = os.path.dirname(inspect.getfile(self.__class__))
+        return folder_path + '/../templates/base.html'
 
 
 class ExamplePageComplex(Page):
@@ -46,7 +49,8 @@ class ExamplePageComplex(Page):
         self.context.page['show_appbar_back_button'] = False
 
     def base_template_path(self) -> str:
-        return self.folder_path() + '/../templates/base.html'
+        folder_path = os.path.dirname(inspect.getfile(self.__class__))
+        return folder_path + '/../templates/base.html'
 
     async def handle_request(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
         # Check for conditional request (304 Not Modified)

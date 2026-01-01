@@ -1,3 +1,6 @@
+import inspect
+import os
+
 from website_widgets.page import Page
 
 
@@ -20,4 +23,5 @@ class UnwrappedPage(Page):
         self.context.page['title'] = 'Unwrapped Page'
 
     def base_template_path(self) -> str:
-        return self.folder_path() + '/../templates/base_unwrapped.html'
+        folder_path = os.path.dirname(inspect.getfile(self.__class__))
+        return folder_path + '/../templates/base_unwrapped.html'

@@ -1,6 +1,3 @@
-import inspect
-import os
-
 from django.http import HttpRequest, HttpResponse
 from django.utils.safestring import SafeText
 
@@ -97,13 +94,6 @@ class Page(Widget):
         raise NotImplementedError(
             f"{self.__class__.__name__} is a page - use html_sync() instead. "
             "All async work should be done in set_context().")
-
-    def folder_path(self) -> str:
-        """
-        Return the directory path containing this page's template.html.
-        Auto-detected from the subclass file location. Override if needed.
-        """
-        return os.path.dirname(inspect.getfile(self.__class__))
 
     def base_template_path(self) -> str:
         """
