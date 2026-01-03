@@ -63,6 +63,18 @@ class Widget:
         template_path: str | None = None,
         extra_context: dict | None = None,
     ) -> SafeText:
+        """
+        Render this widget to HTML using its template and context.
+        Args:
+            template_path: Optional path to the template file. If None, uses
+                the default `template_path()` method. The default method looks for
+                `template.html` in the same directory as the widget class file,
+                so override that method if the template is elsewhere.
+            extra_context: Optional additional context dictionary to merge
+                into the widget's context for rendering. Developers should add context
+                to `self.context.data` instead of using this. This is used internally
+                in the library, not meant for general use.
+        """
         context = self._context_dict()
         if extra_context:
             context.update(extra_context)
