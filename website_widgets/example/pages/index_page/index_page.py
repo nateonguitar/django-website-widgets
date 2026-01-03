@@ -15,7 +15,7 @@ class ExampleIndexPage(ExamplePageSimple):
         # The super class uses base.html will try to render both the header and footer,
         # but django's template engine will just ignore missing context children.
         # Only adding the footer to demonstrate, as the appbar is not needed on index page.
-        self.context.children['footer'] = ExampleFooter(parent=self).html_sync()
+        self.context.children['footer'] = ExampleFooter(parent=self)
 
         self.context.page['title'] = 'Example'
         self.context.data['example_pages'] = [
@@ -28,6 +28,11 @@ class ExampleIndexPage(ExamplePageSimple):
                 'name': 'Widget Composition',
                 'url': reverse('example_widget_composition_page'),
                 'description': 'Demonstrates child widgets with explicit data passing.',
+            },
+            {
+                'name': 'URL Parameters',
+                'url': reverse('example_profile', kwargs={'username': 'django_dev'}),
+                'description': 'Page with URL path parameters passed to constructor.',
             },
             {
                 'name': 'Unwrapped Page',

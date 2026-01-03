@@ -8,6 +8,7 @@ from django.http import HttpRequest, HttpResponse, HttpResponseNotModified
 from django.utils.http import http_date, parse_http_date_safe
 
 from website_widgets import Page
+from website_widgets.config import get_config
 from website_widgets.example.widgets.appbar import ExampleAppbar
 from website_widgets.example.widgets.footer import ExampleFooter
 
@@ -71,13 +72,21 @@ class ExamplePageComplex(Page):
         # Sub class pages can set `show_appbar_back_button = True` in their own set_context()
         await self.set_context(*args, **kwargs)
 
-        # Render appbar and footer after set_context() so the subclass page can
+        # Add appbar and footer after set_context() so the subclass page can
         # modify `page.show_appbar_back_button` if desired.
         # Subclasses of ExamplePageComplex don't need to set appbar/footer manually.
-        self.context.children['appbar'] = ExampleAppbar(parent=self).html_sync()
-        self.context.children['footer'] = ExampleFooter(parent=self).html_sync()
+        self.context.children['appbar'] = ExampleAppbar(parent=self)
+        self.context.children['footer'] = ExampleFooter(parent=self)
 
-        main_content_html = self.html_sync()
+        # Capture debug tree BEFORE rendering (while children are still Widget objects)
+        self._debug_tree_html = None
+        if get_config().show_debug_tree:
+            self._debug_tree_html = self._generate_debug_tree()
+
+        # Render the widget tree to HTML
+        await self._render_children_to_html()
+
+        main_content_html = self.html()
 
         response = self.build_response(main_content_html)
 

@@ -2,14 +2,22 @@
 Put styles in a stylesheet and import them using static, this is just for simplicity.
 {% endcomment %}
 <style>
-    .composition-content h2 { margin-bottom: 8px; }
-    .composition-content .subtitle { color: #94a3b8; margin-bottom: 24px; }
+    .composition-content h2 {
+        margin-bottom: 8px;
+    }
+
+    .composition-content .subtitle {
+        color: #94a3b8;
+        margin-bottom: 24px;
+    }
+
     .cards-container {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
         gap: 16px;
         margin-top: 20px;
     }
+
     .composition-content code {
         background: #16213e;
         padding: 2px 6px;
@@ -17,6 +25,7 @@ Put styles in a stylesheet and import them using static, this is just for simpli
         font-size: 14px;
         color: #e94560;
     }
+
     .info-box {
         background: #16213e;
         border-left: 4px solid #e94560;
@@ -27,14 +36,24 @@ Put styles in a stylesheet and import them using static, this is just for simpli
     }
 </style>
 <div class="composition-content">
-    <h2>Widget Composition Example</h2>
-    <p class="subtitle">Demonstrating child widget rendering with explicit data passing</p>
+    <h2>
+        Widget Composition Example
+    </h2>
+    <p class="subtitle">
+        Demonstrating child widget rendering with the new constructor pattern
+    </p>
     <div class="info-box">
-        <strong>Composition Pattern:</strong> This page creates multiple card widgets in <code>set_context()</code>,
-        renders each with <code>html()</code> or <code>html_sync()</code>, and stores the results in <code>self.context.children</code>
-        for template access.
+        <strong>New Composition Pattern:</strong> This page creates widget instances in <code>set_context()</code>
+        by calling their constructors with data. The system automatically calls <code>html()</code> on each widget
+        and detects whether it's sync or async. Widgets are stored in <code>self.context.children</code> and
+        automatically rendered by the framework.
     </div>
+
+    {{ children.async_demo }}
+
     <div class="cards-container">
-        {% for card_html in children.cards %}{{ card_html }}{% endfor %}
+        {% for card_html in children.cards %}
+            {{ card_html }}
+        {% endfor %}
     </div>
 </div>

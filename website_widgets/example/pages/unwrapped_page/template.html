@@ -2,84 +2,89 @@
 Put styles in a stylesheet and import them using static, this is just for simplicity.
 {% endcomment %}
 <style type="text/css">
-  .unwrapped-content {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    min-height: 100vh;
-    padding: 20px;
-  }
+    .unwrapped-content {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        padding: 20px;
+    }
 
-  .card {
-    background: white;
-    border-radius: 12px;
-    padding: 40px;
-    max-width: 600px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  }
+    .card {
+        background: white;
+        border-radius: 12px;
+        padding: 40px;
+        max-width: 600px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
 
-  .card h1 {
-    margin-bottom: 16px;
-    color: #333;
-  }
+    .card h1 {
+        margin-bottom: 16px;
+        color: #333;
+    }
 
-  .card p {
-    color: #666;
-    line-height: 1.6;
-    margin-bottom: 24px;
-  }
+    .card p {
+        color: #666;
+        line-height: 1.6;
+        margin-bottom: 24px;
+    }
 
-  .card code {
-    background: #f0f0f0;
-    padding: 2px 6px;
-    border-radius: 4px;
-    font-size: 14px;
-  }
+    .card code {
+        background: #f0f0f0;
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-size: 14px;
+    }
 
-  .use-cases {
-    background: #f8f9fa;
-    padding: 20px;
-    border-radius: 8px;
-    margin-bottom: 24px;
-  }
+    .use-cases {
+        background: #f8f9fa;
+        padding: 20px;
+        border-radius: 8px;
+        margin-bottom: 24px;
+    }
 
-  .use-cases h3 {
-    margin-bottom: 12px;
-    font-size: 16px;
-    color: #333;
-  }
+    .use-cases h3 {
+        margin-bottom: 12px;
+        font-size: 16px;
+        color: #333;
+    }
 
-  .use-cases ul {
-    margin-left: 20px;
-    color: #555;
-  }
+    .use-cases ul {
+        margin-left: 20px;
+        color: #555;
+    }
 
-  .use-cases li {
-    margin-bottom: 8px;
-    line-height: 1.5;
-  }
+    .use-cases li {
+        margin-bottom: 8px;
+        line-height: 1.5;
+    }
 
-  .back-link {
-    display: inline-block;
-    color: #667eea;
-    text-decoration: none;
-    font-weight: 500;
-  }
+    .back-link {
+        display: inline-block;
+        color: #667eea;
+        text-decoration: none;
+        font-weight: 500;
+    }
 
-  .back-link:hover {
-    text-decoration: underline;
-  }
+    .back-link:hover {
+        text-decoration: underline;
+    }
 </style>
 <div class="unwrapped-content">
     <div class="card">
-        <a href="{% url 'example_index' %}" class="back-link">← Back to example</a>
-        <h1>Unwrapped Page</h1>
+        <a href="{% url 'example_index' %}"
+           class="back-link">← Back to example</a>
+        <h1>
+            Unwrapped Page
+        </h1>
         <p>
             This page uses <code>base_unwrapped.html</code> — a minimal base template
             with no header, navigation, or footer.
         </p>
         <div class="use-cases">
-            <h3>When to use unwrapped pages:</h3>
+            <h3>
+                When to use unwrapped pages:
+            </h3>
             <ul>
                 <li>
                     <strong>Login / Signup pages</strong> — focused UI without distractions

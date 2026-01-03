@@ -1,6 +1,7 @@
 from website_widgets.example.pages.nav_item import NavItem
 from website_widgets.example.pages.page_superclasses import ExamplePageComplex
 from website_widgets.example.widgets.info_card.info_card import InfoCard
+from website_widgets.example.widgets.async_widget.async_widget import AsyncWidget
 
 
 class WidgetCompositionPage(ExamplePageComplex):
@@ -20,17 +21,22 @@ class WidgetCompositionPage(ExamplePageComplex):
         # self.context.children['footer'] = ExampleFooter(parent=self).html_sync()
 
         cards_data = [
-            {'title': 'First Card', 'content': 'Data is passed explicitly to each widget via html() parameters.'},
+            {'title': 'First Card', 'content': 'Data is passed explicitly to each widget via constructor parameters.'},
             {'title': 'Second Card', 'content': 'Widgets are instantiated with parent=self to establish the hierarchy.'},
-            {'title': 'Third Card', 'content': 'Each widget manages its own context independently.'},
+            {'title': 'Third Card', 'content': 'The system automatically calls html() on each widget during rendering.'},
         ]
 
         card_widgets = []
         for card in cards_data:
-            card_html = InfoCard(parent=self) \
-                .html_sync(
-                    title=card['title'],
-                    content=card['content'])
-            card_widgets.append(card_html)
+            card_widget = InfoCard(
+                title=card['title'],
+                content=card['content'],
+                parent=self)
+            card_widgets.append(card_widget)
 
         self.context.children['cards'] = card_widgets
+
+        # Add async widget to demonstrate async html() support
+        self.context.children['async_demo'] = AsyncWidget(
+            message='Async Widget Demo',
+            parent=self)

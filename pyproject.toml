@@ -62,3 +62,19 @@ include = ["website_widgets*"]
 
 [tool.setuptools.package-data]
 website_widgets = ["templates/**/*", "static/**/*"]
+
+[tool.djlint]
+# Ignore:
+#   H021: Inline styles should be avoided
+#   H006: Img tag should have height and width attributes
+ignore = "H021,H006"
+profile = "django"
+indent = 2
+indent_attributes = true          # attributes on separate lines
+max_line_length = 80              # or whatever; must be non-zero
+max_attribute_length = 1          # force line break when there's any attr
+format_attribute_order = "none"
+max_blank_lines = 1
+line_break_after_multiline_tag = true
+format_css = true
+format_js = true

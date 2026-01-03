@@ -54,13 +54,15 @@ INSTALLED_APPS = [
 `website/app_page.py`
 ```python
 from website_widgets import Page
+from website.widgets.appbar import Appbar
 
 class AppPage(Page):
     def base_template_path(self) -> str:
         return 'website/templates/base.html'
 
     async def set_context(self, *args, **kwargs):
-        self.context.children['appbar'] = ExampleAppbar(parent=self).html_sync()
+        # Construct widget - system will render it automatically
+        self.context.children['appbar'] = Appbar(parent=self)
 ```
 
 4. Create a widget and a `template.html` file next to it:
@@ -68,14 +70,21 @@ class AppPage(Page):
 `website/widgets/project_details_card/project_details_card.py`
 ```python
 from website_widgets import Widget
+from project.models import Project
 
 class ProjectDetailsCard(Widget):
-    def html_sync(self, project: Project):
+    """Widget that displays project details."""
+
+    def __init__(self, project: Project, parent: 'Widget | None' = None):
+        super().__init__(parent=parent)
         self.context.data['project'] = project
+
+    def html(self):
+        """Renders the widget. Can be sync or async - system auto-detects."""
         return self.render_html()
 ```
 
-`website/widgets/project_details_card/template.py`
+`website/widgets/project_details_card/template.html`
 ```html
 <div class="project-details-card">
     <p>Name: {{ data.project.name }}</p>
@@ -87,28 +96,41 @@ class ProjectDetailsCard(Widget):
 `website/pages/project_page/project_page.py`
 ```python
 from project.models import Project
-from website_widgets import Page
+from website.app_page import AppPage
+from website.widgets.project_details_card import ProjectDetailsCard
 
 class ProjectPage(AppPage):
-    async def set_context(self, pk, *args, **kwargs):
+    """Page that displays a single project."""
+
+    def __init__(self, pk: int, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.pk = pk
+
+    async def set_context(self, *args, **kwargs):
         await super().set_context(*args, **kwargs)
-        project = await Project.objects.aget(pk=pk)
+
+        project = await Project.objects.aget(pk=self.pk)
         self.context.page['title'] = f'Project - {project.name}'
         self.context.data['project'] = project
-        self.context.children['project_details_card'] = ProjectDetailsCard(parent=self).html_sync(project)
+
+        # Construct widgets - system will render them automatically
+        self.context.children['project_details_card'] = ProjectDetailsCard(
+            project=project,
+            parent=self
+        )
 ```
 
 
-`website/widgets/project_page/template.py`
+`website/pages/project_page/template.html`
 ```html
 <div id="project-details-page">
     {{ children.project_details_card }}
 
-    <p>Other</p>
+    <p>Other content here</p>
 </div>
 ```
 
-5. Register in `urls.py`:
+6. Register in `urls.py`:
 
 ```python
 from django.urls import path
@@ -123,24 +145,63 @@ urlpatterns = [
 
 ### Widget
 
-Base class for reusable UI components.
+Base class for reusable UI components. Uses a declarative, constructor-based pattern similar to Flutter or React.
+
+**Key Pattern:**
+- Accept data via constructor parameters
+- Store data in `self.context.data` for templates
+- Store child widget instances in `self.context.children`
+- Implement `html()` method (can be sync or async - system auto-detects)
+
+**Example:**
+```python
+class InfoCard(Widget):
+    def __init__(self, title: str, content: str, parent: 'Widget | None' = None):
+        super().__init__(parent=parent)
+        self.context.data['title'] = title
+        self.context.data['content'] = content
+
+    def html(self):  # Or: async def html(self)
+        return self.render_html()
+```
 
 Widgets can:
-- Accept parameters
-  - When the widget needs to do async work
-    - `async def html(project_id: int)`
-  - When the widget will not do async work
-    - `def html_sync(project: Project)`
-- Store data in `self.context.data` for templates
-- Store child widgets in `self.context.children`
+- Accept any parameters in `__init__()`
+- Store child widgets (not HTML) in `self.context.children`
 - Access request via `self.request`
 - Access request user via `self.request.user`
+- Use either `def html()` or `async def html()` - framework detects automatically
 
 ### Page
 
-Extends `Widget` and represents a full page. Pages:
+Extends `Widget` and represents a full page.
+
+**Key Pattern:**
+- URL parameters are passed to `__init__()` and stored as instance variables
+- Use `set_context()` to load data and construct child widgets
+- Child widgets are stored as objects, not HTML
+- Framework automatically renders the widget tree after `set_context()`
+
+**Example with URL parameters:**
+```python
+class ProfilePage(AppPage):
+    def __init__(self, username: str, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.username = username
+
+    async def set_context(self, *args, **kwargs):
+        await super().set_context(*args, **kwargs)
+        user = await User.objects.aget(username=self.username)
+        self.context.page['title'] = f'Profile: {user.username}'
+
+        # Construct widgets (don't call .html() - framework does that)
+        self.context.children['profile_card'] = ProfileCard(user=user, parent=self)
+```
+
+Pages:
 - Define `base_template_path()` for the wrapper template
-- Use `set_context()` to load data and create child widgets
+- Receive URL parameters in `__init__()`
+- Use `set_context()` to load data and construct child widgets
 - Register with Django URLs via `.as_view()`
 - Have lifecycle hooks for authentication, permissions, etc.
 
@@ -148,8 +209,10 @@ Extends `Widget` and represents a full page. Pages:
 
 Each widget has `self.context` with:
 - `data`: Dictionary for template variables
-- `children`: Dictionary for child widget HTML
-- `page`: Page-level data (title, meta tags, etc.)
+- `children`: Dictionary for child widget instances (Widget objects or lists)
+- `page`: Page-level data (title, meta tags, etc.) shared across all widgets
+
+**Important:** Store Widget instances in `children`, not HTML strings. The framework automatically converts them to HTML after the widget tree is built.
 
 ## Templates
 
@@ -161,6 +224,56 @@ Create a `template.html` next to the widget/page class:
     {{ children.my_widget }}
 </div>
 ```
+
+## Configuration
+
+Configure django-website-widgets in your `settings.py`:
+
+```python
+from website_widgets.config import WebsiteWidgetsConfig
+
+WEBSITE_WIDGETS = WebsiteWidgetsConfig(
+    show_debug_tree=True,  # Show widget tree visualization on pages (default: False)
+)
+```
+
+If `WEBSITE_WIDGETS` is not defined, a default configuration is used automatically.
+
+### Debug Tree Visualization
+
+Enable `show_debug_tree=True` to display a visual representation of your widget hierarchy at the bottom of each page. This is useful during development to understand the structure of your widget tree.
+
+**Example output:**
+```
+WidgetCompositionPage
+  cards: [
+    InfoCard(First Card)
+    InfoCard(Second Card)
+    InfoCard(Third Card)
+  ]
+  appbar:
+    ExampleAppbar
+      title: AppbarTitle(Widget Composition)
+  footer:
+    ExampleFooter
+```
+
+#### Adding Debug Labels
+
+For better debugging, add a `_debug_label` to your widgets:
+
+```python
+class InfoCard(Widget):
+    def __init__(self, title: str, content: str, parent: 'Widget | None' = None):
+        super().__init__(parent=parent)
+        self._debug_label = title  # Shows as "InfoCard(My Title)" in debug tree
+        self.context.data['title'] = title
+        self.context.data['content'] = content
+```
+
+Without `_debug_label`, widgets display only their class name (e.g., `InfoCard`). With the label, they display as `InfoCard(My Title)`, making it easier to identify specific widget instances in complex trees.
+
+**Recommendation:** Only enable `show_debug_tree` in development environments, not in production.
 
 ## Management Commands
 

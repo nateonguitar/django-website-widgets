@@ -20,5 +20,5 @@ class SimplePage(ExamplePageSimple):
         # The Simple super class does not add appbar/footer automatically.
         # The super class uses base.html will try to render both the header and footer,
         # but django's template engine will just ignore missing context children.
-        self.context.children['appbar'] = ExampleAppbar(parent=self).html_sync()
-        self.context.children['footer'] = ExampleFooter(parent=self).html_sync()
+        self.context.children['appbar'] = ExampleAppbar(parent=self)
+        self.context.children['footer'] = ExampleFooter(parent=self)

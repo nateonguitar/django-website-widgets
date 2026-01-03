@@ -1,7 +1,9 @@
 from django.http import HttpRequest, HttpResponse
-from django.utils.safestring import SafeText
+from django.utils.safestring import SafeText, mark_safe
+from django.conf import settings
 
 from website_widgets.widget import Widget
+from website_widgets.config import get_config
 
 
 class Page(Widget):
@@ -13,7 +15,7 @@ class Page(Widget):
     1. Creates a fresh page instance per request
     2. Sets self._request (accessible as self.request property)
     3. Calls set_context() - does nothing by default
-    4. Calls html_sync() - renders the page's template.html
+    4. Calls html() - renders the page's template.html
     5. Calls build_response() - wraps content in base template, returns HttpResponse
 
     LIFECYCLE HOOKS (in execution order):
@@ -40,10 +42,11 @@ class Page(Widget):
        - Pattern: Call await super().set_context(*args, **kwargs) first in page classes
          to ensure app-wide setup runs before page-specific logic
 
-    3. html_sync() -> SafeText
+    3. html() -> SafeText
        - Renders the page's template.html into HTML
        - Uses context built by set_context()
        - Rarely needs to be overridden
+       - For pages, this is typically synchronous since async work happens in set_context()
 
     4. build_response(main_content_html) -> HttpResponse
        - Creates the final HttpResponse
@@ -66,34 +69,33 @@ class Page(Widget):
     status_code: int = 200
 
     @classmethod
-    def as_view(cls, **initkwargs):
+    def as_view(cls, *initargs, **initkwargs):
         """
         Factory method that creates a fresh page instance per request.
 
         Returns an async view function compatible with Django URL patterns.
         Sets up request and user on the instance before calling handle_request().
 
+        URL parameters are passed to both the constructor and handle_request().
+        This allows pages to store URL parameters as instance attributes.
+
         Usage:
             path('my-page/', MyPage.as_view(), name='my_page')
+            path('profile/<str:username>/', ProfilePage.as_view(), name='profile')
         """
         async def view(request: HttpRequest, *args, **kwargs):
-            instance = cls(**initkwargs)
+            instance = cls(*args, *initargs, **kwargs, **initkwargs)
             instance._request = request
             return await instance.handle_request(request, *args, **kwargs)
 
         view.view_class = cls
+        view.view_initargs = initargs
         view.view_initkwargs = initkwargs
         return view
 
-    def html_sync(self) -> SafeText:
+    def html(self) -> SafeText:
         """Render the page's main content template."""
         return self.render_html()
-
-    async def html(self) -> SafeText:
-        """Pages use html_sync() since async work is done in set_context()."""
-        raise NotImplementedError(
-            f"{self.__class__.__name__} is a page - use html_sync() instead. "
-            "All async work should be done in set_context().")
 
     def base_template_path(self) -> str:
         """
@@ -124,7 +126,8 @@ class Page(Widget):
         to maintain the expected lifecycle:
         ```python
             await self.set_context(*args, **kwargs)
-            main_content_html = self.html_sync()
+            await self._render_children_to_html()
+            main_content_html = self.html()
             return self.build_response(main_content_html)
         ```
 
@@ -132,7 +135,8 @@ class Page(Widget):
         ```python
             try:
                 await self.set_context(*args, **kwargs)
-                main_content_html = self.html_sync()
+                await self._render_children_to_html()
+                main_content_html = self.html()
                 return self.build_response(main_content_html)
             except ExampleNotAuthorizedException as e:
                 return self.build_not_authorized_response(e)
@@ -143,7 +147,14 @@ class Page(Widget):
         ```
         """
         await self.set_context(*args, **kwargs)
-        main_content_html = self.html_sync()
+
+        # Capture debug tree BEFORE rendering (while children are still Widget objects)
+        self._debug_tree_html = None
+        if get_config().show_debug_tree:
+            self._debug_tree_html = self._generate_debug_tree()
+
+        await self._render_children_to_html()
+        main_content_html = self.html()
         return self.build_response(main_content_html)
 
     async def set_context(self, *args, **kwargs):
@@ -169,6 +180,18 @@ class Page(Widget):
         pass
 
     def build_response(self, main_content_html: str) -> HttpResponse:
+        # Append debug widget tree if it was captured
+        if hasattr(self, '_debug_tree_html') and self._debug_tree_html:
+            debug_tree_html = f"""
+            <div style="margin-top: 40px; padding: 20px; background: #f5f5f5; border-top: 2px solid #ddd; font-family: monospace; font-size: 14px;">
+                <h3 style="margin-top: 0; color: #333;">Widget Tree Debug View</h3>
+                <div style="background: white; padding: 15px; border-radius: 4px; border: 1px solid #ddd;">
+                    {self._debug_tree_html}
+                </div>
+            </div>
+            """
+            main_content_html = main_content_html + mark_safe(debug_tree_html)
+
         html = self.render_html(
             template_path=self.base_template_path(),
             extra_context={
