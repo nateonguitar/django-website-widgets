@@ -17,8 +17,8 @@ class CachingPage(ExamplePageComplex):
     # Simulated last modification time (in real app, from database)
     LAST_MODIFIED = datetime(2025, 12, 24, 12, 0, 0, tzinfo=timezone.utc)
 
-    async def set_context(self, *args, **kwargs):
-        await super().set_context(*args, **kwargs)
+    def set_context(self, *args, **kwargs):
+        super().set_context(*args, **kwargs)
         self.context.page['title'] = 'Caching Example'
         self.context.page['show_appbar_back_button'] = True
         self.context.page['nav_item'] = NavItem.CACHING_PAGE

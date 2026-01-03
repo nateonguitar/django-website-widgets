@@ -70,25 +70,18 @@ class ExamplePageComplex(Page):
                     return HttpResponseNotModified()
 
         # Sub class pages can set `show_appbar_back_button = True` in their own set_context()
-        await self.set_context(*args, **kwargs)
+        if inspect.iscoroutinefunction(self.set_context):
+            await self.set_context(*args, **kwargs)
+        else:
+            self.set_context(*args, **kwargs)
 
         # Add appbar and footer after set_context() so the subclass page can
         # modify `page.show_appbar_back_button` if desired.
         # Subclasses of ExamplePageComplex don't need to set appbar/footer manually.
-        self.context.children['appbar'] = ExampleAppbar(parent=self)
-        self.context.children['footer'] = ExampleFooter(parent=self)
+        self.context.children['appbar'] = ExampleAppbar()
+        self.context.children['footer'] = ExampleFooter()
 
-        # Capture debug tree BEFORE rendering (while children are still Widget objects)
-        self._debug_tree_html = None
-        if get_config().show_debug_tree:
-            self._debug_tree_html = self._generate_debug_tree()
-
-        # Render the widget tree to HTML
-        await self._render_children_to_html()
-
-        main_content_html = self.html()
-
-        response = self.build_response(main_content_html)
+        response = await self.build_response()
 
         if last_modified:
             response['Last-Modified'] = http_date(int(last_modified.timestamp()))
@@ -97,7 +90,7 @@ class ExamplePageComplex(Page):
 
         return response
 
-    async def set_context(self, *args, **kwargs):
+    def set_context(self, *args, **kwargs):
         """App-wide defaults for all pages."""
         self.context.page['title'] = 'Example App'
         self.context.page['canonical_url'] = self.generate_canonical_url(self.request)

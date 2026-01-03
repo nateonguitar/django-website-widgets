@@ -14,8 +14,8 @@ class ProfilePage(ExamplePageSimple):
         super().__init__(*args, **kwargs)
         self.username = username
 
-    async def set_context(self, *args, **kwargs):
-        await super().set_context(*args, **kwargs)
+    def set_context(self, *args, **kwargs):
+        super().set_context(*args, **kwargs)
 
         self.context.page['title'] = f'Profile: {self.username}'
         self.context.page['nav_item'] = NavItem.HOME
@@ -28,5 +28,5 @@ class ProfilePage(ExamplePageSimple):
             'post_count': len(self.username) * 42,
         }
 
-        self.context.children['appbar'] = ExampleAppbar(parent=self)
-        self.context.children['footer'] = ExampleFooter(parent=self)
+        self.context.children['appbar'] = ExampleAppbar()
+        self.context.children['footer'] = ExampleFooter()

@@ -10,8 +10,8 @@ class SimplePage(ExamplePageSimple):
     No need to override base_template_path() - it inherits the default.
     """
 
-    async def set_context(self, *args, **kwargs):
-        await super().set_context(*args, **kwargs)
+    def set_context(self, *args, **kwargs):
+        super().set_context(*args, **kwargs)
         self.context.page['title'] = 'Simple Page'
         self.context.page['nav_item'] = NavItem.SIMPLE_PAGE
         self.context.page['show_appbar_back_button'] = True
@@ -20,5 +20,5 @@ class SimplePage(ExamplePageSimple):
         # The Simple super class does not add appbar/footer automatically.
         # The super class uses base.html will try to render both the header and footer,
         # but django's template engine will just ignore missing context children.
-        self.context.children['appbar'] = ExampleAppbar(parent=self)
-        self.context.children['footer'] = ExampleFooter(parent=self)
+        self.context.children['appbar'] = ExampleAppbar()
+        self.context.children['footer'] = ExampleFooter()
