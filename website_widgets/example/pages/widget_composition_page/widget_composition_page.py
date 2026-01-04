@@ -10,8 +10,8 @@ class WidgetCompositionPage(ExamplePageComplex):
     Uses the default base template from ExampleAppPage.
     """
 
-    def set_context(self, *args, **kwargs):
-        super().set_context(*args, **kwargs)
+    def set_context(self):
+        super().set_context()
         self.context.page['title'] = 'Widget Composition'
         self.context.page['nav_item'] = NavItem.WIDGET_COMPOSITION
         self.context.page['show_appbar_back_button'] = True

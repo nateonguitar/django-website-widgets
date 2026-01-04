@@ -10,8 +10,8 @@ class SimplePage(ExamplePageSimple):
     No need to override base_template_path() - it inherits the default.
     """
 
-    def set_context(self, *args, **kwargs):
-        super().set_context(*args, **kwargs)
+    def set_context(self):
+        super().set_context()
         self.context.page['title'] = 'Simple Page'
         self.context.page['nav_item'] = NavItem.SIMPLE_PAGE
         self.context.page['show_appbar_back_button'] = True

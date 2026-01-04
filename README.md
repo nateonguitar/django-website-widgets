@@ -60,9 +60,9 @@ class AppPage(Page):
     def base_template_path(self) -> str:
         return 'website/templates/base.html'
 
-    async def set_context(self, *args, **kwargs):
+    async def set_context(self):
         # Construct widget - system will render it automatically
-        self.context.children['appbar'] = Appbar(parent=self)
+        self.context.children['appbar'] = Appbar()
 ```
 
 4. Create a widget and a `template.html` file next to it:
@@ -75,13 +75,13 @@ from project.models import Project
 class ProjectDetailsCard(Widget):
     """Widget that displays project details."""
 
-    def __init__(self, project: Project, parent: 'Widget | None' = None):
-        super().__init__(parent=parent)
+    def __init__(self, project: Project):
+        super().__init__()
         self.context.data['project'] = project
 
-    def html(self):
-        """Renders the widget. Can be sync or async - system auto-detects."""
-        return self.render_html()
+    def set_context(self):
+        """Called before rendering. Can be sync or async."""
+        super().set_context()
 ```
 
 `website/widgets/project_details_card/template.html`
@@ -102,12 +102,12 @@ from website.widgets.project_details_card import ProjectDetailsCard
 class ProjectPage(AppPage):
     """Page that displays a single project."""
 
-    def __init__(self, pk: int, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, pk: int):
+        super().__init__()
         self.pk = pk
 
-    async def set_context(self, *args, **kwargs):
-        await super().set_context(*args, **kwargs)
+    async def set_context(self):
+        await super().set_context()
 
         project = await Project.objects.aget(pk=self.pk)
         self.context.page['title'] = f'Project - {project.name}'
@@ -115,8 +115,7 @@ class ProjectPage(AppPage):
 
         # Construct widgets - system will render them automatically
         self.context.children['project_details_card'] = ProjectDetailsCard(
-            project=project,
-            parent=self
+            project=project
         )
 ```
 
@@ -148,16 +147,16 @@ urlpatterns = [
 Base class for reusable UI components. Uses a declarative, constructor-based pattern similar to Flutter or React.
 
 **Key Pattern:**
-- Accept data via constructor parameters
-- Store data in `self.context.data` for templates
-- Store child widget instances in `self.context.children`
-- Implement `html()` method (can be sync or async - system auto-detects)
+- Accept data via `__init__()` parameters
+- Store data on instance variables
+- Implement `set_context()` to populate `self.context.data` and create child widgets
+- System automatically renders widgets after initialization
 
 **Example:**
 ```python
 class InfoCard(Widget):
-    def __init__(self, title: str, content: str, parent: 'Widget | None' = None):
-        super().__init__(parent=parent)
+    def __init__(self, title: str, content: str):
+        super().__init__()
         self.context.data['title'] = title
         self.context.data['content'] = content
 
@@ -165,37 +164,37 @@ class InfoCard(Widget):
         return self.render_html()
 ```
 
-Widgets can:
-- Accept any parameters in `__init__()`
-- Store child widgets (not HTML) in `self.context.children`
-- Access request via `self.request`
-- Access request user via `self.request.user`
-- Use either `def html()` or `async def html()` - framework detects automatically
+Widgets:
+- Accept data parameters in `__init__()` and store them
+- Use `set_context()` to create child widgets (Widget objects or lists)
+- Store children in `self.context.children` - system renders them
+- Access `self.request` and `self.request.user` automatically
+- Can be sync or async - use `async def set_context(self):` only when awaiting
 
 ### Page
 
 Extends `Widget` and represents a full page.
 
 **Key Pattern:**
-- URL parameters are passed to `__init__()` and stored as instance variables
-- Use `set_context()` to load data and construct child widgets
-- Child widgets are stored as objects, not HTML
-- Framework automatically renders the widget tree after `set_context()`
+- URL parameters passed to `__init__()` - store them on self
+- `set_context()` loads data and creates child widgets
+- Assign Widget objects (or lists) to `self.context.children`
+- System calls `set_context()` recursively, then renders all widgets
 
 **Example with URL parameters:**
 ```python
 class ProfilePage(AppPage):
-    def __init__(self, username: str, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, username: str):
+        super().__init__()
         self.username = username
 
-    async def set_context(self, *args, **kwargs):
-        await super().set_context(*args, **kwargs)
+    async def set_context(self):
+        await super().set_context()
         user = await User.objects.aget(username=self.username)
         self.context.page['title'] = f'Profile: {user.username}'
 
         # Construct widgets (don't call .html() - framework does that)
-        self.context.children['profile_card'] = ProfileCard(user=user, parent=self)
+        self.context.children['profile_card'] = ProfileCard(user=user)
 ```
 
 Pages:
@@ -208,11 +207,11 @@ Pages:
 ### Context
 
 Each widget has `self.context` with:
-- `data`: Dictionary for template variables
-- `children`: Dictionary for child widget instances (Widget objects or lists)
-- `page`: Page-level data (title, meta tags, etc.) shared across all widgets
+- `data`: Template variables (dict)
+- `children`: Child widgets - values can be Widget, list[Widget], or None
+- `page`: Shared page-level data (title, meta, etc.)
 
-**Important:** Store Widget instances in `children`, not HTML strings. The framework automatically converts them to HTML after the widget tree is built.
+System renders widgets to HTML automatically. Lists iterate in templates via `{% for item in children.items %}`.
 
 ## Templates
 

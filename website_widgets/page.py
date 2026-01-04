@@ -40,7 +40,7 @@ class Page(Widget):
          * Page-specific data (fetched from database, APIs, etc.)
          * Dynamic children widgets unique to this page
          * Context that varies based on URL parameters
-       - Pattern: Call super().set_context(*args, **kwargs) first
+       - Pattern: Call super().set_context() first
 
     3. build_response() -> HttpResponse
        - Creates the final HttpResponse
@@ -130,9 +130,9 @@ class Page(Widget):
         ```python
             # Call set_context (sync or async)
             if inspect.iscoroutinefunction(self.set_context):
-                await self.set_context(*args, **kwargs)
+                await self.set_context()
             else:
-                self.set_context(*args, **kwargs)
+                self.set_context()
 
             # Build and return response (automatic rendering)
             return await self.build_response()
@@ -142,9 +142,9 @@ class Page(Widget):
         ```python
             try:
                 if inspect.iscoroutinefunction(self.set_context):
-                    await self.set_context(*args, **kwargs)
+                    await self.set_context()
                 else:
-                    self.set_context(*args, **kwargs)
+                    self.set_context()
                 return await self.build_response()
             except ExampleNotAuthorizedException as e:
                 return self.build_not_authorized_response(e)
@@ -154,9 +154,9 @@ class Page(Widget):
         """
         # Call set_context (can be sync or async)
         if inspect.iscoroutinefunction(self.set_context):
-            await self.set_context(*args, **kwargs)
+            await self.set_context()
         else:
-            self.set_context(*args, **kwargs)
+            self.set_context()
 
         return await self.build_response()
 
@@ -174,13 +174,13 @@ class Page(Widget):
         Override to customize response headers, status codes, or add additional processing.
         Call await super().build_response() to get the response, then modify it.
         """
-        # Capture debug tree BEFORE rendering (while children are still Widget objects)
+        # Initialize the entire widget tree (call set_context on all widgets)
+        await self._initialize_widget_tree()
+
+        # Capture debug tree AFTER initializing (so all children are populated)
         self._debug_tree_html = None
         if get_config().show_debug_tree:
             self._debug_tree_html = self._generate_debug_tree()
-
-        # Initialize the entire widget tree (call set_context on all widgets)
-        await self._initialize_widget_tree()
 
         # Render children to HTML
         await self._render_children_to_html()

@@ -23,6 +23,7 @@ class Widget:
         """
         self._request: HttpRequest | None = None
         self.context = WidgetContext()
+
     @property
     def request(self) -> HttpRequest:
         """
@@ -42,7 +43,7 @@ class Widget:
             return self._request
         raise RuntimeError("No request found in widget. AppPage should set _request on root before creating children.")
 
-    def set_context(self, *args, **kwargs):
+    def set_context(self):
         """
         Lifecycle hook for setting up widget context.
         Called after __init__, before rendering.

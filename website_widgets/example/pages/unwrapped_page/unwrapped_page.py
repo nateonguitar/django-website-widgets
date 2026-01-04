@@ -18,8 +18,8 @@ class UnwrappedPage(Page):
     Overrides base_template_path() to use a minimal base template.
     """
 
-    def set_context(self, *args, **kwargs):
-        super().set_context(*args, **kwargs)
+    def set_context(self):
+        super().set_context()
         self.context.page['title'] = 'Unwrapped Page'
 
     def base_template_path(self) -> str:

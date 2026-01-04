@@ -8,8 +8,8 @@ class ExampleIndexPage(ExamplePageSimple):
     Index page listing all available example.
     """
 
-    def set_context(self, *args, **kwargs):
-        super().set_context(*args, **kwargs)
+    def set_context(self):
+        super().set_context()
 
         # The Simple super class does not add appbar/footer automatically.
         # The super class uses base.html will try to render both the header and footer,

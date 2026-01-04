@@ -10,12 +10,12 @@ class ProfilePage(ExamplePageSimple):
     The username comes from the URL pattern and is stored as an instance variable.
     """
 
-    def __init__(self, username: str, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, username: str):
+        super().__init__()
         self.username = username
 
-    def set_context(self, *args, **kwargs):
-        super().set_context(*args, **kwargs)
+    def set_context(self):
+        super().set_context()
 
         self.context.page['title'] = f'Profile: {self.username}'
         self.context.page['nav_item'] = NavItem.HOME
