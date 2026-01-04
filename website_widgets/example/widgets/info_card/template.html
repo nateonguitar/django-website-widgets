@@ -6,12 +6,14 @@ Put styles in a stylesheet and import them using static, this is just for simpli
         background: white;
         border-radius: 8px;
         padding: 20px;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     }
+
     .info-card h3 {
         margin: 0 0 12px 0;
         color: #333;
     }
+
     .info-card p {
         margin: 0;
         color: #666;
@@ -20,7 +22,10 @@ Put styles in a stylesheet and import them using static, this is just for simpli
 </style>
 
 <div class="info-card">
-    <h3>{{ data.title }}</h3>
-    <p>{{ data.content }}</p>
+    <h3>
+        {{ data.title }}
+    </h3>
+    <p>
+        {{ data.content }}
+    </p>
 </div>
-

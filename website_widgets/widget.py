@@ -8,11 +8,21 @@ import os
 from website_widgets.widget_context import WidgetContext
 
 class Widget:
-    def __init__(self, parent: 'Widget | None' = None):
-        self.parent = parent
-        self._request: HttpRequest | None = parent._request if parent else None
-        self.context = WidgetContext(
-            parent=parent.context if parent else None)
+    def __init__(self):
+        """
+        Widget constructor. Store data parameters as instance attributes.
+
+        Pattern:
+            def __init__(self, user: User, title: str):
+                super().__init__()
+                self.user = user
+                self.title = title
+
+        The system sets self._request and self.context.page automatically
+        before calling set_context().
+        """
+        self._request: HttpRequest | None = None
+        self.context = WidgetContext()
 
     @property
     def request(self) -> HttpRequest:
@@ -33,11 +43,166 @@ class Widget:
             return self._request
         raise RuntimeError("No request found in widget. AppPage should set _request on root before creating children.")
 
-    async def html(self) -> SafeText:
-        return self.render_html()
+    def set_context(self):
+        """
+        Lifecycle hook for setting up widget context.
+        Called after __init__, before rendering.
 
-    def html_sync(self) -> SafeText:
-        return self.render_html()
+        Use this to:
+        - Set self.context.data for template variables
+        - Create self.context.children widgets
+        - Fetch data asynchronously (if using async def)
+        - Set self.context.page values if needed
+
+        Patterns:
+            # Sync version (use when no async operations needed)
+            def set_context(self):
+                self.context.data['title'] = self.title
+                self.context.children['child'] = SomeWidget()
+
+            # Async version (use when fetching data with await)
+            async def set_context(self):
+                data = await SomeModel.objects.aget(pk=self.some_id)
+                self.context.data['item'] = data
+                self.context.children['child'] = SomeWidget(data=data)
+
+        Use `def` for sync, `async def` for async - system auto-detects.
+        Base implementation does nothing.
+        """
+        pass
+
+    async def _initialize_widget_tree(self):
+        """
+        Traverse the widget tree and call set_context() on all children.
+        This happens BEFORE any rendering, ensuring the entire widget tree
+        is fully constructed with all data loaded before we render anything.
+        """
+        for key, value in self.context.children.items():
+            if value is None:
+                continue
+            elif isinstance(value, list):
+                for widget in value:
+                    if not isinstance(widget, Widget):
+                        raise TypeError(f"Expected Widget in children['{key}'] list, got {type(widget)}")
+
+                    # Set request and page context (shared by reference)
+                    widget._request = self._request
+                    widget.context.page = self.context.page
+
+                    # Call set_context lifecycle hook
+                    if inspect.iscoroutinefunction(widget.set_context):
+                        await widget.set_context()
+                    else:
+                        widget.set_context()
+
+                    # Recursively initialize this widget's children
+                    await widget._initialize_widget_tree()
+
+            elif isinstance(value, Widget):
+                widget = value
+
+                # Set request and page context (shared by reference)
+                widget._request = self._request
+                widget.context.page = self.context.page
+
+                # Call set_context lifecycle hook
+                if inspect.iscoroutinefunction(widget.set_context):
+                    await widget.set_context()
+                else:
+                    widget.set_context()
+
+                # Recursively initialize this widget's children
+                await widget._initialize_widget_tree()
+
+    async def _render_children_to_html(self):
+        """
+        Traverse the widget tree and render all children to HTML.
+        Converts self.context.children from Widget objects to SafeText HTML.
+        """
+        self._children_rendered = True
+
+        rendered_children = {}
+
+        for key, value in self.context.children.items():
+            if value is None:
+                rendered_children[key] = None
+            elif isinstance(value, list):
+                rendered_list = []
+                for widget in value:
+                    if not isinstance(widget, Widget):
+                        raise TypeError(f"Expected Widget in children['{key}'] list, got {type(widget)}")
+
+                    # Recursively render this widget's children first
+                    await widget._render_children_to_html()
+
+                    # Then render this widget
+                    html = widget.render_html()
+                    rendered_list.append(html)
+
+                rendered_children[key] = rendered_list
+            elif isinstance(value, Widget):
+                widget = value
+
+                # Recursively render this widget's children first
+                await widget._render_children_to_html()
+
+                # Then render this widget
+                html = widget.render_html()
+
+                rendered_children[key] = html
+            else:
+                raise TypeError(f"Expected Widget, list[Widget], or None in children['{key}'], got {type(value)}")
+
+        # Replace widget objects with rendered HTML
+        self.context.children = rendered_children
+
+    def _generate_debug_tree(self, indent: int = 0) -> str:
+        """
+        Generate a debug tree visualization of the widget hierarchy.
+        Shows widget class names and their children structure with proper indentation.
+
+        Args:
+            indent: Current indentation level (0 = root, 1 = first child, etc.)
+
+        Returns:
+            HTML string representing this widget and its children
+        """
+        lines = []
+
+        # Show this widget's name with debug label if available
+        debug_label = getattr(self, '_debug_label', None)
+        if debug_label is not None:
+            display_name = f"{self.__class__.__name__}({str(debug_label)})"
+        else:
+            display_name = self.__class__.__name__
+        lines.append(f"<div style='margin-left: {indent * 20}px; color: #000;'>{display_name}</div>")
+
+        # Show each child
+        for key, value in self.context.children.items():
+            if value is None:
+                # Show None explicitly
+                lines.append(f"<div style='margin-left: {(indent + 1) * 20}px; color: #888;'>{key}: <span style='color: #999;'>None</span></div>")
+
+            elif isinstance(value, list):
+                # Show list opening
+                lines.append(f"<div style='margin-left: {(indent + 1) * 20}px; color: #888;'>{key}: [</div>")
+
+                # Show each item in the list (indented one more level)
+                for item in value:
+                    if isinstance(item, Widget):
+                        lines.append(item._generate_debug_tree(indent + 2))
+
+                # Show list closing
+                lines.append(f"<div style='margin-left: {(indent + 1) * 20}px; color: #888;'>]</div>")
+
+            elif isinstance(value, Widget):
+                # Show key name
+                lines.append(f"<div style='margin-left: {(indent + 1) * 20}px; color: #888;'>{key}:</div>")
+
+                # Show the widget (indented one more level)
+                lines.append(value._generate_debug_tree(indent + 2))
+
+        return "\n".join(lines)
 
     def template_path(self) -> str:
         """

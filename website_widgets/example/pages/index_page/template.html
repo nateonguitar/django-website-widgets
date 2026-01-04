@@ -6,27 +6,32 @@ Put styles in a stylesheet and import them using static, this is just for simpli
         background: white;
         border-radius: 8px;
         padding: 32px;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         color: #333;
     }
+
     .index-content h2 {
         margin-bottom: 8px;
     }
+
     .intro {
         color: #666;
         margin-bottom: 24px;
         line-height: 1.6;
     }
+
     .intro code {
         background: #f0f0f0;
         padding: 2px 6px;
         border-radius: 4px;
     }
+
     .example-list {
         display: grid;
         gap: 16px;
         margin-bottom: 32px;
     }
+
     .example-card {
         display: block;
         padding: 20px;
@@ -37,29 +42,35 @@ Put styles in a stylesheet and import them using static, this is just for simpli
         border: 2px solid transparent;
         transition: border-color 0.2s, box-shadow 0.2s;
     }
+
     .example-card:hover {
         border-color: #667eea;
         box-shadow: 0 2px 8px rgba(102, 126, 234, 0.2);
     }
+
     .example-card h3 {
         margin: 0 0 8px 0;
         color: #667eea;
     }
+
     .example-card p {
         margin: 0;
         color: #666;
         font-size: 14px;
     }
+
     .hierarchy-info {
         background: #f8f9fa;
         padding: 20px;
         border-radius: 8px;
         overflow-x: auto;
     }
+
     .hierarchy-info h3 {
         margin: 0 0 12px 0;
         font-size: 16px;
     }
+
     .hierarchy-info pre {
         margin: 0;
         font-size: 13px;
@@ -68,7 +79,9 @@ Put styles in a stylesheet and import them using static, this is just for simpli
     }
 </style>
 <div class="index-content">
-    <h2>website_widgets example</h2>
+    <h2>
+        website_widgets example
+    </h2>
     <p class="intro">
         These example demonstrate the <code>Page</code> and <code>Widget</code> pattern
         for building Django pages with composable, reusable components.
@@ -78,14 +91,21 @@ Put styles in a stylesheet and import them using static, this is just for simpli
             {% comment %}
             These anchor cards could have been widgets instead. See other examples for widget usage.
             {% endcomment %}
-            <a href="{{ example_page.url }}" class="example-card">
-                <h3>{{ example_page.name }}</h3>
-                <p>{{ example_page.description }}</p>
+            <a href="{{ example_page.url }}"
+               class="example-card">
+                <h3>
+                    {{ example_page.name }}
+                </h3>
+                <p>
+                    {{ example_page.description }}
+                </p>
             </a>
         {% endfor %}
     </div>
     <div class="hierarchy-info">
-        <h3>Class Hierarchy</h3>
+        <h3>
+            Class Hierarchy
+        </h3>
         <pre>
 Page (library base)
     ├── ExamplePageSimple (minimal: just base_template_path)

@@ -8,6 +8,7 @@ from django.http import HttpRequest, HttpResponse, HttpResponseNotModified
 from django.utils.http import http_date, parse_http_date_safe
 
 from website_widgets import Page
+from website_widgets.config import get_config
 from website_widgets.example.widgets.appbar import ExampleAppbar
 from website_widgets.example.widgets.footer import ExampleFooter
 
@@ -17,8 +18,8 @@ class ExamplePageSimple(Page):
     Good for simple apps or getting started quickly.
     """
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self):
+        super().__init__()
         # Sub classes can override in set_context()
         self.context.page['title'] = 'Example App'
         self.context.page['show_appbar_back_button'] = False
@@ -42,8 +43,8 @@ class ExamplePageComplex(Page):
     - Custom response building with caching headers
     """
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self):
+        super().__init__()
         # Sub classes can override in set_context()
         self.context.page['title'] = 'Example App'
         self.context.page['show_appbar_back_button'] = False
@@ -54,7 +55,7 @@ class ExamplePageComplex(Page):
 
     async def handle_request(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
         # Check for conditional request (304 Not Modified)
-        last_modified = await self.get_last_modified(request, *args, **kwargs)
+        last_modified = await self.get_last_modified(request)
         if last_modified and request.method == 'GET':
             etag = self.generate_etag(last_modified, request)
 
@@ -69,17 +70,18 @@ class ExamplePageComplex(Page):
                     return HttpResponseNotModified()
 
         # Sub class pages can set `show_appbar_back_button = True` in their own set_context()
-        await self.set_context(*args, **kwargs)
+        if inspect.iscoroutinefunction(self.set_context):
+            await self.set_context()
+        else:
+            self.set_context()
 
-        # Render appbar and footer after set_context() so the subclass page can
+        # Add appbar and footer after set_context() so the subclass page can
         # modify `page.show_appbar_back_button` if desired.
         # Subclasses of ExamplePageComplex don't need to set appbar/footer manually.
-        self.context.children['appbar'] = ExampleAppbar(parent=self).html_sync()
-        self.context.children['footer'] = ExampleFooter(parent=self).html_sync()
+        self.context.children['appbar'] = ExampleAppbar()
+        self.context.children['footer'] = ExampleFooter()
 
-        main_content_html = self.html_sync()
-
-        response = self.build_response(main_content_html)
+        response = await self.build_response()
 
         if last_modified:
             response['Last-Modified'] = http_date(int(last_modified.timestamp()))
@@ -88,13 +90,13 @@ class ExamplePageComplex(Page):
 
         return response
 
-    async def set_context(self, *args, **kwargs):
+    def set_context(self):
         """App-wide defaults for all pages."""
         self.context.page['title'] = 'Example App'
         self.context.page['canonical_url'] = self.generate_canonical_url(self.request)
 
-    async def get_last_modified(self, request: HttpRequest, *args, **kwargs) -> datetime | None:
-        """Override in page subclasses to enable conditional requests."""
+    async def get_last_modified(self, request: HttpRequest) -> datetime | None:
+        """Override to enable conditional requests (304 responses)."""
         return None
 
     def generate_etag(self, last_modified: datetime, request: HttpRequest) -> str:

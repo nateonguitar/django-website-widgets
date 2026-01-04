@@ -4,10 +4,15 @@ from website_widgets import Widget
 class InfoCard(Widget):
     """
     Example reusable widget demonstrating explicit data passing.
-    All data comes via html_sync() parameters, not from parent context.
+    Data is passed via constructor, then rendered by the system.
     """
 
-    def html_sync(self, title: str, content: str):
-        self.context.data['title'] = title
-        self.context.data['content'] = content
-        return self.render_html()
+    def __init__(self, title: str, content: str):
+        super().__init__()
+        self.title = title
+        self.content = content
+        self._debug_label = title
+
+    def set_context(self):
+        self.context.data['title'] = self.title
+        self.context.data['content'] = self.content
