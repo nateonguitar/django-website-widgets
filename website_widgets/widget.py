@@ -206,13 +206,20 @@ class Widget:
 
     def template_path(self) -> str:
         """
-        Return the path to this widget's template.html file.
-        Auto-detected from the subclass file location. Override if needed.
+        Return the path to this widget's template file.
+        Auto-detected from the subclass Python filename. Override if needed.
+
+        For example, if the widget class is defined in `cookie_banner.py`,
+        this will look for `cookie_banner.html` in the same directory.
 
         Override this in subclasses if the template is not in the same folder
-        as the widget class file.
+        as the widget class file or uses a different naming convention.
         """
-        return os.path.join(os.path.dirname(inspect.getfile(self.__class__)), 'template.html')
+        class_file = inspect.getfile(self.__class__)
+        class_dir = os.path.dirname(class_file)
+        class_filename = os.path.basename(class_file)
+        template_name = class_filename.replace('.py', '.html')
+        return os.path.join(class_dir, template_name)
 
     def _context_dict(self) -> dict:
         context = {}
