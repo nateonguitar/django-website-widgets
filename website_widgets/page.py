@@ -194,12 +194,20 @@ class Page(Widget):
         # Append debug widget tree if it was captured
         if hasattr(self, '_debug_tree_html') and self._debug_tree_html:
             debug_tree_html = f"""
-            <div style="margin-top: 40px; padding: 20px; background: #f5f5f5; border-top: 2px solid #ddd; font-family: monospace; font-size: 14px;">
+            <div style="margin-top: 40px; padding: 20px; background: #f5f5f5; border-top: 2px solid #ddd; font-family: monospace; font-size: 14px; box-sizing: border-box; width: 100%; max-width: 100%;">
                 <h3 style="margin-top: 0; color: #333;">Widget Tree Debug View</h3>
-                <div style="background: white; padding: 15px; border-radius: 4px; border: 1px solid #ddd;">
+                <div style="background: white; padding: 15px; border-radius: 4px; border: 1px solid #ddd; overflow-x: auto; word-wrap: break-word; box-sizing: border-box;">
                     {self._debug_tree_html}
                 </div>
             </div>
+            <style>
+                @media (max-width: 768px) {{
+                    div[style*="Widget Tree Debug"] {{
+                        padding: 12px !important;
+                        font-size: 12px !important;
+                    }}
+                }}
+            </style>
             """
             main_content_html = main_content_html + mark_safe(debug_tree_html)
 
