@@ -6,9 +6,6 @@ class Command(BaseCommand):
     """
     Manual sanity check that the django-website-widgets package is installed
     correctly (--verbose dumps app_config/class info). Not a real test suite.
-    Documented in django-website-widgets/README.md. This package is being
-    incrementally decoupled from the main project for eventual standalone PyPI
-    distribution; expect more real tests to land here over time.
     """
 
     help = 'Test that django-website-widgets package is working correctly'

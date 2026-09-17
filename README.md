@@ -65,7 +65,7 @@ class AppPage(Page):
         self.context.children['appbar'] = Appbar()
 ```
 
-4. Create a widget and a `template.html` file next to it:
+4. Create a widget and a template next to it, named after the widget's Python file:
 
 `website/widgets/project_details_card/project_details_card.py`
 ```python
@@ -84,14 +84,14 @@ class ProjectDetailsCard(Widget):
         super().set_context()
 ```
 
-`website/widgets/project_details_card/template.html`
+`website/widgets/project_details_card/project_details_card.html`
 ```html
 <div class="project-details-card">
     <p>Name: {{ data.project.name }}</p>
 </div>
 ```
 
-5. Create a page and a `template.html` file next to it:
+5. Create a page and its template the same way:
 
 `website/pages/project_page/project_page.py`
 ```python
@@ -120,7 +120,7 @@ class ProjectPage(AppPage):
 ```
 
 
-`website/pages/project_page/template.html`
+`website/pages/project_page/project_page.html`
 ```html
 <div id="project-details-page">
     {{ children.project_details_card }}
@@ -157,19 +157,22 @@ Base class for reusable UI components. Uses a declarative, constructor-based pat
 class InfoCard(Widget):
     def __init__(self, title: str, content: str):
         super().__init__()
-        self.context.data['title'] = title
-        self.context.data['content'] = content
+        self.title = title
+        self.content = content
 
-    def html(self):  # Or: async def html(self)
-        return self.render_html()
+    def set_context(self):
+        self.context.data['title'] = self.title
+        self.context.data['content'] = self.content
 ```
 
 Widgets:
 - Accept data parameters in `__init__()` and store them
 - Use `set_context()` to create child widgets (Widget objects or lists)
 - Store children in `self.context.children` - system renders them
-- Access `self.request` and `self.request.user` automatically
-- Can be sync or async - use `async def set_context(self):` only when awaiting
+- Access `self.request` and `self.request.user` from `set_context()` onwards (not in `__init__()`)
+- Can be sync or async - use `async def set_context(self):` only when awaiting. Rendering always
+  runs in an async view, so database access in a sync `set_context()` raises
+  `SynchronousOnlyOperation`; use the async ORM
 
 ### Page
 
@@ -202,11 +205,12 @@ Pages:
 - Receive URL parameters in `__init__()`
 - Use `set_context()` to load data and construct child widgets
 - Register with Django URLs via `.as_view()`
-- Have lifecycle hooks for authentication, permissions, etc.
+- Override `handle_request()` for authentication, redirects or conditional responses, and
+  `build_response()` for headers
 
-### Context
+### WidgetContext
 
-Each widget has `self.context` with:
+Each widget has `self.context`, a `WidgetContext`, with:
 - `data`: Template variables (dict)
 - `children`: Child widgets - values can be Widget, list[Widget], or None
 - `page`: Shared page-level data (title, meta, etc.)
@@ -215,7 +219,8 @@ System renders widgets to HTML automatically. Lists iterate in templates via `{%
 
 ## Templates
 
-Create a `template.html` next to the widget/page class:
+A widget's template sits next to its Python file and shares its name: `my_widget.py` renders
+`my_widget.html`. Override `template_path()` to use a different file.
 
 ```html
 <div class="my-widget">
@@ -223,6 +228,10 @@ Create a `template.html` next to the widget/page class:
     {{ children.my_widget }}
 </div>
 ```
+
+Templates are opened directly rather than through Django's template loader, so context processors
+do not run. The context holds only `request`, `user`, `page`, `data` and `children`. See
+`docs/rendering_pipeline.md` for the full render order.
 
 ## Configuration
 
@@ -236,11 +245,12 @@ WEBSITE_WIDGETS = WebsiteWidgetsConfig(
 )
 ```
 
-If `WEBSITE_WIDGETS` is not defined, a default configuration is used automatically.
+If `WEBSITE_WIDGETS` is not defined, a default configuration is used automatically. The setting is
+read once per process, so changing it at runtime has no effect.
 
 ### Debug Tree Visualization
 
-Enable `show_debug_tree=True` to display a visual representation of your widget hierarchy at the bottom of each page. This is useful during development to understand the structure of your widget tree.
+Enable `show_debug_tree=True` to display a visual representation of your widget hierarchy after each page's main content. This is useful during development to understand the structure of your widget tree.
 
 **Example output:**
 ```
@@ -263,11 +273,11 @@ For better debugging, add a `_debug_label` to your widgets:
 
 ```python
 class InfoCard(Widget):
-    def __init__(self, title: str, content: str, parent: 'Widget | None' = None):
-        super().__init__(parent=parent)
+    def __init__(self, title: str, content: str):
+        super().__init__()
         self._debug_label = title  # Shows as "InfoCard(My Title)" in debug tree
-        self.context.data['title'] = title
-        self.context.data['content'] = content
+        self.title = title
+        self.content = content
 ```
 
 Without `_debug_label`, widgets display only their class name (e.g., `InfoCard`). With the label, they display as `InfoCard(My Title)`, making it easier to identify specific widget instances in complex trees.

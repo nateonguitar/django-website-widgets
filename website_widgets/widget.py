@@ -240,7 +240,7 @@ class Widget:
         Args:
             template_path: Optional path to the template file. If None, uses
                 the default `template_path()` method. The default method looks for
-                `template.html` in the same directory as the widget class file,
+                `<module>.html` beside the widget class's `<module>.py`,
                 so override that method if the template is elsewhere.
             extra_context: Optional additional context dictionary to merge
                 into the widget's context for rendering. Developers should add context

@@ -59,7 +59,7 @@ class Page(Widget):
         # In urls.py:
         path('my-page/', MyPage.as_view(), name='my_page')
 
-        # The page's template.html renders main content, which gets injected
+        # The page's own template renders main content, which gets injected
         # into the base template as {{ main_content_html }}.
     """
 
