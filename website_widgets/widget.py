@@ -8,8 +8,6 @@ import os
 from website_widgets.widget_context import WidgetContext
 
 class Widget:
-    # Relative to the folder of the concrete class's file, or absolute. Assign it on the class or
-    # in set_context(); left as None, the widget renders `<module>.html` beside `<module>.py`.
     template_path: str | None = None
 
     def __init__(self):
