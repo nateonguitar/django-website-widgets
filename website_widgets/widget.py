@@ -8,6 +8,10 @@ import os
 from website_widgets.widget_context import WidgetContext
 
 class Widget:
+    # Relative to the folder of the concrete class's file, or absolute. Assign it on the class or
+    # in set_context(); left as None, the widget renders `<module>.html` beside `<module>.py`.
+    template_path: str | None = None
+
     def __init__(self):
         """
         Widget constructor. Store data parameters as instance attributes.
@@ -204,22 +208,25 @@ class Widget:
 
         return "\n".join(lines)
 
-    def template_path(self) -> str:
+    def get_template_path(self) -> str:
         """
         Return the path to this widget's template file.
-        Auto-detected from the subclass Python filename. Override if needed.
 
-        For example, if the widget class is defined in `cookie_banner.py`,
-        this will look for `cookie_banner.html` in the same directory.
+        `self.template_path` when set, resolved against the class file's folder unless absolute.
+        Otherwise auto-detected from the subclass Python filename: a widget class defined in
+        `cookie_banner.py` renders `cookie_banner.html` in the same directory.
 
-        Override this in subclasses if the template is not in the same folder
-        as the widget class file or uses a different naming convention.
+        Override this in subclasses when the choice needs more than an attribute.
         """
-        class_file = inspect.getfile(self.__class__)
-        class_dir = os.path.dirname(class_file)
-        class_filename = os.path.basename(class_file)
-        template_name = class_filename.replace('.py', '.html')
-        return os.path.join(class_dir, template_name)
+        return self._resolve_beside_class_file(self.template_path or self._module_named_template())
+
+    def _module_named_template(self) -> str:
+        class_filename = os.path.basename(inspect.getfile(self.__class__))
+        return class_filename.replace('.py', '.html')
+
+    def _resolve_beside_class_file(self, path: str) -> str:
+        class_dir = os.path.dirname(inspect.getfile(self.__class__))
+        return os.path.join(class_dir, path)
 
     def _context_dict(self) -> dict:
         context = {}
@@ -239,9 +246,9 @@ class Widget:
         Render this widget to HTML using its template and context.
         Args:
             template_path: Optional path to the template file. If None, uses
-                the default `template_path()` method. The default method looks for
-                `<module>.html` beside the widget class's `<module>.py`,
-                so override that method if the template is elsewhere.
+                `get_template_path()`, which honours `self.template_path` and
+                otherwise looks for `<module>.html` beside the widget class's
+                `<module>.py`.
             extra_context: Optional additional context dictionary to merge
                 into the widget's context for rendering. Developers should add context
                 to `self.context.data` instead of using this. This is used internally
@@ -250,7 +257,7 @@ class Widget:
         context = self._context_dict()
         if extra_context:
             context.update(extra_context)
-        filepath = self.template_path() if template_path is None else template_path
+        filepath = self.get_template_path() if template_path is None else template_path
         with open(filepath, 'r') as file:
             template = Template(file.read())
         return template.render(Context(context))

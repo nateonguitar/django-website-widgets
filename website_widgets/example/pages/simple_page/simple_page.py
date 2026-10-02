@@ -7,7 +7,7 @@ from website_widgets.example.widgets.footer.footer import ExampleFooter
 class SimplePage(ExamplePageSimple):
     """
     Minimal example page using the default base template from ExampleAppPage.
-    No need to override base_template_path() - it inherits the default.
+    No need to set base_template_path - it inherits the default.
     """
 
     def set_context(self):

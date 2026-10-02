@@ -53,7 +53,8 @@ class Page(Widget):
        - Call await super().build_response() to get response, then modify
 
     REQUIRED IMPLEMENTATION:
-    - base_template_path(): Return path to the base template that wraps content
+    - base_template_path: Path to the base template that wraps content, set on the class
+      (or override get_base_template_path())
 
     USAGE:
         # In urls.py:
@@ -64,6 +65,8 @@ class Page(Widget):
     """
 
     status_code: int = 200
+    # Resolved like Widget.template_path: against the concrete class's folder unless absolute.
+    base_template_path: str | None = None
 
     @classmethod
     def as_view(cls, *initargs, **initkwargs):
@@ -99,15 +102,18 @@ class Page(Widget):
         """Render the page's main content template."""
         return self.render_html()
 
-    def base_template_path(self) -> str:
+    def get_base_template_path(self) -> str:
         """
         Return the path to the base template that wraps this page's content.
 
-        Override this in subclasses to specify which base template to use.
+        Set `base_template_path` in subclasses to specify which base template to use.
         Common pattern: create an intermediate class that sets a default,
         then individual pages can override if needed.
         """
-        raise NotImplementedError("Subclasses must implement `base_template_path()`.")
+        if self.base_template_path is None:
+            raise NotImplementedError(
+                "Subclasses must set `base_template_path` or override `get_base_template_path()`.")
+        return self._resolve_beside_class_file(self.base_template_path)
 
     async def handle_request(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
         """
@@ -212,7 +218,7 @@ class Page(Widget):
             main_content_html = main_content_html + mark_safe(debug_tree_html)
 
         html = self.render_html(
-            template_path=self.base_template_path(),
+            template_path=self.get_base_template_path(),
             extra_context={
                 'main_content_html': main_content_html,
             })

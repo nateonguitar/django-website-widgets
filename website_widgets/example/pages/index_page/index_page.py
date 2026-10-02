@@ -37,7 +37,7 @@ class ExampleIndexPage(ExamplePageSimple):
             {
                 'name': 'Unwrapped Page',
                 'url': reverse('example_unwrapped_page'),
-                'description': 'Override base_template_path() for pages without the app shell.',
+                'description': 'Sets base_template_path for pages without the app shell.',
             },
             {
                 'name': 'HTTP Caching',

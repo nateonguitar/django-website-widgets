@@ -9,7 +9,7 @@ in, which is where the surprises are. Read this before overriding `handle_reques
 Primary code:
 - `website_widgets/page.py` — `Page.as_view()`, `handle_request()`, `build_response()`
 - `website_widgets/widget.py` — `_initialize_widget_tree()`, `_render_children_to_html()`,
-  `template_path()`, `_context_dict()`, `render_html()`
+  `get_template_path()`, `_context_dict()`, `render_html()`
 - `website_widgets/widget_context.py` — `WidgetContext`
 - `website_widgets/config.py` — `WebsiteWidgetsConfig`, `get_config()`
 
@@ -80,12 +80,13 @@ each widget's optional `_debug_label`.
 
 `self.html()` returns `self.render_html()`, which renders the page's own template. The result, or
 `self._override_main_content_html` if that attribute is set, has the debug tree appended when one
-was generated, and is then passed into the template at `base_template_path()` as
+was generated, and is then passed into the template at `get_base_template_path()` as
 `main_content_html`.
 
-`base_template_path()` raises `NotImplementedError` on `Page` itself. The usual pattern is one
-intermediate subclass per project that returns the app's base template, with individual pages
-inheriting it.
+`base_template_path` is `None` on `Page` itself, and `get_base_template_path()` raises
+`NotImplementedError` until a subclass sets it. The usual pattern is one intermediate subclass per
+project that sets the app's base template, with individual pages inheriting it. It resolves the
+same way as `template_path` below.
 
 `_override_main_content_html` is the escape hatch for replacing a page's body while keeping the
 wrapper, for an error state say. Set it before `build_response()` runs and the page's own template
@@ -122,10 +123,17 @@ Anything every widget must reach goes in `context.page`, which is passed down by
 pass 1, so a widget writing to `context.page` writes to the page's own dict, visible to everything
 initialized after it.
 
-**The template file is named after the class's module.** `template_path()` takes the file the
-widget class is defined in and swaps `.py` for `.html`: a class in `info_card/info_card.py` renders
-`info_card/info_card.html`. **A file called `template.html` is never found**; it fails with
-`FileNotFoundError` at render time. Override `template_path()` if the template lives elsewhere.
+**The template file is named after the class's module** unless `template_path` says otherwise.
+`get_template_path()` takes the file the widget class is defined in and swaps `.py` for `.html`: a
+class in `info_card/info_card.py` renders `info_card/info_card.html`. **A file called
+`template.html` is never found**; it fails with `FileNotFoundError` at render time.
+
+`template_path` names another file, relative to the folder of the concrete class's file, or
+absolute. It is read in pass 3 or 4, after every `set_context()` has run, so a widget can assign
+it in `set_context()` to choose between templates at runtime: a page with a not-found state keeps
+`not_found.html` beside its own template and switches to it there. A relative path set on a base
+class resolves against the subclass's folder, the same way the module-named default does.
+
 Since files are opened directly rather than resolved through `TEMPLATES` dirs, `{% include %}` of
 another component's template is not part of the model: compose with child widgets, or duplicate the
 markup.

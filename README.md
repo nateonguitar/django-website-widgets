@@ -57,8 +57,7 @@ from website_widgets import Page
 from website.widgets.appbar import Appbar
 
 class AppPage(Page):
-    def base_template_path(self) -> str:
-        return 'website/templates/base.html'
+    base_template_path = 'templates/base.html'
 
     async def set_context(self):
         # Construct widget - system will render it automatically
@@ -201,7 +200,7 @@ class ProfilePage(AppPage):
 ```
 
 Pages:
-- Define `base_template_path()` for the wrapper template
+- Set `base_template_path` for the wrapper template
 - Receive URL parameters in `__init__()`
 - Use `set_context()` to load data and construct child widgets
 - Register with Django URLs via `.as_view()`
@@ -220,7 +219,23 @@ System renders widgets to HTML automatically. Lists iterate in templates via `{%
 ## Templates
 
 A widget's template sits next to its Python file and shares its name: `my_widget.py` renders
-`my_widget.html`. Override `template_path()` to use a different file.
+`my_widget.html`. Set `template_path` to use a different file, either on the class or in
+`set_context()` to pick between files at runtime. A relative path resolves against the folder of
+the class's file:
+
+```python
+class ProjectPage(AppPage):
+    async def set_context(self):
+        await super().set_context()
+        project = await Project.objects.filter(pk=self.pk).afirst()
+        if project is None:
+            self.status_code = 404
+            self.template_path = 'not_found.html'
+            return
+        ...
+```
+
+Override `get_template_path()` when the choice needs more than an attribute.
 
 ```html
 <div class="my-widget">
