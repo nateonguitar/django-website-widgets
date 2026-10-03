@@ -8,7 +8,9 @@ import os
 from website_widgets.widget_context import WidgetContext
 
 class Widget:
-    template_path: str | None = None
+    template_filename: str | None = None
+    # Library base classes, whose folders hold no application templates.
+    _LIBRARY_MODULES = ('website_widgets.widget', 'website_widgets.page')
 
     def __init__(self):
         """
@@ -210,13 +212,38 @@ class Widget:
         """
         Return the path to this widget's template file.
 
-        `self.template_path` when set, resolved against the class file's folder unless absolute.
-        Otherwise auto-detected from the subclass Python filename: a widget class defined in
-        `cookie_banner.py` renders `cookie_banner.html` in the same directory.
+        With `template_filename` unset, the template is named after the class's module: a widget
+        class defined in `cookie_banner.py` renders `cookie_banner.html` in the same directory.
+
+        `template_filename` must be a bare file name. It is looked up beside the class's own
+        file, then beside each base class's file in MRO order, so a base class can keep a
+        variant beside its own module and set it for every subclass.
 
         Override this in subclasses when the choice needs more than an attribute.
         """
-        return self._resolve_beside_class_file(self.template_path or self._module_named_template())
+        if self.template_filename is None:
+            return self._resolve_beside_class_file(self._module_named_template())
+        return self._find_beside_class_or_bases(self.template_filename)
+
+    def _find_beside_class_or_bases(self, filename: str) -> str:
+        if not filename or filename in ('.', '..') or '/' in filename or '\\' in filename:
+            raise ValueError(
+                f'{type(self).__name__}.template_filename must be a bare file name, '
+                f'not {filename!r}')
+        searched = []
+        for cls in type(self).__mro__:
+            if cls.__module__ in self._LIBRARY_MODULES or not issubclass(cls, Widget):
+                continue
+            folder = os.path.dirname(inspect.getfile(cls))
+            if folder in searched:
+                continue
+            searched.append(folder)
+            candidate = os.path.join(folder, filename)
+            if os.path.isfile(candidate):
+                return candidate
+        raise FileNotFoundError(
+            f'{type(self).__name__}.template_filename {filename!r} is in none of: '
+            f'{", ".join(searched)}')
 
     def _module_named_template(self) -> str:
         class_filename = os.path.basename(inspect.getfile(self.__class__))
@@ -243,10 +270,8 @@ class Widget:
         """
         Render this widget to HTML using its template and context.
         Args:
-            template_path: Optional path to the template file. If None, uses
-                `get_template_path()`, which honours `self.template_path` and
-                otherwise looks for `<module>.html` beside the widget class's
-                `<module>.py`.
+            template_path: Optional full path to the template file, used internally for a
+                page's base template. If None, uses `get_template_path()`.
             extra_context: Optional additional context dictionary to merge
                 into the widget's context for rendering. Developers should add context
                 to `self.context.data` instead of using this. This is used internally

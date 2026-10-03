@@ -219,9 +219,14 @@ System renders widgets to HTML automatically. Lists iterate in templates via `{%
 ## Templates
 
 A widget's template sits next to its Python file and shares its name: `my_widget.py` renders
-`my_widget.html`. Set `template_path` to use a different file, either on the class or in
-`set_context()` to pick between files at runtime. A relative path resolves against the folder of
-the class's file:
+`my_widget.html`. Set `template_filename` to use a different file, either on the class or in
+`set_context()` to pick between files at runtime.
+
+**`template_filename` is a bare file name, never a path.** A template lives beside the code that
+chooses it, so a `/`, a `\` or `..` raises `ValueError`. The file is looked up beside the class's
+own `.py` file first, then beside each base class's file in inheritance order, and the first match
+wins. That lets a base class keep a variant beside its own module and switch any subclass to it.
+A name found nowhere raises `FileNotFoundError` listing every folder searched.
 
 ```python
 class ProjectPage(AppPage):
@@ -230,7 +235,7 @@ class ProjectPage(AppPage):
         project = await Project.objects.filter(pk=self.pk).afirst()
         if project is None:
             self.status_code = 404
-            self.template_path = 'project_page__not_found.html'
+            self.template_filename = 'project_page__not_found.html'
             return
         ...
 ```
@@ -249,11 +254,11 @@ project_page/
 The double underscore marks where the module name ends, the way it separates the parts of a Django
 lookup (`author__name__startswith`): module and variant names both contain single underscores, so
 one alone can't. The prefix keeps every variant sorted next to the template it replaces, and an
-editor tab or a search result names its component without the folder. Give the variant the same root element as
-the main template, so the component's styles still apply to it.
+editor tab or a search result names its component without the folder. Give the variant the same
+root element as the main template, so the component's styles still apply to it.
 
-A variant defined on a base class for every subclass needs an absolute path, since a relative one
-resolves against the subclass's folder.
+A page's layout is the one template set by path: `base_template_path` names a file shared by every
+page, so it lives in a common folder rather than beside any one of them.
 
 Override `get_template_path()` when the choice needs more than an attribute.
 

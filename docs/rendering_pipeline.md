@@ -78,19 +78,19 @@ each widget's optional `_debug_label`.
 
 ## The page's own rendering
 
-`self.html()` returns `self.render_html()`, which renders the page's own template. The result, or
-`self._override_main_content_html` if that attribute is set, has the debug tree appended when one
-was generated, and is then passed into the template at `get_base_template_path()` as
-`main_content_html`.
+`self.html()` returns `self.render_html()`, which renders the page's own template. The result has
+the debug tree appended when one was generated, and is then passed into the template at
+`get_base_template_path()` as `main_content_html`.
+
+**A page names two templates: its layout and its own content.** `base_template_path` is the layout
+every page shares, so it is a real path, resolved against the concrete class's folder unless
+absolute. The page's own content is chosen like any widget's, by module name or
+`template_filename` (below). An error state that replaces a page's body is a variant template,
+not a separate mechanism.
 
 `base_template_path` is `None` on `Page` itself, and `get_base_template_path()` raises
 `NotImplementedError` until a subclass sets it. The usual pattern is one intermediate subclass per
-project that sets the app's base template, with individual pages inheriting it. It resolves the
-same way as `template_path` below.
-
-`_override_main_content_html` is the escape hatch for replacing a page's body while keeping the
-wrapper, for an error state say. Set it before `build_response()` runs and the page's own template
-is not rendered at all.
+project that sets the app's base template, with individual pages inheriting it.
 
 The response is `HttpResponse(html, status=self.status_code)`. `status_code` is a plain class
 attribute on `Page`, defaulting to `200`; assign it before `build_response()` to change it.
@@ -123,17 +123,23 @@ Anything every widget must reach goes in `context.page`, which is passed down by
 pass 1, so a widget writing to `context.page` writes to the page's own dict, visible to everything
 initialized after it.
 
-**The template file is named after the class's module** unless `template_path` says otherwise.
+**The template file is named after the class's module** unless `template_filename` says otherwise.
 `get_template_path()` takes the file the widget class is defined in and swaps `.py` for `.html`: a
 class in `info_card/info_card.py` renders `info_card/info_card.html`. **A file called
 `template.html` is never found**; it fails with `FileNotFoundError` at render time.
 
-`template_path` names another file, relative to the folder of the concrete class's file, or
-absolute. It is read in pass 3 or 4, after every `set_context()` has run, so a widget can assign
-it in `set_context()` to choose between templates at runtime: a page with a not-found state keeps
-`project_page__not_found.html` beside `project_page.html` and switches to it there. The README
-suggests that `<module>__<variant>.html` naming. A relative path set on a base
-class resolves against the subclass's folder, the same way the module-named default does.
+`template_filename` names another file, and only a bare file name: anything with a `/`, a `\` or
+`..` raises `ValueError`. It is read in pass 3 or 4, after every `set_context()` has run, so a
+widget can assign it in `set_context()` to choose between templates at runtime: a page with a
+not-found state keeps `project_page__not_found.html` beside `project_page.html` and switches to it
+there. The README suggests that `<module>__<variant>.html` naming.
+
+**The lookup walks the class hierarchy, the concrete class first.** `get_template_path()` checks
+the folder of each class in the MRO, skipping the library's own `Widget` and `Page`, and returns
+the first folder holding the file. A base class's variant, kept beside the base class's module,
+therefore works for every subclass, wherever the subclass lives; a subclass with a file of the same
+name shadows it. A name found nowhere raises `FileNotFoundError` listing the folders searched.
+The module-named default is not searched for: it is always beside the concrete class.
 
 Since files are opened directly rather than resolved through `TEMPLATES` dirs, `{% include %}` of
 another component's template is not part of the model: compose with child widgets, or duplicate the

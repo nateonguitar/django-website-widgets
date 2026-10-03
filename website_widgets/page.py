@@ -65,7 +65,8 @@ class Page(Widget):
     """
 
     status_code: int = 200
-    # Resolved like Widget.template_path: against the concrete class's folder unless absolute.
+    # A real path, unlike `template_filename`, since the layout is shared rather than kept beside
+    # one page. Resolved against the concrete class's folder unless absolute.
     base_template_path: str | None = None
 
     @classmethod
@@ -191,11 +192,7 @@ class Page(Widget):
         # Render children to HTML
         await self._render_children_to_html()
 
-        # Render main content (or use override if set)
-        if hasattr(self, '_override_main_content_html'):
-            main_content_html = self._override_main_content_html
-        else:
-            main_content_html = self.html()
+        main_content_html = self.html()
 
         # Append debug widget tree if it was captured
         if hasattr(self, '_debug_tree_html') and self._debug_tree_html:
