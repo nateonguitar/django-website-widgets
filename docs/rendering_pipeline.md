@@ -131,7 +131,8 @@ class in `info_card/info_card.py` renders `info_card/info_card.html`. **A file c
 `template_path` names another file, relative to the folder of the concrete class's file, or
 absolute. It is read in pass 3 or 4, after every `set_context()` has run, so a widget can assign
 it in `set_context()` to choose between templates at runtime: a page with a not-found state keeps
-`not_found.html` beside its own template and switches to it there. A relative path set on a base
+`project_page__not_found.html` beside `project_page.html` and switches to it there. The README
+suggests that `<module>__<variant>.html` naming. A relative path set on a base
 class resolves against the subclass's folder, the same way the module-named default does.
 
 Since files are opened directly rather than resolved through `TEMPLATES` dirs, `{% include %}` of

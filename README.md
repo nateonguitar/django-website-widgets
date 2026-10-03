@@ -230,10 +230,30 @@ class ProjectPage(AppPage):
         project = await Project.objects.filter(pk=self.pk).afirst()
         if project is None:
             self.status_code = 404
-            self.template_path = 'not_found.html'
+            self.template_path = 'project_page__not_found.html'
             return
         ...
 ```
+
+**Suggested convention: name a variant `<module>__<variant>.html`**, with a double underscore,
+beside the main template:
+
+```
+project_page/
+    project_page.py
+    project_page.html
+    project_page__not_found.html
+    project_page__archived.html
+```
+
+The double underscore marks where the module name ends, the way it separates the parts of a Django
+lookup (`author__name__startswith`): module and variant names both contain single underscores, so
+one alone can't. The prefix keeps every variant sorted next to the template it replaces, and an
+editor tab or a search result names its component without the folder. Give the variant the same root element as
+the main template, so the component's styles still apply to it.
+
+A variant defined on a base class for every subclass needs an absolute path, since a relative one
+resolves against the subclass's folder.
 
 Override `get_template_path()` when the choice needs more than an attribute.
 
