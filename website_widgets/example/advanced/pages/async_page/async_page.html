@@ -1,0 +1,40 @@
+<section id="example-async">
+    <h1>Async widgets</h1>
+    <p class="example-lead">
+        Any widget's <span class="example-code">set_context()</span> can be
+        <span class="example-code">async def</span> and await the async ORM or an HTTP call. The times
+        below are milliseconds since this page started building. Each mock query takes
+        {{ data.query_ms }} ms.
+    </p>
+
+    <h2>Together</h2>
+    <p class="example-muted">
+        The page's own <span class="example-code">set_context()</span> runs all three queries at once
+        with <span class="example-code">asyncio.gather()</span>, then hands each result to an
+        <span class="example-code">QueryCard</span> through its constructor. They all start
+        and finish at about the same time.
+    </p>
+    {% for card in children.together %}
+        {{ card }}
+    {% endfor %}
+
+    <h2>One after another</h2>
+    <p class="example-muted">
+        Each <span class="example-code">SlowQueryCard</span> awaits its own query in its own
+        <span class="example-code">set_context()</span>. The library awaits one widget's
+        <span class="example-code">set_context()</span> before starting the next, so each query waits
+        for the one before it. When several widgets need data, fetch it together in their parent and
+        pass it down.
+    </p>
+    {% for card in children.one_after_another %}
+        {{ card }}
+    {% endfor %}
+
+    <h2>Sync widgets</h2>
+    <p class="example-muted">
+        A plain <span class="example-code">def set_context()</span> is fine for work that doesn't wait.
+        It still runs inside the event loop, though, so a synchronous ORM query there raises
+        <span class="example-code">SynchronousOnlyOperation</span>. Use the async ORM in an
+        <span class="example-code">async def set_context()</span>.
+    </p>
+</section>

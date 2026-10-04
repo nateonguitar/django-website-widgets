@@ -195,7 +195,7 @@ class ProfilePage(AppPage):
         user = await User.objects.aget(username=self.username)
         self.context.page['title'] = f'Profile: {user.username}'
 
-        # Construct widgets (don't call .html() - framework does that)
+        # Construct widgets; the page renders them
         self.context.children['profile_card'] = ProfileCard(user=user)
 ```
 
@@ -215,6 +215,27 @@ Each widget has `self.context`, a `WidgetContext`, with:
 - `page`: Shared page-level data (title, meta, etc.)
 
 System renders widgets to HTML automatically. Lists iterate in templates via `{% for item in children.items %}`.
+
+### Rendering a widget on its own
+
+Outside a page, for an endpoint returning HTML fragments (an infinite scroller, a "load more"
+button), construct the widget, adjust it, and render it once:
+
+```python
+widget = ProjectListTile(project=project)
+widget.context.page['nonce'] = nonce
+html = await widget.render__standalone(request)
+```
+
+Tests render a widget directly against a mock request, optionally as a given user:
+
+```python
+html = await ProjectListTile(project=project).render__test(user=user)   # async def test
+html = ProjectListTile(project=project).render__test_sync(user=user)    # def test
+```
+
+Each runs the widget's `set_context()` and every descendant's, then the templates. No base
+template wraps the result.
 
 ## Templates
 
@@ -294,17 +315,19 @@ Enable `show_debug_tree=True` to display a visual representation of your widget 
 
 **Example output:**
 ```
-WidgetCompositionPage
-  cards: [
-    InfoCard(First Card)
-    InfoCard(Second Card)
-    InfoCard(Third Card)
+CompositionPage
+  stylesheet:
+    AdvancedStylesheet
+  constructor_card:
+    InfoCard
+  list_cards: [
+    InfoCard
+    InfoCard
+    InfoCard
   ]
-  appbar:
-    ExampleAppbar
-      title: AppbarTitle(Widget Composition)
-  footer:
-    ExampleFooter
+  skipped_card: None
+  page_title_note:
+    PageTitleNote
 ```
 
 #### Adding Debug Labels
@@ -323,6 +346,62 @@ class InfoCard(Widget):
 Without `_debug_label`, widgets display only their class name (e.g., `InfoCard`). With the label, they display as `InfoCard(My Title)`, making it easier to identify specific widget instances in complex trees.
 
 **Recommendation:** Only enable `show_debug_tree` in development environments, not in production.
+
+## Example Site
+
+`website_widgets.example` is a small demo site. Every page renders on the server, and each of its
+three parts has its own base page and stylesheet:
+
+- **The index** links the two apps.
+- **The projects app** is a project tracker with a fake login and an appbar. Inline JavaScript
+  calls JSON endpoints to log in and out and to create, edit and delete projects. Its base page
+  shows access-denied and not-found variants, and its login page a logged-in variant.
+- **The advanced demo** has no login: composition, async widgets (awaited one after another
+  versus gathered by their parent), a widget rendered by an endpoint with
+  `render__standalone()` and added under one rendered with the page, and a conditional (304)
+  response.
+
+Its tests include widget tests using `render__test_sync()`.
+
+Install it for development only, and mount its URLs:
+
+```python
+# settings.py
+if DEBUG:
+    INSTALLED_APPS.append('website_widgets.example')
+
+# urls.py
+from django.apps import apps
+
+if apps.is_installed('website_widgets.example'):
+    urlpatterns.append(path('website-widgets-example/', include('website_widgets.example.urls')))
+```
+
+Then open `/website-widgets-example/`. In the projects app, log in as `user_1`, `user_2` or
+`admin` with any password.
+
+**The prefix is yours to choose.** The library ships only the routes beneath it; every link,
+form target and endpoint URL in the example is built with `{% url %}` or `reverse()`, so any
+prefix works, the site root included. `website-widgets-example/` is the suggested one, since it
+can't collide with the host project's own pages. Its URL names are all
+`website_widgets_example_<name>` (`website_widgets_example_projects`, ...) for the same reason.
+
+**The projects app's data lives only in memory.** The users and projects are Python objects
+seeded when the app loads, so they are wiped whenever the Django server restarts, autoreloads
+included. Behind a load
+balancer or with several server processes, each process holds its own copy, so what a request sees
+depends on which process serves it. The login is a plain cookie holding a user id, not
+authentication.
+
+Its endpoints are plain Django returning `JsonResponse`, one endpoint (one method on one URL) per
+file in `api/` folders that mirror the URLs, such as `projects/api/projects/by_id/patch.py`.
+`Endpoint.route()` builds the view a URL pattern points at from the endpoints sharing that
+URL. Each endpoint reads its input into a request DTO beside it (`ProjectCreateDto.from_dict()`,
+then `validate()`), builds or changes the model from that (`Project.from_create_dto()`), and
+returns a response DTO's `to_dict()`, as a Ninja or DRF schema would. The library doesn't care how
+endpoints are built, so Django Ninja, Django REST Framework or pydantic work the same way. Its tests, in
+`website_widgets/example/tests/`, mount the example URLs themselves, so they run whether or not
+the app is installed.
 
 ## Management Commands
 

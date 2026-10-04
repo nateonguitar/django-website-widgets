@@ -1,0 +1,13 @@
+<section id="example-advanced">
+    <h1>Advanced demo</h1>
+    <p class="example-lead">
+        Smaller demos of the library's mechanics, with no login and no data store. This app has its
+        own base page and stylesheet, so it looks different from the projects app.
+    </p>
+    {% for demo in data.demos %}
+        <a class="example-demo" href="{{ demo.url }}">
+            <span class="example-demo-name">{{ demo.name }}</span>
+            <span class="example-demo-description">{{ demo.description }}</span>
+        </a>
+    {% endfor %}
+</section>

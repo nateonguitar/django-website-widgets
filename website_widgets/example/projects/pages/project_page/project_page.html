@@ -1,0 +1,89 @@
+<article id="example-project" data-site-name="{{ page.site_name }}">
+    <h1 id="example-project-name">{{ data.project.name }}</h1>
+    <p id="example-project-description"{% if not data.project.description %} class="example-muted"{% endif %}>{{ data.project.description|default:"No description." }}</p>
+    <p class="example-tile-meta">
+        By {{ data.project.creator.name }}. Last updated <span id="example-project-updated">{{ data.project.updated_at_display }}</span>.
+    </p>
+
+    <h2>Edit</h2>
+    <form id="example-project-edit-form" class="example-form example-card" novalidate>
+        <label for="example-project-edit-name">Name</label>
+        <input id="example-project-edit-name" value="{{ data.project.name }}" maxlength="{{ data.name_max_length }}" required>
+        <p id="example-project-edit-name-error" class="example-field-error" role="alert"></p>
+        <label for="example-project-edit-description">Description (optional)</label>
+        <textarea id="example-project-edit-description" maxlength="{{ data.description_max_length }}">{{ data.project.description }}</textarea>
+        <p id="example-project-edit-description-error" class="example-field-error" role="alert"></p>
+        <div class="example-actions">
+            <button id="example-project-edit-submit" class="example-button" type="submit">Save changes</button>
+        </div>
+        <p id="example-project-edit-success" class="example-message example-message-success" role="status"></p>
+        <p id="example-project-edit-error" class="example-message example-message-error" role="alert"></p>
+    </form>
+
+    <h2>Delete</h2>
+    <div class="example-actions">
+        <button id="example-project-delete" class="example-button example-button-danger" type="button">Delete project</button>
+    </div>
+    <p id="example-project-delete-error" class="example-message example-message-error" role="alert"></p>
+</article>
+<script>
+    (() => {
+        const projectUrl = '{% url "website_widgets_example_api_project" project_id=data.project.id %}';
+        const siteName = document.getElementById('example-project').dataset.siteName;
+        const saveButton = document.getElementById('example-project-edit-submit');
+        const deleteButton = document.getElementById('example-project-delete');
+        const editMessages = {
+            name: document.getElementById('example-project-edit-name-error'),
+            description: document.getElementById('example-project-edit-description-error'),
+            form: document.getElementById('example-project-edit-error'),
+            success: document.getElementById('example-project-edit-success'),
+        };
+
+        // Leaves the page as a reload would render it, the <head> included.
+        const showProject = (project) => {
+            const description = document.getElementById('example-project-description');
+            document.getElementById('example-project-name').textContent = project.name;
+            description.textContent = project.description || 'No description.';
+            description.classList.toggle('example-muted', !project.description);
+            document.getElementById('example-project-updated').textContent = project.updated_at_display;
+            document.title = `${project.name} | ${siteName}`;
+            document.querySelector('meta[name="description"]').content = project.meta_description;
+        };
+
+        document.getElementById('example-project-edit-form').addEventListener('submit', async (event) => {
+            event.preventDefault();
+            Object.values(editMessages).forEach((element) => { element.textContent = ''; });
+            saveButton.disabled = true;
+
+            const result = await exampleApi.send('PATCH', projectUrl, {
+                name: document.getElementById('example-project-edit-name').value,
+                description: document.getElementById('example-project-edit-description').value,
+            });
+            saveButton.disabled = false;
+            if (result.ok) {
+                showProject(result.data);
+                editMessages.success.textContent = 'Changes saved.';
+            } else {
+                exampleApi.showErrors(result, editMessages, editMessages.form);
+            }
+        });
+
+        deleteButton.addEventListener('click', async () => {
+            const name = document.getElementById('example-project-name').textContent;
+            if (!window.confirm(`Delete "${name}"? This can't be undone.`)) {
+                return;
+            }
+            const error = document.getElementById('example-project-delete-error');
+            error.textContent = '';
+            deleteButton.disabled = true;
+
+            const result = await exampleApi.send('DELETE', projectUrl);
+            if (result.ok) {
+                exampleApi.navigateWithMessage('{% url "website_widgets_example_projects" %}', 'Project deleted.');
+                return;
+            }
+            deleteButton.disabled = false;
+            error.textContent = result.error;
+        });
+    })();
+</script>

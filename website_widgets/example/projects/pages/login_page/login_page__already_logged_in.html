@@ -1,0 +1,30 @@
+<section id="example-login">
+    <h1>Log in</h1>
+    <div class="example-card">
+        <p>You're already logged in as {{ page.viewer.name }}.</p>
+        <p class="example-muted">
+            This is a variant template, <span class="example-code">login_page__already_logged_in.html</span>,
+            kept beside <span class="example-code">login_page.html</span>. The page picks it in
+            <span class="example-code">set_context()</span> by setting
+            <span class="example-code">template_filename</span> when someone is logged in.
+        </p>
+        <div class="example-actions">
+            <a class="example-button" href="{% url 'website_widgets_example_projects' %}">Go to your projects</a>
+            <button id="example-login-switch" class="example-button example-button-secondary" type="button">Log out to switch users</button>
+        </div>
+        <p id="example-login-switch-error" class="example-message example-message-error" role="alert"></p>
+    </div>
+</section>
+<script>
+    const exampleSwitchButton = document.getElementById('example-login-switch');
+    exampleSwitchButton.addEventListener('click', async () => {
+        exampleSwitchButton.disabled = true;
+        const result = await exampleApi.send('POST', '{% url "website_widgets_example_api_logout" %}');
+        if (result.ok) {
+            window.location.reload();
+            return;
+        }
+        exampleSwitchButton.disabled = false;
+        document.getElementById('example-login-switch-error').textContent = result.error;
+    });
+</script>

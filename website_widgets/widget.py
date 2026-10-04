@@ -1,5 +1,7 @@
 from __future__ import annotations
 import inspect
+from asgiref.sync import async_to_sync
+from django.apps import apps
 from django.conf import settings
 from django.http import HttpRequest
 from django.template import Template, Context
@@ -26,13 +28,13 @@ class Widget:
         before calling set_context().
         """
         self._request: HttpRequest | None = None
+        self._children_rendered = False
         self.context = WidgetContext()
 
     @property
     def request(self) -> HttpRequest:
         """
-        The HttpRequest object for the current page render.
-        Cached from parent during construction to avoid tree traversal.
+        The HttpRequest being rendered, assigned by the parent before `set_context()` runs.
 
         Access the user via `self.request.user`. For custom user models with
         additional fields or methods, type hint locally for IDE support:
@@ -45,7 +47,9 @@ class Widget:
         """
         if self._request is not None:
             return self._request
-        raise RuntimeError("No request found in widget. AppPage should set _request on root before creating children.")
+        raise RuntimeError(
+            f'{type(self).__name__} has no request yet: it gets one when a page or a render__ '
+            f'method renders it.')
 
     def set_context(self):
         """
@@ -75,12 +79,66 @@ class Widget:
         """
         pass
 
+    async def render__standalone(self, request: HttpRequest) -> SafeText:
+        """
+        Render this widget on its own, outside a page, e.g. as an HTML fragment returned by an
+        endpoint.
+
+        Construct the widget, adjust it if needed, then call this once:
+
+            widget = ForumPostListItem(post=post)
+            widget.context.page['nonce'] = nonce
+            html = await widget.render__standalone(request)
+
+        Runs the whole lifecycle: this widget's `set_context()`, every descendant's, then the
+        templates. Values put in `context.page` beforehand reach every descendant. No base
+        template wraps the result.
+        """
+        return await self._render_in_place(request)
+
+    async def render__test(self, user=None) -> SafeText:
+        """
+        Render this widget the way `render__standalone()` does, against a mock `GET /` request.
+
+        For tests only. `user` becomes `request.user`; without one it is `AnonymousUser` when
+        `django.contrib.auth` is installed.
+        """
+        from django.test import RequestFactory
+
+        request = RequestFactory().get('/')
+        if user is not None:
+            request.user = user
+        elif apps.is_installed('django.contrib.auth'):
+            from django.contrib.auth.models import AnonymousUser
+            request.user = AnonymousUser()
+        return await self._render_in_place(request)
+
+    def render__test_sync(self, user=None) -> SafeText:
+        """
+        `render__test()` for a synchronous test method. Raises inside a running event loop, so an
+        `async def` test awaits `render__test()` instead.
+        """
+        return async_to_sync(self.render__test)(user)
+
+    async def _render_in_place(self, request: HttpRequest) -> SafeText:
+        if self._children_rendered:
+            raise RuntimeError(
+                f'{type(self).__name__} has already been rendered; rendering replaces its children '
+                f'with their HTML, so construct a new instance to render again.')
+        self._request = request
+        await self._call_set_context()
+        await self._initialize_widget_tree()
+        await self._render_children_to_html()
+        return self._render_template()
+
+    async def _call_set_context(self):
+        if inspect.iscoroutinefunction(self.set_context):
+            await self.set_context()
+        else:
+            self.set_context()
+
     async def _initialize_widget_tree(self):
-        """
-        Traverse the widget tree and call set_context() on all children.
-        This happens BEFORE any rendering, ensuring the entire widget tree
-        is fully constructed with all data loaded before we render anything.
-        """
+        """Pass 1: every descendant's `set_context()`, parent before child."""
         for key, value in self.context.children.items():
             if value is None:
                 continue
@@ -88,41 +146,19 @@ class Widget:
                 for widget in value:
                     if not isinstance(widget, Widget):
                         raise TypeError(f"Expected Widget in children['{key}'] list, got {type(widget)}")
-
-                    # Set request and page context (shared by reference)
-                    widget._request = self._request
-                    widget.context.page = self.context.page
-
-                    # Call set_context lifecycle hook
-                    if inspect.iscoroutinefunction(widget.set_context):
-                        await widget.set_context()
-                    else:
-                        widget.set_context()
-
-                    # Recursively initialize this widget's children
-                    await widget._initialize_widget_tree()
-
+                    await self._initialize_child(widget)
             elif isinstance(value, Widget):
-                widget = value
+                await self._initialize_child(value)
 
-                # Set request and page context (shared by reference)
-                widget._request = self._request
-                widget.context.page = self.context.page
-
-                # Call set_context lifecycle hook
-                if inspect.iscoroutinefunction(widget.set_context):
-                    await widget.set_context()
-                else:
-                    widget.set_context()
-
-                # Recursively initialize this widget's children
-                await widget._initialize_widget_tree()
+    async def _initialize_child(self, widget: Widget):
+        # Request and page context are shared by reference across the whole tree.
+        widget._request = self._request
+        widget.context.page = self.context.page
+        await widget._call_set_context()
+        await widget._initialize_widget_tree()
 
     async def _render_children_to_html(self):
-        """
-        Traverse the widget tree and render all children to HTML.
-        Converts self.context.children from Widget objects to SafeText HTML.
-        """
+        """Pass 3: replaces each child in `context.children` with its rendered `SafeText`."""
         self._children_rendered = True
 
         rendered_children = {}
@@ -135,45 +171,24 @@ class Widget:
                 for widget in value:
                     if not isinstance(widget, Widget):
                         raise TypeError(f"Expected Widget in children['{key}'] list, got {type(widget)}")
-
-                    # Recursively render this widget's children first
                     await widget._render_children_to_html()
-
-                    # Then render this widget
-                    html = widget.render_html()
+                    html = widget._render_template()
                     rendered_list.append(html)
-
                 rendered_children[key] = rendered_list
             elif isinstance(value, Widget):
                 widget = value
-
-                # Recursively render this widget's children first
                 await widget._render_children_to_html()
-
-                # Then render this widget
-                html = widget.render_html()
-
+                html = widget._render_template()
                 rendered_children[key] = html
             else:
                 raise TypeError(f"Expected Widget, list[Widget], or None in children['{key}'], got {type(value)}")
 
-        # Replace widget objects with rendered HTML
         self.context.children = rendered_children
 
     def _generate_debug_tree(self, indent: int = 0) -> str:
-        """
-        Generate a debug tree visualization of the widget hierarchy.
-        Shows widget class names and their children structure with proper indentation.
-
-        Args:
-            indent: Current indentation level (0 = root, 1 = first child, etc.)
-
-        Returns:
-            HTML string representing this widget and its children
-        """
+        """This widget and its descendants as indented HTML lines, labelled by `_debug_label`."""
         lines = []
 
-        # Show this widget's name with debug label if available
         debug_label = getattr(self, '_debug_label', None)
         if debug_label is not None:
             display_name = f"{self.__class__.__name__}({str(debug_label)})"
@@ -181,29 +196,17 @@ class Widget:
             display_name = self.__class__.__name__
         lines.append(f"<div style='margin-left: {indent * 20}px; color: #000;'>{display_name}</div>")
 
-        # Show each child
         for key, value in self.context.children.items():
             if value is None:
-                # Show None explicitly
                 lines.append(f"<div style='margin-left: {(indent + 1) * 20}px; color: #888;'>{key}: <span style='color: #999;'>None</span></div>")
-
             elif isinstance(value, list):
-                # Show list opening
                 lines.append(f"<div style='margin-left: {(indent + 1) * 20}px; color: #888;'>{key}: [</div>")
-
-                # Show each item in the list (indented one more level)
                 for item in value:
                     if isinstance(item, Widget):
                         lines.append(item._generate_debug_tree(indent + 2))
-
-                # Show list closing
                 lines.append(f"<div style='margin-left: {(indent + 1) * 20}px; color: #888;'>]</div>")
-
             elif isinstance(value, Widget):
-                # Show key name
                 lines.append(f"<div style='margin-left: {(indent + 1) * 20}px; color: #888;'>{key}:</div>")
-
-                # Show the widget (indented one more level)
                 lines.append(value._generate_debug_tree(indent + 2))
 
         return "\n".join(lines)
@@ -256,26 +259,27 @@ class Widget:
     def _context_dict(self) -> dict:
         context = {}
         context['request'] = self.request
-        context['user'] = self.request.user
+        # Absent when django.contrib.auth isn't installed.
+        context['user'] = getattr(self.request, 'user', None)
         context['page'] = self.context.page
         context['data'] = self.context.data
         context['children'] = self.context.children
         return context
 
-    def render_html(
+    def _render_template(
         self,
         template_path: str | None = None,
         extra_context: dict | None = None,
     ) -> SafeText:
         """
-        Render this widget to HTML using its template and context.
+        Fill this widget's template with the context it already has: no `set_context()`, no
+        children rendered. The pipeline calls it once both are done; use a `render__` method to
+        render a widget from outside the pipeline.
+
         Args:
-            template_path: Optional full path to the template file, used internally for a
-                page's base template. If None, uses `get_template_path()`.
-            extra_context: Optional additional context dictionary to merge
-                into the widget's context for rendering. Developers should add context
-                to `self.context.data` instead of using this. This is used internally
-                in the library, not meant for general use.
+            template_path: Full path to the template file, for a page's base template. If None,
+                uses `get_template_path()`.
+            extra_context: Merged over the widget's context, for a page's base template.
         """
         context = self._context_dict()
         if extra_context:

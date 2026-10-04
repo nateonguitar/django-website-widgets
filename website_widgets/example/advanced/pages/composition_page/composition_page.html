@@ -1,0 +1,28 @@
+<section id="example-composition">
+    <h1>Composition</h1>
+    <p class="example-muted">
+        This page is a tree of widgets. Each one sets its context, then the whole tree renders, children
+        before their parents.
+    </p>
+
+    <h2>A child widget</h2>
+    {{ children.constructor_card }}
+
+    <h2>A list of children</h2>
+    {% for card in children.list_cards %}
+        {{ card }}
+    {% endfor %}
+
+    <h2>A skipped child</h2>
+    {% if children.skipped_card %}
+        {{ children.skipped_card }}
+    {% else %}
+        <p class="example-card example-muted">
+            The page set <span class="example-code">children['skipped_card'] = None</span>, so nothing
+            rendered here. Optional children don't need an <span class="example-code">if</span> in Python.
+        </p>
+    {% endif %}
+
+    <h2>Shared page context</h2>
+    {{ children.page_title_note }}
+</section>

@@ -1,0 +1,54 @@
+<section id="example-widget-from-endpoint">
+    <h1>Server-rendered widget from an endpoint</h1>
+    <p class="example-lead">
+        Tip 0 below was rendered as part of this page. The button asks
+        <span class="example-code">GET {% url "website_widgets_example_api_tip" %}?number=1</span>, then 2, and so on.
+        That async endpoint awaits a mock database call, then renders an
+        <span class="example-code">TipCard</span> for that number on the server with
+        <span class="example-code">await widget.render__standalone(request)</span> and returns its
+        HTML in JSON. The page adds it under the others, the way an infinite scroller or a
+        "load more" button would. Both come from the same widget and template.
+    </p>
+    <p class="example-muted">
+        The button is disabled while the request is in flight, so a double click can't load the same
+        tip twice.
+    </p>
+    <div id="example-widget-from-endpoint-tips">
+        {{ children.first_tip }}
+    </div>
+    <div class="example-actions">
+        <button id="example-widget-from-endpoint-load" class="example-button" type="button">Load another tip</button>
+    </div>
+    <p id="example-widget-from-endpoint-error" class="example-muted" role="alert"></p>
+</section>
+<script>
+    (() => {
+        const tipUrl = '{% url "website_widgets_example_api_tip" %}';
+        const loadButton = document.getElementById('example-widget-from-endpoint-load');
+        const loadLabel = loadButton.textContent;
+        const tips = document.getElementById('example-widget-from-endpoint-tips');
+        const error = document.getElementById('example-widget-from-endpoint-error');
+        let lastNumber = 0;
+
+        loadButton.addEventListener('click', async () => {
+            const number = lastNumber + 1;
+            error.textContent = '';
+            loadButton.disabled = true;
+            loadButton.textContent = `Loading tip ${number}...`;
+            try {
+                const response = await fetch(`${tipUrl}?number=${number}`);
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+                const data = await response.json();
+                tips.insertAdjacentHTML('beforeend', data.html);
+                lastNumber = number;
+            } catch {
+                error.textContent = `Something went wrong loading tip ${number}. Try again.`;
+            } finally {
+                loadButton.disabled = false;
+                loadButton.textContent = loadLabel;
+            }
+        });
+    })();
+</script>

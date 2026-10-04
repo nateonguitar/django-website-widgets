@@ -15,6 +15,17 @@ The host project runs in Docker, with the repository bind-mounted at `/app`, so 
 docker compose exec api python manage.py test_website_widgets --verbose
 ```
 
+The library's tests, the example site's included, run through the host project's runner. The host
+project's full suite doesn't discover them, since `django-website-widgets/` isn't a Python package,
+so name the app:
+
+```bash
+docker compose exec api python manage.py test website_widgets
+```
+
+The host project installs the example site (`website_widgets.example`) when `DEBUG` is on and
+serves it at `/website-widgets-example/`.
+
 ## Making Changes
 
 Edit files in `django-website-widgets/website_widgets/`. Changes are immediately available because
@@ -65,7 +76,14 @@ django-website-widgets/
     ├── tests.py
     ├── management/
     │   └── commands/           # test_website_widgets
-    └── example/                # Example pages and widgets
+    └── example/                # The example site, an installable app of its own
+        ├── apps.py             # Seeds the projects app's in-memory store on startup
+        ├── api/                # Endpoint (one endpoint per file) and route(), the errors
+        ├── example_page/       # ExamplePage, the root base page, and its layout
+        ├── index/              # The index page and its stylesheet
+        ├── projects/           # Projects app: store, fake login, base page, endpoints
+        ├── advanced/           # Advanced demo: composition, async, widget from endpoint, 304
+        └── tests/              # Endpoint tests mirror api/, one file per endpoint
 ```
 
 ## Gotchas

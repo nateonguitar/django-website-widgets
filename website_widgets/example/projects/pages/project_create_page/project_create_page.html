@@ -1,0 +1,41 @@
+<section id="example-project-create">
+    <h1>New project</h1>
+    <p class="example-muted">You'll own the project you create.</p>
+    <form id="example-project-create-form" class="example-form example-card" novalidate>
+        <label for="example-project-create-name">Name</label>
+        <input id="example-project-create-name" maxlength="{{ data.name_max_length }}" required>
+        <p id="example-project-create-name-error" class="example-field-error" role="alert"></p>
+        <label for="example-project-create-description">Description (optional)</label>
+        <textarea id="example-project-create-description" maxlength="{{ data.description_max_length }}"></textarea>
+        <p id="example-project-create-description-error" class="example-field-error" role="alert"></p>
+        <div class="example-actions">
+            <button id="example-project-create-submit" class="example-button" type="submit">Create project</button>
+            <a href="{% url 'website_widgets_example_projects' %}">Cancel</a>
+        </div>
+        <p id="example-project-create-error" class="example-message example-message-error" role="alert"></p>
+    </form>
+</section>
+<script>
+    document.getElementById('example-project-create-form').addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const submitButton = document.getElementById('example-project-create-submit');
+        const errors = {
+            name: document.getElementById('example-project-create-name-error'),
+            description: document.getElementById('example-project-create-description-error'),
+            form: document.getElementById('example-project-create-error'),
+        };
+        Object.values(errors).forEach((element) => { element.textContent = ''; });
+        submitButton.disabled = true;
+
+        const result = await exampleApi.send('POST', '{% url "website_widgets_example_api_projects" %}', {
+            name: document.getElementById('example-project-create-name').value,
+            description: document.getElementById('example-project-create-description').value,
+        });
+        if (result.ok) {
+            exampleApi.navigateWithMessage(result.data.url, 'Project created.');
+            return;
+        }
+        submitButton.disabled = false;
+        exampleApi.showErrors(result, errors, errors.form);
+    });
+</script>

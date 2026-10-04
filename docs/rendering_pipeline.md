@@ -9,7 +9,7 @@ in, which is where the surprises are. Read this before overriding `handle_reques
 Primary code:
 - `website_widgets/page.py` — `Page.as_view()`, `handle_request()`, `build_response()`
 - `website_widgets/widget.py` — `_initialize_widget_tree()`, `_render_children_to_html()`,
-  `get_template_path()`, `_context_dict()`, `render_html()`
+  `get_template_path()`, `_context_dict()`, `_render_template()`, and the `render__` methods
 - `website_widgets/widget_context.py` — `WidgetContext`
 - `website_widgets/config.py` — `WebsiteWidgetsConfig`, `get_config()`
 
@@ -36,15 +36,17 @@ Because the instance is per-request, instance state is safe. Class-level mutable
 is shared across every request in the process.
 
 The default `handle_request()` calls the page's own `set_context()`, then `build_response()`. Every
-other widget's `set_context()` runs later, inside `build_response()`.
+other widget's `set_context()` runs later, inside `build_response()`. An override calls
+`await self._call_set_context()` rather than `set_context()` directly, so a sync or async
+`set_context()` both work.
 
 ## `build_response()` runs the tree in four passes
 
 ```
 1. await self._initialize_widget_tree()    every descendant's set_context()
 2. self._generate_debug_tree()             only if show_debug_tree is on
-3. await self._render_children_to_html()   every descendant's render_html()
-4. self.html(), then the base template     the page's own template, then the wrapper
+3. await self._render_children_to_html()   every descendant's _render_template()
+4. self._render_template(), then the base  the page's own template, then the wrapper
 ```
 
 **Pass 1 is depth-first and parent-before-child.** For each child widget the tree walker assigns
@@ -76,11 +78,34 @@ Pass 2 sits between 1 and 3 because it needs both: the tree must be fully constr
 drawing, and the children must still *be* widgets, since the debug tree reports class names and
 each widget's optional `_debug_label`.
 
+## Rendering a widget outside a page
+
+A widget can be rendered on its own, for an endpoint returning HTML fragments (an infinite scroller,
+a "load more" button) or for a test. The widget is constructed, adjusted if needed (a value put in
+`context.page` beforehand reaches every descendant), then rendered once:
+
+| Method | Request | For |
+|---|---|---|
+| `await widget.render__standalone(request)` | the caller's, required | endpoints |
+| `await widget.render__test(user=None)` | a mock `GET /`, `user` or `AnonymousUser` | `async def` tests |
+| `widget.render__test_sync(user=None)` | same, through `async_to_sync` | plain `def` tests |
+
+All three run the widget's own `set_context()`, then passes 1 and 3 above, then the widget's
+template. There is no debug tree and no base template. The request is required in the endpoint
+form so production code can't fall back to a mock by omission. `render__test_sync()` raises
+inside a running event loop, so an async test awaits `render__test()`.
+
+**A widget renders once.** Pass 3 replaces its children with their HTML, so a second render
+raises `RuntimeError`; construct a new instance instead.
+
+`_render_template()`, which only fills a template with the context already present, is private:
+called on a fresh widget it would render an empty template without running `set_context()`.
+
 ## The page's own rendering
 
-`self.html()` returns `self.render_html()`, which renders the page's own template. The result has
-the debug tree appended when one was generated, and is then passed into the template at
-`get_base_template_path()` as `main_content_html`.
+`self._render_template()` renders the page's own template. The result has the debug tree appended
+when one was generated, and is then passed into the template at `get_base_template_path()` as
+`main_content_html`.
 
 **A page names two templates: its layout and its own content.** `base_template_path` is the layout
 every page shares, so it is a real path, resolved against the concrete class's folder unless
@@ -97,7 +122,7 @@ attribute on `Page`, defaulting to `200`; assign it before `build_response()` to
 
 ## Templates bypass Django's loader
 
-`render_html()` opens the template file with `open()`, builds a `Template` from the string, and
+`_render_template()` opens the template file with `open()`, builds a `Template` from the string, and
 renders it against a bare `Context`. Three consequences, all easy to get wrong:
 
 **No template context processors run.** The context is exactly five keys, assembled in
@@ -106,7 +131,7 @@ renders it against a bare `Context`. Three consequences, all easy to get wrong:
 | Key | Value |
 |---|---|
 | `request` | `self.request` |
-| `user` | `self.request.user` |
+| `user` | `self.request.user`, or `None` when the request has none (no `django.contrib.auth`) |
 | `page` | `self.context.page`, shared by reference down the whole tree |
 | `data` | `self.context.data`, this widget only |
 | `children` | `self.context.children`, this widget only |
@@ -114,9 +139,9 @@ renders it against a bare `Context`. Three consequences, all easy to get wrong:
 Anything a project expects from a context processor (`csrf_token`, `MEDIA_URL`, `debug`, settings
 exposed globally) **is not there** and resolves to empty with no error. `{% load %}`, custom tags
 and filters, `{% url %}` and `{% static %}` all work normally; only the automatic context is
-absent. The base template additionally receives `main_content_html`, through `render_html()`'s
-`extra_context` argument; that argument exists for the library's own use, and application code
-puts values in `self.context.data`.
+absent. The base template additionally receives `main_content_html`, through
+`_render_template()`'s `extra_context` argument; application code puts values in
+`self.context.data`.
 
 **`data` and `children` are per-widget, `page` is shared.** A child cannot see its parent's `data`.
 Anything every widget must reach goes in `context.page`, which is passed down by reference during
@@ -155,7 +180,8 @@ logged. This is the most common cause of "my widget renders but its content is m
 loop `as_view()`'s view executes in, and sync or async is only detected per widget with
 `inspect.iscoroutinefunction`. A plain `def set_context()` making a synchronous ORM call raises
 `SynchronousOnlyOperation`. So does a lazy queryset put in `context.data` and first evaluated by
-the template, because every `render_html()` call happens inside the same async pipeline. Fetch with
+the template, because every `_render_template()` call happens inside the same async pipeline,
+the `render__` methods included. Fetch with
 the async ORM (`aget`, `async for`, and so on) in an `async def set_context()`, and hand templates
 evaluated data. A test harness that sets `DJANGO_ALLOW_ASYNC_UNSAFE` hides this.
 

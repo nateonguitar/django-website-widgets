@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>{{ page.title }} | {{ page.site_name }}</title>
+        <meta name="description" content="{{ page.description }}">
+        <meta name="csrf-token" content="{{ page.csrf_token }}">
+        {{ children.stylesheet }}
+        <script>
+            // Every page's script calls endpoints through this, so each one stays a few lines.
+            window.exampleApi = {
+                csrfToken: document.querySelector('meta[name="csrf-token"]').content,
+
+                async send(method, url, body) {
+                    let response;
+                    try {
+                        response = await fetch(url, {
+                            method,
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRFToken': this.csrfToken,
+                            },
+                            body: body === undefined ? undefined : JSON.stringify(body),
+                        });
+                    } catch {
+                        return { ok: false, status: 0, data: null, error: 'Something went wrong. Check your connection and try again.', field: null };
+                    }
+                    const data = response.status === 204 ? null : await response.json().catch(() => null);
+                    if (response.ok) {
+                        return { ok: true, status: response.status, data, error: null, errors: {} };
+                    }
+                    const errors = data?.errors ?? {};
+                    return {
+                        ok: false,
+                        status: response.status,
+                        data,
+                        error: data?.error ?? (Object.keys(errors).length ? null : 'Something went wrong.'),
+                        errors,
+                    };
+                },
+
+                // Puts each field's messages beside its input, and anything else in the form's message.
+                showErrors(result, fieldElements, formElement) {
+                    const unplaced = result.error ? [result.error] : [];
+                    for (const [field, messages] of Object.entries(result.errors)) {
+                        if (fieldElements[field]) {
+                            fieldElements[field].textContent = messages.join(' ');
+                        } else {
+                            unplaced.push(...messages);
+                        }
+                    }
+                    formElement.textContent = unplaced.join(' ');
+                },
+
+                navigateWithMessage(url, message) {
+                    document.cookie = `{{ page.flash_cookie_name }}=${encodeURIComponent(message)}; path=/; SameSite=Lax`;
+                    window.location.assign(url);
+                },
+            };
+        </script>
+    </head>
+    <body>
+        {{ children.appbar }}
+        <main class="example-main">
+            <p class="example-store-warning">
+                This demo keeps its data in memory only. It is wiped when the Django server restarts,
+                and behind a load balancer or with several server instances it may not be predictable,
+                since each process holds its own copy.
+            </p>
+            {% if page.flash %}
+                <p class="example-message example-message-success" role="status">{{ page.flash }}</p>
+            {% endif %}
+            {{ main_content_html }}
+        </main>
+        {{ children.footer }}
+    </body>
+</html>

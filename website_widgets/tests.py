@@ -1,5 +1,6 @@
 import os
 import tempfile
+from types import SimpleNamespace
 from unittest.mock import patch
 
 from django.contrib.auth.models import AnonymousUser
@@ -41,7 +42,50 @@ class ClassLevelBasePage(Page):
     base_template_path = '../templates/base.html'
 
 
-class TemplateFilenameTestCase(SimpleTestCase):
+class SyncContextWidget(Widget):
+    def set_context(self):
+        self.context.data['word'] = 'sync'
+
+
+class AsyncContextWidget(Widget):
+    async def set_context(self):
+        self.context.data['word'] = 'async'
+
+
+class WordWidget(Widget):
+    def __init__(self, word: str, template_filename: str):
+        super().__init__()
+        self.word = word
+        self.template_filename = template_filename
+
+    def set_context(self):
+        self.context.data['word'] = self.word
+
+
+class ParentWidget(Widget):
+    def __init__(self, child_template_filename: str):
+        super().__init__()
+        self.child_template_filename = child_template_filename
+
+    def set_context(self):
+        self.context.children['single'] = WordWidget('one', self.child_template_filename)
+        self.context.children['many'] = [
+            WordWidget('two', self.child_template_filename),
+            WordWidget('three', self.child_template_filename),
+        ]
+        self.context.children['absent'] = None
+
+
+class WidgetTestCase(SimpleTestCase):
+    def write_template(self, content: str) -> str:
+        """Writes a template beside this module for one test and returns its bare file name."""
+        with tempfile.NamedTemporaryFile('w', suffix='.html', dir=TESTS_DIR, delete=False) as template_file:
+            template_file.write(content)
+        self.addCleanup(os.remove, template_file.name)
+        return os.path.basename(template_file.name)
+
+
+class TemplateFilenameTestCase(WidgetTestCase):
     """Existing files beside this module stand in for templates, since only the lookup is tested."""
 
     def test_get_template_path__returns_module_named_html__when_template_filename_unset(self):
@@ -115,19 +159,70 @@ class TemplateFilenameTestCase(SimpleTestCase):
 
         self.assertEqual(path, os.path.join(sub_dir, 'shared.html'))
 
-    def test_render_html__renders_chosen_template__when_template_filename_set(self):
-        with tempfile.NamedTemporaryFile('w', suffix='.html', dir=TESTS_DIR, delete=False) as template_file:
-            template_file.write('chosen {{ data.word }}')
-        self.addCleanup(os.remove, template_file.name)
-
-        request = RequestFactory().get('/')
-        request.user = AnonymousUser()
+    def test_render__test_sync__renders_chosen_template__when_template_filename_set(self):
         widget = DefaultTemplateWidget()
-        widget._request = request
-        widget.template_filename = os.path.basename(template_file.name)
+        widget.template_filename = self.write_template('chosen {{ data.word }}')
         widget.context.data['word'] = 'template'
 
-        self.assertEqual(widget.render_html(), 'chosen template')
+        self.assertEqual(widget.render__test_sync(), 'chosen template')
+
+
+class RenderInPlaceTestCase(WidgetTestCase):
+    async def test_render__test__runs_set_context__when_set_context_is_sync(self):
+        widget = SyncContextWidget()
+        widget.template_filename = self.write_template('{{ data.word }}')
+
+        self.assertEqual(await widget.render__test(), 'sync')
+
+    async def test_render__test__runs_set_context__when_set_context_is_async(self):
+        widget = AsyncContextWidget()
+        widget.template_filename = self.write_template('{{ data.word }}')
+
+        self.assertEqual(await widget.render__test(), 'async')
+
+    async def test_render__test__renders_children__when_nested_and_listed(self):
+        widget = ParentWidget(self.write_template('{{ data.word }}'))
+        widget.template_filename = self.write_template(
+            '{{ children.single }}|{% for child in children.many %}{{ child }},{% endfor %}|'
+            '{{ children.absent|default_if_none:"none" }}')
+
+        self.assertEqual(await widget.render__test(), 'one|two,three,|none')
+
+    async def test_render__test__shares_page_context_with_children__when_set_before_rendering(self):
+        widget = ParentWidget(self.write_template('{{ page.nonce }}'))
+        widget.template_filename = self.write_template('{{ children.single }}')
+        widget.context.page['nonce'] = 'abc'
+
+        self.assertEqual(await widget.render__test(), 'abc')
+
+    async def test_render__test__renders_as_anonymous__when_no_user_given(self):
+        widget = DefaultTemplateWidget()
+        widget.template_filename = self.write_template('{{ user.is_authenticated }}')
+
+        self.assertEqual(await widget.render__test(), 'False')
+
+    async def test_render__test__renders_as_user__when_user_given(self):
+        user = SimpleNamespace(is_authenticated=True, username='riley')
+        widget = DefaultTemplateWidget()
+        widget.template_filename = self.write_template('{{ user.username }}')
+
+        self.assertEqual(await widget.render__test(user=user), 'riley')
+
+    async def test_render__standalone__renders_with_given_request__when_called(self):
+        request = RequestFactory().get('/somewhere/')
+        request.user = AnonymousUser()
+        widget = DefaultTemplateWidget()
+        widget.template_filename = self.write_template('{{ request.path }}')
+
+        self.assertEqual(await widget.render__standalone(request), '/somewhere/')
+
+    async def test_render__test__fails__when_already_rendered(self):
+        widget = DefaultTemplateWidget()
+        widget.template_filename = self.write_template('once')
+        await widget.render__test()
+
+        with self.assertRaises(RuntimeError):
+            await widget.render__test()
 
 
 class BaseTemplatePathTestCase(SimpleTestCase):

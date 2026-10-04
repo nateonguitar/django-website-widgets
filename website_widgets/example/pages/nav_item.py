@@ -1,9 +1,0 @@
-from enum import Enum
-
-
-class NavItem(Enum):
-    HOME = 'HOME'
-    SIMPLE_PAGE = 'SIMPLE_PAGE'
-    WIDGET_COMPOSITION = 'WIDGET_COMPOSITION'
-    UNWRAPPED_PAGE = 'UNWRAPPED_PAGE'
-    CACHING_PAGE = 'CACHING_PAGE'
