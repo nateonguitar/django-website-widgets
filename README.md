@@ -237,6 +237,25 @@ html = ProjectListTile(project=project).render__test_sync(user=user)    # def te
 Each runs the widget's `set_context()` and every descendant's, then the templates. No base
 template wraps the result.
 
+### URL templates for the frontend
+
+`reverse_template()` stands in for `reverse()` when the frontend fills in the parameters. It
+reverses a URL name into a template with a `{name}` placeholder per route parameter:
+
+```python
+from website_widgets import reverse_template
+
+# path('projects/<int:project_id>/tasks/<slug:task_slug>', ..., name='project_task')
+reverse_template('project_task')   # '/projects/{project_id}/tasks/{task_slug}'
+reverse_template('project_list')   # '/projects', as reverse() returns it
+```
+
+Placeholders take the route's own parameter names, and namespaces, `include()` prefixes and the
+script prefix apply as they do in `reverse()`. Converters don't run, so a placeholder is accepted
+wherever a parameter goes. Pass `paramnames` to rename the placeholders in route order, which a
+`re_path()` with unnamed groups needs: `reverse_template('legacy', ['legacy_id'])`. A name whose
+routes take different parameters raises `ValueError` unless `paramnames` picks one by count.
+
 ## Templates
 
 A widget's template sits next to its Python file and shares its name: `my_widget.py` renders
