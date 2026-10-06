@@ -203,7 +203,7 @@ Pages:
 - Set `base_template_path` for the wrapper template
 - Receive URL parameters in `__init__()`
 - Use `set_context()` to load data and construct child widgets
-- Register with Django URLs via `.as_view()`
+- Route with `@register_url` (see below), or by hand in `urls.py` with `.as_view()`
 - Override `handle_request()` for authentication, redirects or conditional responses, and
   `build_response()` for headers
 
@@ -236,6 +236,80 @@ html = ProjectListTile(project=project).render__test_sync(user=user)    # def te
 
 Each runs the widget's `set_context()` and every descendant's, then the templates. No base
 template wraps the result.
+
+### Routing pages with `@register_url`
+
+A page can declare its own routes instead of being listed in `urls.py`. The decorator takes
+`path()`'s arguments, and stacks one per route:
+
+```python
+from website_widgets import register_url
+
+@register_url('')
+class HomePage(AppPage): ...
+
+@register_url('forum/<int:post_id>', name='forum_post')
+@register_url('tab-requests/<int:post_id>', name='tab_request')
+class ForumPostPage(AppPage): ...
+
+@register_url('forum/create-post', name='forum_create_post', kwargs={'post_type': 'forum_post'})
+class ForumCreatePostPage(AppPage): ...
+```
+
+Then include every decorated page with one line, the way the admin is included:
+
+```python
+from website_widgets import PageRoutes
+
+urlpatterns = [
+    path('', PageRoutes.urls()),
+    ...
+]
+```
+
+- **Pages are found by importing every module under the website app's `pages/` folder**, the app
+  being `WebsiteWidgetsConfig.website_app_name` (default `'website'`). A page elsewhere isn't found.
+- **Routes live in a namespace named after that app.** `name` defaults to the class name, so
+  `HomePage` reverses as `reverse('website:HomePage')`, and `forum_post` as `'website:forum_post'`.
+- **`kwargs` reach the page's constructor** alongside the URL's parameters.
+- **Routes are tried most specific first, never in file order.** They are compared segment by
+  segment: a fixed segment comes before `int`, then `uuid`, `slug`, `str` and `path`, and equally
+  specific routes fall back to alphabetical order. So `profile/settings` is always tried before
+  `profile/<str:username>`, wherever either is declared.
+- **Two equally specific routes that can match the same URL fail a system check**
+  (`website_widgets.E001`), such as `a/<str:x>` and `a/<str:y>`.
+- **A decorated route is an ordinary `path()`.** `reverse()`, `{% url %}`, `resolve()` and URL
+  tools such as django-extensions' `show_urls` all see it. Routing a page by hand with
+  `path('...', MyPage.as_view(), name='...')` still works, and the two mix freely; a hand-routed
+  page's name sits outside the namespace.
+
+To see the order routes are tried in, and check that nothing clobbers them, run
+`show_page_resolve_order`:
+
+```
+$ python manage.py show_page_resolve_order
+#   URL                                              Segments  Page
+1   /moderation/reports/<int:report_id>              f/f/i     ViewReportPage
+...
+15  /profile/<str:username>                          f/s       UserProfilePage
+...
+17  /                                                f         HomePage
+
+Segments: f fixed, i int, s str, g slug, u uuid, p path, and a project converter by its name.
+All 37 page routes reach their page.
+```
+
+For each route it reverses a sample URL (`/profile/a`) and resolves it through the whole project,
+so it also catches a route that never reaches its page because something earlier in `urls.py`
+takes its URLs, such as a hand-written route or a catch-all, or because `PageRoutes.urls()` isn't
+included. A route that fails prints in red with the reason, and the command exits non-zero, so it
+can run in CI.
+
+- `--columns` picks the columns after `#`, in order, from `url,segments,name,page,reaches_page`
+  (default `url,segments,page`). The reachability check runs either way.
+- `--path-param-type` shows a path parameter as declared (`full`, the default:
+  `<str:game_slug>`), as its converter (`type`: `<str>`) or as the sample value the check uses
+  (`example`: `a`).
 
 ### URL templates for the frontend
 
@@ -322,6 +396,7 @@ from website_widgets.config import WebsiteWidgetsConfig
 
 WEBSITE_WIDGETS = WebsiteWidgetsConfig(
     show_debug_tree=True,  # Show widget tree visualization on pages (default: False)
+    website_app_name='website',  # Label of the app holding your pages/ (default: 'website')
 )
 ```
 
@@ -427,6 +502,13 @@ the app is installed.
 Check installation:
 ```bash
 python manage.py test_website_widgets --verbose
+```
+
+List the `@register_url` routes in the order they are tried, and check each reaches its page
+(see "Routing pages with `@register_url`"):
+```bash
+python manage.py show_page_resolve_order
+python manage.py show_page_resolve_order --columns=url,name,page,reaches_page --path-param-type=type
 ```
 
 ## License

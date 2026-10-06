@@ -1,9 +1,13 @@
 class WebsiteWidgetsConfig:
     def __init__(
         self,
-        show_debug_tree: bool = False
+        show_debug_tree: bool = False,
+        website_app_name: str = 'website',
     ):
         self.show_debug_tree = show_debug_tree
+        # An app label, resolved through the app registry, so nothing depends on the working
+        # directory.
+        self.website_app_name = website_app_name
 
 
 _config_cache: WebsiteWidgetsConfig | None = None

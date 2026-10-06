@@ -1,14 +1,21 @@
+import importlib
+import io
 import os
+import sys
 import tempfile
-from types import SimpleNamespace
+import uuid
+from types import ModuleType, SimpleNamespace
 from unittest.mock import patch
 
 from django.contrib.auth.models import AnonymousUser
+from django.core.exceptions import ImproperlyConfigured
+from django.core.management import CommandError, call_command
 from django.test import RequestFactory, SimpleTestCase, override_settings
 from django.test.utils import override_script_prefix
 from django.urls import NoReverseMatch, include, path, re_path, reverse
 
-from website_widgets import reverse_template
+from website_widgets import PageRoutes, register_url, reverse_template
+from website_widgets.config import WebsiteWidgetsConfig
 from website_widgets.page import Page
 from website_widgets.widget import Widget
 
@@ -336,3 +343,292 @@ class BaseTemplatePathTestCase(SimpleTestCase):
         page.base_template_path = '/srv/templates/base.html'
 
         self.assertEqual(page.get_base_template_path(), '/srv/templates/base.html')
+
+
+class WebsiteWidgetsConfigTestCase(SimpleTestCase):
+    def test_website_app_name__returns_website__when_not_given(self):
+        self.assertEqual(WebsiteWidgetsConfig().website_app_name, 'website')
+
+    def test_website_app_name__returns_given_label__when_given(self):
+        config = WebsiteWidgetsConfig(website_app_name='storefront')
+
+        self.assertEqual(config.website_app_name, 'storefront')
+
+
+class PageRoutesTestCase(SimpleTestCase):
+    """
+    Each test gets an empty registry and a throwaway website app on `sys.path`, so neither the
+    project's pages nor another test's leak in.
+    """
+
+    def setUp(self):
+        temp_dir = tempfile.TemporaryDirectory()
+        self.addCleanup(temp_dir.cleanup)
+        self.package_name = f'page_routes_fixture_{uuid.uuid4().hex}'
+        package_folder = os.path.join(temp_dir.name, self.package_name)
+        self.pages_folder = os.path.join(package_folder, 'pages')
+        os.makedirs(self.pages_folder)
+        sys.path.insert(0, temp_dir.name)
+        self.addCleanup(sys.path.remove, temp_dir.name)
+        self.addCleanup(self.forget_fixture_modules)
+
+        app_config = SimpleNamespace(
+            name=self.package_name,
+            path=package_folder)
+        mock_apps = self.enterContext(patch('website_widgets.page_routes.apps'))
+        mock_apps.get_app_config.return_value = app_config
+        self.enterContext(patch.object(PageRoutes, '_routes', {}))
+
+    def forget_fixture_modules(self):
+        for module_name in list(sys.modules):
+            if module_name.startswith(self.package_name):
+                del sys.modules[module_name]
+
+    def write_page_module(self, relative_path: str, content: str):
+        module_path = os.path.join(self.pages_folder, relative_path)
+        os.makedirs(os.path.dirname(module_path), exist_ok=True)
+        with open(module_path, 'w') as module_file:
+            module_file.write(content)
+        importlib.invalidate_caches()
+
+    def get_routes_in_url_order(self) -> list[str]:
+        url_patterns, _app_name, _namespace = PageRoutes.urls()
+        return [str(url_pattern.pattern) for url_pattern in url_patterns]
+
+    def test_register_url__routes_page_at_each_route__when_stacked(self):
+        @register_url('forum/<int:post_id>', name='forum_post')
+        @register_url('tab-requests/<int:post_id>', name='tab_request')
+        class ForumPostPage(Page):
+            pass
+
+        url_patterns, _app_name, _namespace = PageRoutes.urls()
+
+        self.assertEqual(
+            {url_pattern.name: url_pattern.callback.view_class for url_pattern in url_patterns},
+            {
+                'forum_post': ForumPostPage,
+                'tab_request': ForumPostPage,
+            })
+
+    def test_register_url__names_route_after_class__when_name_omitted(self):
+        @register_url('')
+        class HomePage(Page):
+            pass
+
+        url_patterns, _app_name, _namespace = PageRoutes.urls()
+
+        self.assertEqual([url_pattern.name for url_pattern in url_patterns], ['HomePage'])
+
+    def test_urls__namespaces_routes_by_website_app_name__when_included(self):
+        config = WebsiteWidgetsConfig(website_app_name='storefront')
+        self.enterContext(patch('website_widgets.page_routes.get_config', return_value=config))
+
+        _url_patterns, app_name, namespace = PageRoutes.urls()
+
+        self.assertEqual((app_name, namespace), ('storefront', 'storefront'))
+
+    def test_register_url__passes_kwargs_to_route__when_kwargs_given(self):
+        @register_url('tab-requests/create', name='tab_request_create', kwargs={'post_type': 'tab_request'})
+        class CreatePostPage(Page):
+            pass
+
+        url_patterns, _app_name, _namespace = PageRoutes.urls()
+
+        self.assertEqual(url_patterns[0].default_args, {'post_type': 'tab_request'})
+
+    def test_register_url__fails__when_name_already_registered(self):
+        @register_url('forum', name='forum')
+        class ForumPage(Page):
+            pass
+
+        with self.assertRaises(ImproperlyConfigured):
+            @register_url('other-forum', name='forum')
+            class OtherForumPage(Page):
+                pass
+
+    def test_register_url__fails__when_class_is_not_a_page(self):
+        with self.assertRaises(TypeError):
+            @register_url('plain', name='plain')
+            class PlainWidget(Widget):
+                pass
+
+    def test_urls__routes_page__when_only_discovery_imports_its_module(self):
+        self.write_page_module('nested_page/__init__.py', '')
+        self.write_page_module(
+            'nested_page/nested_page.py',
+            'from website_widgets import Page, register_url\n'
+            '\n'
+            '\n'
+            "@register_url('nested', name='nested')\n"
+            'class NestedPage(Page):\n'
+            '    pass\n')
+
+        self.assertEqual(self.get_routes_in_url_order(), ['nested'])
+
+    def test_urls__orders_fixed_segment_first__when_parameter_could_match_it(self):
+        @register_url('profile/<str:username>', name='profile')
+        class ProfilePage(Page):
+            pass
+
+        @register_url('profile/settings', name='profile_settings')
+        class SettingsPage(Page):
+            pass
+
+        self.assertEqual(self.get_routes_in_url_order(), ['profile/settings', 'profile/<str:username>'])
+
+    def test_urls__orders_longer_route_first__when_path_parameter_could_match_it(self):
+        @register_url('files/<path:file_path>', name='file')
+        class FilePage(Page):
+            pass
+
+        @register_url('files/<path:file_path>/history', name='file_history')
+        class FileHistoryPage(Page):
+            pass
+
+        self.assertEqual(
+            self.get_routes_in_url_order(),
+            ['files/<path:file_path>/history', 'files/<path:file_path>'])
+
+    def test_urls__orders_alphabetically__when_routes_are_equally_specific(self):
+        @register_url('tabs/<int:tab_id>', name='tab')
+        class TabPage(Page):
+            pass
+
+        @register_url('forum/<int:post_id>', name='forum_post')
+        class ForumPostPage(Page):
+            pass
+
+        self.assertEqual(self.get_routes_in_url_order(), ['forum/<int:post_id>', 'tabs/<int:tab_id>'])
+
+    def test_check_for_ties__fails__when_equally_specific_routes_match_same_url(self):
+        @register_url('a/<str:x>', name='a_x')
+        class XPage(Page):
+            pass
+
+        @register_url('a/<str:y>', name='a_y')
+        class YPage(Page):
+            pass
+
+        errors = PageRoutes.check_for_ties()
+
+        self.assertEqual([error.id for error in errors], ['website_widgets.E001'])
+
+    def test_check_for_ties__succeeds__when_fixed_segment_and_int_parameter_share_position(self):
+        @register_url('forum/create-post', name='forum_create_post')
+        class CreatePostPage(Page):
+            pass
+
+        @register_url('forum/<int:post_id>', name='forum_post')
+        class ForumPostPage(Page):
+            pass
+
+        self.assertEqual(PageRoutes.check_for_ties(), [])
+
+    def use_urlconf(self, urlpatterns: list):
+        urlconf = ModuleType('page_routes_test_urlconf')
+        urlconf.urlpatterns = urlpatterns
+        self.enterContext(override_settings(ROOT_URLCONF=urlconf))
+
+    def run_show_page_resolve_order(self, *args, output: io.StringIO | None = None, **options) -> str:
+        output = output or io.StringIO()
+        call_command('show_page_resolve_order', *args, stdout=output, no_color=True, **options)
+        return output.getvalue()
+
+    def test_show_page_resolve_order__shows_only_given_columns__when_columns_given(self):
+        @register_url('forum/<int:post_id>', name='forum_post')
+        class ForumPostPage(Page):
+            pass
+
+        self.use_urlconf([path('', PageRoutes.urls())])
+
+        output = self.run_show_page_resolve_order('--columns=url,name')
+
+        self.assertIn('website:forum_post', output)
+        self.assertNotIn('ForumPostPage', output)
+
+    def test_show_page_resolve_order__lists_unreachable_route__when_reaches_page_column_hidden(self):
+        @register_url('profile/<str:username>', name='profile')
+        class ProfilePage(Page):
+            pass
+
+        self.use_urlconf([
+            path('profile/<str:username>', UnsetBasePage.as_view(), name='hand_routed_profile'),
+            path('', PageRoutes.urls()),
+        ])
+        output = io.StringIO()
+
+        with self.assertRaises(CommandError):
+            self.run_show_page_resolve_order('--columns=url', output=output)
+
+        self.assertIn('/profile/a goes to hand_routed_profile instead', output.getvalue())
+
+    def test_show_page_resolve_order__shows_converter_only__when_path_param_type_is_type(self):
+        @register_url('forum/<int:post_id>', name='forum_post')
+        class ForumPostPage(Page):
+            pass
+
+        self.use_urlconf([path('', PageRoutes.urls())])
+
+        output = self.run_show_page_resolve_order(path_param_type='type')
+
+        self.assertIn('/forum/<int>', output)
+
+    def test_show_page_resolve_order__shows_sample_value__when_path_param_type_is_example(self):
+        @register_url('forum/<int:post_id>', name='forum_post')
+        class ForumPostPage(Page):
+            pass
+
+        self.use_urlconf([path('', PageRoutes.urls())])
+
+        output = self.run_show_page_resolve_order(path_param_type='example')
+
+        self.assertIn('/forum/1 ', output)
+
+    def test_show_page_resolve_order__lists_fixed_segment_first__when_parameter_could_match_it(self):
+        @register_url('profile/<str:username>', name='profile')
+        class ProfilePage(Page):
+            pass
+
+        @register_url('profile/settings', name='profile_settings')
+        class SettingsPage(Page):
+            pass
+
+        self.use_urlconf([path('', PageRoutes.urls())])
+
+        output = self.run_show_page_resolve_order()
+
+        self.assertLess(output.index('profile/settings'), output.index('profile/<str:username>'))
+
+    def test_show_page_resolve_order__fails__when_earlier_urlconf_route_takes_its_url(self):
+        @register_url('profile/<str:username>', name='profile')
+        class ProfilePage(Page):
+            pass
+
+        self.use_urlconf([
+            path('profile/<str:username>', UnsetBasePage.as_view(), name='hand_routed_profile'),
+            path('', PageRoutes.urls()),
+        ])
+
+        with self.assertRaises(CommandError):
+            self.run_show_page_resolve_order()
+
+    def test_show_page_resolve_order__fails__when_page_routes_not_included(self):
+        @register_url('profile/<str:username>', name='profile')
+        class ProfilePage(Page):
+            pass
+
+        self.use_urlconf([])
+
+        with self.assertRaises(CommandError):
+            self.run_show_page_resolve_order()
+
+    def test_check_for_ties__succeeds__when_equally_specific_routes_differ_in_a_fixed_segment(self):
+        @register_url('forum/<int:post_id>', name='forum_post')
+        class ForumPostPage(Page):
+            pass
+
+        @register_url('tab-requests/<int:post_id>', name='tab_request')
+        class TabRequestPage(Page):
+            pass
+
+        self.assertEqual(PageRoutes.check_for_ties(), [])
