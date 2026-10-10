@@ -1,6 +1,0 @@
-include README.md
-include LICENSE
-recursive-include website_widgets/templates *
-recursive-include website_widgets/static *
-recursive-exclude website_widgets/__pycache__ *
-recursive-exclude website_widgets *.pyc

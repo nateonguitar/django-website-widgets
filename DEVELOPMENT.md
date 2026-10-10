@@ -1,97 +1,80 @@
 # Development Guide
 
-## Local Development Setup
+## Setup
 
-The host project installs this package as a path dependency in its own `pyproject.toml`:
-
-```toml
-django-website-widgets = {path = "django-website-widgets", develop = true}
-```
-
-The host project runs in Docker, with the repository bind-mounted at `/app`, so run Poetry and
-`manage.py` through the container:
+The library needs only Python 3.12+ and Poetry. From the repository root:
 
 ```bash
-docker compose exec api python manage.py test_website_widgets --verbose
+poetry install --no-root
 ```
 
-The library's tests, the example site's included, run through the host project's runner. The host
-project's full suite doesn't discover them, since `django-website-widgets/` isn't a Python package,
-so name the app:
+This creates a virtualenv with Django, at the version pinned in `poetry.lock`. The lock file pins
+the development environment only; a project installing the package gets any Django that
+`pyproject.toml` allows.
+
+## Tests
 
 ```bash
-docker compose exec api python manage.py test website_widgets
+poetry run django-admin test website_widgets --settings=test_settings --pythonpath=.
 ```
 
-The host project installs the example site (`website_widgets.example`) when `DEBUG` is on and
-serves it at `/website-widgets-example/`.
+`test_settings.py` sits at the repository root, outside the package, so it never ships. Every test
+is a `SimpleTestCase`, so it configures no database. It does configure a `DjangoTemplates` backend,
+because widget templates are compiled with `Template()`, which raises `ImproperlyConfigured`
+without one. Any project using the library has one already.
 
-## Making Changes
+GitHub Actions (`.github/workflows/tests.yml`) runs the same command on every push, for each
+supported Python against each supported Django. **Supporting a new Django or Python version means
+adding it to the matrix and the classifiers in `pyproject.toml` together**, and dropping one means
+removing it from both, along with `requires-python` or the `django` requirement when the lowest
+version changes.
 
-Edit files in `django-website-widgets/website_widgets/`. Changes are immediately available because
-the package is installed in develop mode from the bind-mounted source.
+## Releasing
 
-## Building
+A change reaches a project using the library only through a published version.
 
-```bash
-docker compose exec api sh -c "cd django-website-widgets && poetry build"
-```
+1. Bump `version` in `pyproject.toml`. The `0.x` series allows breaking changes in any release.
+2. Run the tests, and check the GitHub Actions matrix is green.
+3. Build and publish: `poetry build`, then `poetry publish`. Publishing needs a PyPI token, set
+   once with `poetry config pypi-token.pypi <token>`.
+4. Tag the release (`git tag v0.2.0`) and push the tag.
+5. Bump the requirement in the project using it.
 
-Creates distribution files in `dist/` (git-ignored):
-- `django_website_widgets-X.Y.Z-py3-none-any.whl`
-- `django_website_widgets-X.Y.Z.tar.gz`
+`poetry build` writes the wheel and source archive to `dist/`, which is git-ignored.
 
-## Publishing to PyPI
-
-```bash
-docker compose exec api sh -c "cd django-website-widgets && poetry publish"
-```
-
-Requires PyPI credentials configured in Poetry.
-
-## Version Management
-
-1. Edit `version` under `[project]` in `pyproject.toml`
-2. Rebuild with `poetry build`
-3. Publish with `poetry publish`
-4. Tag the release in git, e.g. `v0.2.0`
-
-## Package Structure
+## Package structure
 
 ```
 django-website-widgets/
 ├── pyproject.toml              # Package metadata and build config
-├── MANIFEST.in
+├── poetry.lock                 # The development environment's pins
+├── test_settings.py            # Settings for the tests, not shipped
+├── .github/workflows/          # The test matrix
 ├── README.md                   # User documentation (shows on PyPI)
 ├── DEVELOPMENT.md              # This file
 ├── LICENSE
 ├── docs/                       # How the library works internally
-└── website_widgets/            # Python package
-    ├── __init__.py             # Exports Widget, Page, WidgetContext
+└── website_widgets/            # The Python package, and the only thing shipped
+    ├── __init__.py             # Exports Widget, Page, WidgetContext, PageRoutes, register_url,
+    │                           # reverse_template
     ├── apps.py
     ├── config.py               # WebsiteWidgetsConfig, get_config()
     ├── widget.py
     ├── page.py
+    ├── page_routes.py          # @register_url, route discovery, the overlapping-route check
+    ├── url_templates.py        # reverse_template()
     ├── widget_context.py
     ├── tests.py
-    ├── management/
-    │   └── commands/           # test_website_widgets
-    └── example/                # The example site, an installable app of its own
-        ├── apps.py             # Seeds the projects app's in-memory store on startup
-        ├── api/                # Endpoint (one endpoint per file) and route(), the errors
-        ├── example_page/       # ExamplePage, the root base page, and its layout
-        ├── index/              # The index page and its stylesheet
-        ├── projects/           # Projects app: store, fake login, base page, endpoints
-        ├── advanced/           # Advanced demo: composition, async, widget from endpoint, 304
-        └── tests/              # Endpoint tests mirror api/, one file per endpoint
+    └── management/
+        └── commands/           # test_website_widgets, show_page_resolve_order
 ```
 
 ## Gotchas
 
-**`pyproject.toml` declares the metadata twice.** Both `[project]` and `[tool.poetry]` set `name`,
-`version`, `description`, `readme` and `authors`. Poetry uses `[project]` and ignores the
-`[tool.poetry]` copies (`poetry check` warns about each one), so a version bumped only under
-`[tool.poetry]` does not change the build.
+**The distribution and import names differ.** The package is installed as
+`django-website-widgets` and imported as `website_widgets`, so `[tool.poetry]` names the package
+to include explicitly; without it Poetry looks for a `django_website_widgets` folder and builds an
+empty wheel.
 
 **`test_website_widgets` is an installation check, not a test suite.** It confirms the app loads
 and, with `--verbose`, prints the exported classes. It never renders a widget.
