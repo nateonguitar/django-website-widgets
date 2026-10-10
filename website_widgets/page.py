@@ -9,8 +9,10 @@ from website_widgets.config import get_config
 
 class Page(Widget):
     """
-    A widget served at a URL: its own template is rendered, then passed to the template at
-    `base_template_path` as `{{ main_content_html }}`.
+    A widget served at a URL, rendering two templates against the same context: its own, found
+    like any widget's, then the document template at `document_template_path`, which receives the
+    first as `{{ page_content_html }}`. Both see the same `page`, `data` and `children`, so a child
+    widget can render in either one.
 
         path('my-page/', MyPage.as_view(), name='my_page')
 
@@ -19,9 +21,10 @@ class Page(Widget):
     """
 
     status_code: int = 200
-    # A real path, unlike `template_filename`, since the layout is shared rather than kept beside
-    # one page. Resolved against the concrete class's folder unless absolute.
-    base_template_path: str | None = None
+    # The whole HTML document, `<head>` included. A real path, unlike `template_filename`, since it
+    # is shared rather than kept beside one page. Resolved against the concrete class's folder
+    # unless absolute.
+    document_template_path: str | None = None
 
     @classmethod
     def as_view(cls, *initargs, **initkwargs):
@@ -44,12 +47,13 @@ class Page(Widget):
         view.view_initkwargs = initkwargs
         return view
 
-    def get_base_template_path(self) -> str:
-        """The path to the layout wrapping this page's content, from `base_template_path`."""
-        if self.base_template_path is None:
+    def get_document_template_path(self) -> str:
+        """The path to the document wrapping this page's content, from `document_template_path`."""
+        if self.document_template_path is None:
             raise NotImplementedError(
-                "Subclasses must set `base_template_path` or override `get_base_template_path()`.")
-        return self._resolve_beside_class_file(self.base_template_path)
+                "Subclasses must set `document_template_path` or override "
+                "`get_document_template_path()`.")
+        return self._resolve_beside_class_file(self.document_template_path)
 
     async def handle_request(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
         """
@@ -69,7 +73,7 @@ class Page(Widget):
 
     async def build_response(self) -> HttpResponse:
         """
-        Renders the widget tree and wraps it in the base template. Override to change the response
+        Renders the widget tree and wraps it in the document template. Override to change the response
         returned by `await super().build_response()`.
         """
         await self._initialize_widget_tree()
@@ -81,7 +85,7 @@ class Page(Widget):
 
         await self._render_children_to_html()
 
-        main_content_html = self._render_template()
+        page_content_html = self._render_template()
 
         if hasattr(self, '_debug_tree_html') and self._debug_tree_html:
             debug_tree_html = f"""
@@ -100,11 +104,11 @@ class Page(Widget):
                 }}
             </style>
             """
-            main_content_html = main_content_html + mark_safe(debug_tree_html)
+            page_content_html = page_content_html + mark_safe(debug_tree_html)
 
         html = self._render_template(
-            template_path=self.get_base_template_path(),
+            template_path=self.get_document_template_path(),
             extra_context={
-                'main_content_html': main_content_html,
+                'page_content_html': page_content_html,
             })
         return HttpResponse(html, status=self.status_code)

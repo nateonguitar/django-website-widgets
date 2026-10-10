@@ -22,8 +22,12 @@ from website_widgets.example.projects.widgets.projects_stylesheet.projects_style
 
 class ProjectsAppPage(ExamplePage):
     """
-    The projects app's base page: its own layout and stylesheet, the appbar, the viewer, flash
-    messages, and the access variants.
+    The projects app's base page: its own document template and stylesheet, the appbar, the
+    viewer, flash messages, and the access variants.
+
+    The appbar and footer are children of every page, rendered by the document template rather
+    than the page's own, so they sit outside `page_content_html`. They still read `context.page`,
+    which the page fills before either template renders.
 
     A page's `set_context()` raises `UnauthorizedException`, `ForbiddenException` or
     `NotFoundException` to refuse the request. This page catches it and renders
@@ -31,7 +35,7 @@ class ProjectsAppPage(ExamplePage):
     the class hierarchy for every subclass.
     """
 
-    base_template_path = os.path.join(os.path.dirname(__file__), 'projects_layout.html')
+    document_template_path = os.path.join(os.path.dirname(__file__), 'document_template.html')
     stylesheet_class = ProjectsStylesheet
 
     viewer: User | None = None

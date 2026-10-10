@@ -25,9 +25,10 @@ INSTALLED_APPS = [
 ]
 ```
 
-2. Create a base.html for all pages to use (customize as needed with stylesheets, an appbar header, a footer, etc.)
+2. Create a document template for all pages to use: the whole HTML document, `<head>` included.
+   Customize it as needed with stylesheets, an appbar, a footer, etc.
 
-`website/templates/base.html`
+`website/document_template.html`
 ```html
 {% load static %}
 <!DOCTYPE html>
@@ -42,27 +43,47 @@ INSTALLED_APPS = [
         {{ children.appbar }}
 
         <main id="main-content">
-            {{ main_content_html }}
+            {{ page_content_html }}
         </main>
     </body>
 </html>
 
 ```
 
-3. Create subclass Page for reusing across all other pages
+3. Create a `Page` subclass for every other page to extend, pointing at that template:
 
 `website/app_page.py`
 ```python
+import os
+
 from website_widgets import Page
 from website.widgets.appbar import Appbar
 
 class AppPage(Page):
-    base_template_path = 'templates/base.html'
+    # Absolute: a relative path resolves beside each concrete page, not beside this file.
+    document_template_path = os.path.join(os.path.dirname(__file__), 'document_template.html')
 
     async def set_context(self):
         # Construct widget - system will render it automatically
         self.context.children['appbar'] = Appbar()
 ```
+
+A page renders two templates against the same context: its own, then the document template, which
+receives the first as `{{ page_content_html }}`. So `children.appbar` can render in either one.
+Here it sits outside the page's content but still reads `context.page`, which every page fills
+before either template renders:
+
+`website/widgets/appbar/appbar.html`
+```html
+<header class="appbar">
+    <a href="/">Home</a>
+    <span>{{ page.title }}</span>
+</header>
+```
+
+Where the appbar goes is the project's choice: every page can set its own
+`children['appbar']`, a page can leave it out, or the document template can hold the markup
+directly.
 
 4. Create a widget and a template next to it, named after the widget's Python file:
 
@@ -200,7 +221,7 @@ class ProfilePage(AppPage):
 ```
 
 Pages:
-- Set `base_template_path` for the wrapper template
+- Set `document_template_path` for the HTML document wrapping their own template
 - Receive URL parameters in `__init__()`
 - Use `set_context()` to load data and construct child widgets
 - Route with `@register_url` (see below), or by hand in `urls.py` with `.as_view()`
@@ -234,7 +255,7 @@ html = await ProjectListTile(project=project).render__test(user=user)   # async 
 html = ProjectListTile(project=project).render__test_sync(user=user)    # def test
 ```
 
-Each runs the widget's `set_context()` and every descendant's, then the templates. No base
+Each runs the widget's `set_context()` and every descendant's, then the templates. No document
 template wraps the result.
 
 ### Routing pages with `@register_url`
@@ -371,8 +392,8 @@ one alone can't. The prefix keeps every variant sorted next to the template it r
 editor tab or a search result names its component without the folder. Give the variant the same
 root element as the main template, so the component's styles still apply to it.
 
-A page's layout is the one template set by path: `base_template_path` names a file shared by every
-page, so it lives in a common folder rather than beside any one of them.
+A page's document template is the one template set by path: `document_template_path` names a file
+shared by every page, so it lives beside the shared `Page` subclass rather than beside any one page.
 
 Override `get_template_path()` when the choice needs more than an attribute.
 

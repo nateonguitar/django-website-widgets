@@ -91,7 +91,7 @@ class Widget:
             html = await widget.render__standalone(request)
 
         Runs the whole lifecycle: this widget's `set_context()`, every descendant's, then the
-        templates. Values put in `context.page` beforehand reach every descendant. No base
+        templates. Values put in `context.page` beforehand reach every descendant. No document
         template wraps the result.
         """
         return await self._render_in_place(request)
@@ -277,9 +277,9 @@ class Widget:
         render a widget from outside the pipeline.
 
         Args:
-            template_path: Full path to the template file, for a page's base template. If None,
-                uses `get_template_path()`.
-            extra_context: Merged over the widget's context, for a page's base template.
+            template_path: Full path to the template file, for a page's document template. If
+                None, uses `get_template_path()`.
+            extra_context: Merged over the widget's context, for a page's document template.
         """
         context = self._context_dict()
         if extra_context:

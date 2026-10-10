@@ -46,7 +46,7 @@ other widget's `set_context()` runs later, inside `build_response()`. An overrid
 1. await self._initialize_widget_tree()    every descendant's set_context()
 2. self._generate_debug_tree()             only if show_debug_tree is on
 3. await self._render_children_to_html()   every descendant's _render_template()
-4. self._render_template(), then the base  the page's own template, then the wrapper
+4. self._render_template(), twice         the page's own template, then the document template
 ```
 
 **Pass 1 is depth-first and parent-before-child.** For each child widget the tree walker assigns
@@ -91,9 +91,12 @@ a "load more" button) or for a test. The widget is constructed, adjusted if need
 | `widget.render__test_sync(user=None)` | same, through `async_to_sync` | plain `def` tests |
 
 All three run the widget's own `set_context()`, then passes 1 and 3 above, then the widget's
-template. There is no debug tree and no base template. The request is required in the endpoint
+template. There is no debug tree and no document template. The request is required in the endpoint
 form so production code can't fall back to a mock by omission. `render__test_sync()` raises
 inside a running event loop, so an async test awaits `render__test()`.
+
+This is the line between a widget and a page: a widget renders a fragment, and only a page wraps
+one in a whole HTML document, since the document belongs to the response the page returns.
 
 **A widget renders once.** Pass 3 replaces its children with their HTML, so a second render
 raises `RuntimeError`; construct a new instance instead.
@@ -103,19 +106,24 @@ called on a fresh widget it would render an empty template without running `set_
 
 ## The page's own rendering
 
-`self._render_template()` renders the page's own template. The result has the debug tree appended
-when one was generated, and is then passed into the template at `get_base_template_path()` as
-`main_content_html`.
+**A page renders two templates against the same context.** `self._render_template()` renders the
+page's own template. The result has the debug tree appended when one was generated, and is then
+passed into the template at `get_document_template_path()` as `page_content_html`. Both renders
+see the same `page`, `data` and `children`, so a child widget can be placed in either template:
+an appbar in the document template sits outside the page's content but reads the same
+`context.page` the page filled.
 
-**A page names two templates: its layout and its own content.** `base_template_path` is the layout
-every page shares, so it is a real path, resolved against the concrete class's folder unless
-absolute. The page's own content is chosen like any widget's, by module name or
-`template_filename` (below). An error state that replaces a page's body is a variant template,
-not a separate mechanism.
+**The document template is shared; the page's own template is not.** `document_template_path`
+names the whole HTML document, `<head>` included, that every page of a kind shares, so it is a
+real path, resolved against the concrete class's folder unless absolute. The page's own template
+is chosen like any widget's, by module name or `template_filename` (below). An error state that
+replaces a page's body is a variant template, not a separate mechanism.
 
-`base_template_path` is `None` on `Page` itself, and `get_base_template_path()` raises
+`document_template_path` is `None` on `Page` itself, and `get_document_template_path()` raises
 `NotImplementedError` until a subclass sets it. The usual pattern is one intermediate subclass per
-project that sets the app's base template, with individual pages inheriting it.
+project that sets the app's document template, kept beside it, with individual pages inheriting
+it. Pages that need a different document entirely, such as an admin area with its own `<head>`,
+get a second intermediate subclass pointing at a second document template.
 
 The response is `HttpResponse(html, status=self.status_code)`. `status_code` is a plain class
 attribute on `Page`, defaulting to `200`; assign it before `build_response()` to change it.
@@ -139,7 +147,7 @@ renders it against a bare `Context`. Three consequences, all easy to get wrong:
 Anything a project expects from a context processor (`csrf_token`, `MEDIA_URL`, `debug`, settings
 exposed globally) **is not there** and resolves to empty with no error. `{% load %}`, custom tags
 and filters, `{% url %}` and `{% static %}` all work normally; only the automatic context is
-absent. The base template additionally receives `main_content_html`, through
+absent. The document template additionally receives `page_content_html`, through
 `_render_template()`'s `extra_context` argument; application code puts values in
 `self.context.data`.
 

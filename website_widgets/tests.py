@@ -44,12 +44,12 @@ class SubfolderWidget(BaseFolderWidget):
     pass
 
 
-class UnsetBasePage(Page):
+class UnsetDocumentPage(Page):
     pass
 
 
-class ClassLevelBasePage(Page):
-    base_template_path = '../templates/base.html'
+class ClassLevelDocumentPage(Page):
+    document_template_path = '../templates/document_template.html'
 
 
 class SyncContextWidget(Widget):
@@ -236,7 +236,7 @@ class RenderInPlaceTestCase(WidgetTestCase):
 
 
 eleven_parameters_route = '/'.join(f'<int:p{i}>' for i in range(11))
-stub_view = UnsetBasePage.as_view()
+stub_view = UnsetDocumentPage.as_view()
 inner_patterns = (
     [path('items/<int:item_id>', stub_view, name='item')],
     'inner_app')
@@ -328,21 +328,21 @@ class ReverseTemplateTestCase(SimpleTestCase):
             reverse_template('missing:post')
 
 
-class BaseTemplatePathTestCase(SimpleTestCase):
-    def test_get_base_template_path__fails__when_base_template_path_unset(self):
+class DocumentTemplatePathTestCase(SimpleTestCase):
+    def test_get_document_template_path__fails__when_document_template_path_unset(self):
         with self.assertRaises(NotImplementedError):
-            UnsetBasePage().get_base_template_path()
+            UnsetDocumentPage().get_document_template_path()
 
-    def test_get_base_template_path__returns_path_beside_class__when_base_template_path_relative(self):
+    def test_get_document_template_path__returns_path_beside_class__when_document_template_path_relative(self):
         self.assertEqual(
-            ClassLevelBasePage().get_base_template_path(),
-            os.path.join(TESTS_DIR, '../templates/base.html'))
+            ClassLevelDocumentPage().get_document_template_path(),
+            os.path.join(TESTS_DIR, '../templates/document_template.html'))
 
-    def test_get_base_template_path__returns_path_unchanged__when_base_template_path_absolute(self):
-        page = UnsetBasePage()
-        page.base_template_path = '/srv/templates/base.html'
+    def test_get_document_template_path__returns_path_unchanged__when_document_template_path_absolute(self):
+        page = UnsetDocumentPage()
+        page.document_template_path = '/srv/templates/document_template.html'
 
-        self.assertEqual(page.get_base_template_path(), '/srv/templates/base.html')
+        self.assertEqual(page.get_document_template_path(), '/srv/templates/document_template.html')
 
 
 class WebsiteWidgetsConfigTestCase(SimpleTestCase):
@@ -552,7 +552,7 @@ class PageRoutesTestCase(SimpleTestCase):
             pass
 
         self.use_urlconf([
-            path('profile/<str:username>', UnsetBasePage.as_view(), name='hand_routed_profile'),
+            path('profile/<str:username>', UnsetDocumentPage.as_view(), name='hand_routed_profile'),
             path('', PageRoutes.urls()),
         ])
         output = io.StringIO()
@@ -605,7 +605,7 @@ class PageRoutesTestCase(SimpleTestCase):
             pass
 
         self.use_urlconf([
-            path('profile/<str:username>', UnsetBasePage.as_view(), name='hand_routed_profile'),
+            path('profile/<str:username>', UnsetDocumentPage.as_view(), name='hand_routed_profile'),
             path('', PageRoutes.urls()),
         ])
 
