@@ -11,7 +11,7 @@ INSTALLED_APPS = [
     'website_widgets',
 ]
 
-ROOT_URLCONF = 'website_widgets.tests'
+ROOT_URLCONF = 'website_widgets.tests.urls'
 
 # Widget templates are compiled with `Template()`, which needs a DjangoTemplates backend.
 TEMPLATES = [

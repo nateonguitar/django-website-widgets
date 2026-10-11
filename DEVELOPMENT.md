@@ -23,6 +23,19 @@ is a `SimpleTestCase`, so it configures no database. It does configure a `Django
 because widget templates are compiled with `Template()`, which raises `ImproperlyConfigured`
 without one. Any project using the library has one already.
 
+**One test class per file, named for what it tests.** A class's tests sit in a folder named for
+the module (`tests/widget/test_render.py` for `Widget.render()`,
+`tests/page_routes/test_register_url.py`); a module with one test class keeps a flat
+`tests/test_<module>.py`. Test names follow `test_<feature>__<succeeds/fails>__when_<condition>`.
+The shared pieces sit beside the tests:
+
+- `tests/sample_widgets.py`: the widgets and pages the tests render.
+- `tests/widget_test_case.py`: `WidgetTestCase.write_template()`, which writes a test's template
+  beside `sample_widgets.py`, since a widget's template is looked up beside its class's module.
+- `tests/urls.py`: the URLconf `reverse_template()` is tested against, also `ROOT_URLCONF`.
+- `tests/page_routes/page_routes_test_case.py`: an empty route registry and a throwaway website
+  app for each test.
+
 GitHub Actions (`.github/workflows/tests.yml`) runs the same command on every push, for each
 supported Python against each supported Django. **Supporting a new Django or Python version means
 adding it to the matrix and the classifiers in `pyproject.toml` together**, and dropping one means
@@ -65,7 +78,7 @@ django-website-widgets/
     ├── url_templates.py        # reverse_template()
     ├── npm_watch.py            # start_npm_watch(), for manage.py
     ├── widget_context.py
-    ├── tests.py
+    ├── tests/                  # One test class per file; see "Tests" above
     └── management/
         └── commands/           # test_website_widgets, show_page_resolve_order
 ```
