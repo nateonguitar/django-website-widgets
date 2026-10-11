@@ -1,3 +1,4 @@
+import asyncio
 import importlib
 import io
 import os
@@ -10,6 +11,7 @@ from unittest.mock import patch
 from django.contrib.auth.models import AnonymousUser
 from django.core.exceptions import ImproperlyConfigured
 from django.core.management import CommandError, call_command
+from django.template import Context, Template
 from django.test import RequestFactory, SimpleTestCase, override_settings
 from django.test.utils import override_script_prefix
 from django.urls import NoReverseMatch, include, path, re_path, reverse
@@ -169,70 +171,190 @@ class TemplateFilenameTestCase(WidgetTestCase):
 
         self.assertEqual(path, os.path.join(sub_dir, 'shared.html'))
 
-    def test_render__test_sync__renders_chosen_template__when_template_filename_set(self):
+    def test_render__renders_chosen_template__when_template_filename_set(self):
         widget = DefaultTemplateWidget()
         widget.template_filename = self.write_template('chosen {{ data.word }}')
         widget.context.data['word'] = 'template'
 
-        self.assertEqual(widget.render__test_sync(), 'chosen template')
+        self.assertEqual(widget.render(), 'chosen template')
 
 
-class RenderInPlaceTestCase(WidgetTestCase):
-    async def test_render__test__runs_set_context__when_set_context_is_sync(self):
+class RequestReadingWidget(Widget):
+    def set_context(self):
+        self.context.data['path'] = self.request.path
+
+
+class LoopCheckingWidget(Widget):
+    def set_context(self):
+        try:
+            asyncio.get_running_loop()
+            self.context.data['loop'] = 'running'
+        except RuntimeError:
+            self.context.data['loop'] = 'none'
+
+
+class AsyncChildParentWidget(Widget):
+    def __init__(self, child_template_filename: str):
+        super().__init__()
+        self.child_template_filename = child_template_filename
+
+    def set_context(self):
+        child = AsyncContextWidget()
+        child.template_filename = self.child_template_filename
+        self.context.children['child'] = child
+
+
+class RenderTestCase(WidgetTestCase):
+    def test_render__runs_set_context__when_set_context_is_sync(self):
         widget = SyncContextWidget()
         widget.template_filename = self.write_template('{{ data.word }}')
 
-        self.assertEqual(await widget.render__test(), 'sync')
+        self.assertEqual(widget.render(), 'sync')
 
-    async def test_render__test__runs_set_context__when_set_context_is_async(self):
-        widget = AsyncContextWidget()
-        widget.template_filename = self.write_template('{{ data.word }}')
-
-        self.assertEqual(await widget.render__test(), 'async')
-
-    async def test_render__test__renders_children__when_nested_and_listed(self):
+    def test_render__renders_children__when_nested_and_listed(self):
         widget = ParentWidget(self.write_template('{{ data.word }}'))
         widget.template_filename = self.write_template(
             '{{ children.single }}|{% for child in children.many %}{{ child }},{% endfor %}|'
             '{{ children.absent|default_if_none:"none" }}')
 
-        self.assertEqual(await widget.render__test(), 'one|two,three,|none')
+        self.assertEqual(widget.render(), 'one|two,three,|none')
 
-    async def test_render__test__shares_page_context_with_children__when_set_before_rendering(self):
+    def test_render__shares_page_context_with_children__when_set_before_rendering(self):
         widget = ParentWidget(self.write_template('{{ page.foo }}'))
         widget.template_filename = self.write_template('{{ children.single }}')
         widget.context.page['foo'] = 'abc'
 
-        self.assertEqual(await widget.render__test(), 'abc')
+        self.assertEqual(widget.render(), 'abc')
 
-    async def test_render__test__renders_as_anonymous__when_no_user_given(self):
-        widget = DefaultTemplateWidget()
-        widget.template_filename = self.write_template('{{ user.is_authenticated }}')
+    def test_render__runs_set_context_without_event_loop__when_called_from_sync_code(self):
+        widget = LoopCheckingWidget()
+        widget.template_filename = self.write_template('{{ data.loop }}')
 
-        self.assertEqual(await widget.render__test(), 'False')
+        self.assertEqual(widget.render(), 'none')
 
-    async def test_render__test__renders_as_user__when_user_given(self):
-        user = SimpleNamespace(is_authenticated=True, username='riley')
-        widget = DefaultTemplateWidget()
-        widget.template_filename = self.write_template('{{ user.username }}')
+    def test_render__fails_naming_widget__when_set_context_is_async(self):
+        widget = AsyncContextWidget()
+        widget.template_filename = self.write_template('{{ data.word }}')
 
-        self.assertEqual(await widget.render__test(user=user), 'riley')
+        with self.assertRaisesMessage(TypeError, 'AsyncContextWidget'):
+            widget.render()
 
-    async def test_render__standalone__renders_with_given_request__when_called(self):
+    def test_render__fails_naming_widget__when_child_set_context_is_async(self):
+        widget = AsyncChildParentWidget(self.write_template('{{ data.word }}'))
+        widget.template_filename = self.write_template('{{ children.child }}')
+
+        with self.assertRaisesMessage(TypeError, 'AsyncContextWidget'):
+            widget.render()
+
+    def test_render__renders_with_given_request__when_called(self):
         request = RequestFactory().get('/somewhere/')
         request.user = AnonymousUser()
         widget = DefaultTemplateWidget()
         widget.template_filename = self.write_template('{{ request.path }}')
 
-        self.assertEqual(await widget.render__standalone(request), '/somewhere/')
+        self.assertEqual(widget.render(request), '/somewhere/')
 
-    async def test_render__test__fails__when_already_rendered(self):
+    def test_render__renders__when_no_request_given_and_widget_needs_none(self):
         widget = DefaultTemplateWidget()
-        widget.template_filename = self.write_template('once')
-        await widget.render__test()
+        widget.template_filename = self.write_template(
+            '{{ request|default_if_none:"none" }} {{ user|default_if_none:"none" }}')
+
+        self.assertEqual(widget.render(), 'none none')
+
+    def test_render__fails__when_no_request_given_and_widget_reads_request(self):
+        widget = RequestReadingWidget()
+        widget.template_filename = self.write_template('{{ data.path }}')
 
         with self.assertRaises(RuntimeError):
-            await widget.render__test()
+            widget.render()
+
+    def test_render__drops_into_django_template_unescaped__when_output_is_in_its_context(self):
+        widget = DefaultTemplateWidget()
+        widget.template_filename = self.write_template('<b>{{ data.word }}</b>')
+        widget.context.data['word'] = '<i>'
+
+        html = Template('<div>{{ widget_html }}</div>').render(Context({'widget_html': widget.render()}))
+
+        self.assertEqual(html, '<div><b>&lt;i&gt;</b></div>')
+
+    def test_render__fails__when_already_rendered(self):
+        widget = DefaultTemplateWidget()
+        widget.template_filename = self.write_template('once')
+        widget.render()
+
+        with self.assertRaises(RuntimeError):
+            widget.render()
+
+    def test_render__test__renders_as_anonymous__when_no_user_given(self):
+        widget = DefaultTemplateWidget()
+        widget.template_filename = self.write_template('{{ user.is_authenticated }}')
+
+        self.assertEqual(widget.render__test(), 'False')
+
+    def test_render__test__renders_as_user__when_user_given(self):
+        user = SimpleNamespace(is_authenticated=True, username='riley')
+        widget = DefaultTemplateWidget()
+        widget.template_filename = self.write_template('{{ user.username }}')
+
+        self.assertEqual(widget.render__test(user=user), 'riley')
+
+
+class ARenderTestCase(WidgetTestCase):
+    async def test_arender__runs_set_context__when_set_context_is_sync(self):
+        widget = SyncContextWidget()
+        widget.template_filename = self.write_template('{{ data.word }}')
+
+        self.assertEqual(await widget.arender(), 'sync')
+
+    async def test_arender__runs_set_context__when_set_context_is_async(self):
+        widget = AsyncContextWidget()
+        widget.template_filename = self.write_template('{{ data.word }}')
+
+        self.assertEqual(await widget.arender(), 'async')
+
+    async def test_arender__renders_async_child__when_parent_is_sync(self):
+        widget = AsyncChildParentWidget(self.write_template('{{ data.word }}'))
+        widget.template_filename = self.write_template('{{ children.child }}')
+
+        self.assertEqual(await widget.arender(), 'async')
+
+    async def test_arender__renders_children__when_nested_and_listed(self):
+        widget = ParentWidget(self.write_template('{{ data.word }}'))
+        widget.template_filename = self.write_template(
+            '{{ children.single }}|{% for child in children.many %}{{ child }},{% endfor %}|'
+            '{{ children.absent|default_if_none:"none" }}')
+
+        self.assertEqual(await widget.arender(), 'one|two,three,|none')
+
+    async def test_arender__renders_with_given_request__when_called(self):
+        request = RequestFactory().get('/somewhere/')
+        request.user = AnonymousUser()
+        widget = DefaultTemplateWidget()
+        widget.template_filename = self.write_template('{{ request.path }}')
+
+        self.assertEqual(await widget.arender(request), '/somewhere/')
+
+    async def test_arender__fails__when_no_request_given_and_widget_reads_request(self):
+        widget = RequestReadingWidget()
+        widget.template_filename = self.write_template('{{ data.path }}')
+
+        with self.assertRaises(RuntimeError):
+            await widget.arender()
+
+    async def test_arender__fails__when_already_rendered(self):
+        widget = DefaultTemplateWidget()
+        widget.template_filename = self.write_template('once')
+        await widget.arender()
+
+        with self.assertRaises(RuntimeError):
+            await widget.arender()
+
+    async def test_arender__test__renders_as_user__when_user_given(self):
+        user = SimpleNamespace(is_authenticated=True, username='riley')
+        widget = AsyncContextWidget()
+        widget.template_filename = self.write_template('{{ user.username }} {{ data.word }}')
+
+        self.assertEqual(await widget.arender__test(user=user), 'riley async')
 
 
 eleven_parameters_route = '/'.join(f'<int:p{i}>' for i in range(11))

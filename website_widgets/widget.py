@@ -1,6 +1,5 @@
 from __future__ import annotations
 import inspect
-from asgiref.sync import async_to_sync
 from django.apps import apps
 from django.conf import settings
 from django.http import HttpRequest
@@ -48,8 +47,8 @@ class Widget:
         if self._request is not None:
             return self._request
         raise RuntimeError(
-            f'{type(self).__name__} has no request yet: it gets one when a page or a render__ '
-            f'method renders it.')
+            f'{type(self).__name__} has no request: it gets one from the page rendering it, or '
+            f'from the request passed to render() or arender().')
 
     def set_context(self):
         """
@@ -74,36 +73,61 @@ class Widget:
                 self.context.data['item'] = data
                 self.context.children['child'] = SomeWidget(data=data)
 
-        Use `def` for sync, `async def` for async - system auto-detects.
-        Base implementation does nothing.
+        Use `def` for sync, `async def` for async - system auto-detects. A widget rendered with
+        `render()` must use `def`. Base implementation does nothing.
         """
         pass
 
-    async def render__standalone(self, request: HttpRequest) -> SafeText:
+    def render(self, request: HttpRequest | None = None) -> SafeText:
         """
-        Render this widget on its own, outside a page, e.g. as an HTML fragment returned by an
-        endpoint.
+        Render this widget on its own from synchronous code: an ordinary Django view, an admin
+        hook, an email body. The result drops into any Django template unescaped.
 
         Construct the widget, adjust it if needed, then call this once:
 
             widget = ProjectListTile(project=project)
             # Provide any custom values the widget might need.
             widget.context.page['foo'] = bar
-            html = await widget.render__standalone(request)
+            html = widget.render(request)
 
-        Runs the whole lifecycle: this widget's `set_context()`, every descendant's, then the
-        templates. Values put in `context.page` beforehand reach every descendant. No document
-        template wraps the result.
-        """
-        return await self._render_in_place(request)
+        Runs the whole lifecycle with no event loop: this widget's `set_context()`, every
+        descendant's, then the templates, so synchronous ORM calls work in `set_context()`. Raises
+        on a widget whose `set_context()` is `async def`; await `arender()` for those. Values put
+        in `context.page` beforehand reach every descendant. No document template wraps the
+        result.
 
-    async def render__test(self, user=None) -> SafeText:
+        Without a request, `self.request` raises, so a widget that needs one fails loudly.
         """
-        Render this widget the way `render__standalone()` does, against a mock `GET /` request.
+        self._start_rendering(request)
+        self._call_set_context()
+        self._initialize_widget_tree()
+        self._render_children_to_html()
+        return self._render_template()
 
-        For tests only. `user` becomes `request.user`; without one it is `AnonymousUser` when
-        `django.contrib.auth` is installed.
+    async def arender(self, request: HttpRequest | None = None) -> SafeText:
         """
+        `render()` for async code, such as an endpoint returning an HTML fragment. Awaits each
+        `async def set_context()` and calls each plain one, as a page's pipeline does.
+        """
+        self._start_rendering(request)
+        await self._acall_set_context()
+        await self._ainitialize_widget_tree()
+        self._render_children_to_html()
+        return self._render_template()
+
+    def render__test(self, user=None) -> SafeText:
+        """
+        `render()` against a mock `GET /` request, for tests only. `user` becomes `request.user`;
+        without one it is `AnonymousUser` when `django.contrib.auth` is installed.
+        """
+        return self.render(self._build_test_request(user))
+
+    async def arender__test(self, user=None) -> SafeText:
+        """`arender()` against a mock `GET /` request, for tests only, like `render__test()`."""
+        return await self.arender(self._build_test_request(user))
+
+    @staticmethod
+    def _build_test_request(user) -> HttpRequest:
         from django.test import RequestFactory
 
         request = RequestFactory().get('/')
@@ -112,53 +136,60 @@ class Widget:
         elif apps.is_installed('django.contrib.auth'):
             from django.contrib.auth.models import AnonymousUser
             request.user = AnonymousUser()
-        return await self._render_in_place(request)
+        return request
 
-    def render__test_sync(self, user=None) -> SafeText:
-        """
-        `render__test()` for a synchronous test method. Raises inside a running event loop, so an
-        `async def` test awaits `render__test()` instead.
-        """
-        return async_to_sync(self.render__test)(user)
-
-    async def _render_in_place(self, request: HttpRequest) -> SafeText:
+    def _start_rendering(self, request: HttpRequest | None):
         if self._children_rendered:
             raise RuntimeError(
                 f'{type(self).__name__} has already been rendered; rendering replaces its children '
                 f'with their HTML, so construct a new instance to render again.')
         self._request = request
-        await self._call_set_context()
-        await self._initialize_widget_tree()
-        await self._render_children_to_html()
-        return self._render_template()
 
-    async def _call_set_context(self):
+    def _call_set_context(self):
+        if inspect.iscoroutinefunction(self.set_context):
+            raise TypeError(
+                f'{type(self).__name__}.set_context() is async, so render() cannot run it; '
+                f'await arender() instead, or write set_context() with def.')
+        self.set_context()
+
+    async def _acall_set_context(self):
         if inspect.iscoroutinefunction(self.set_context):
             await self.set_context()
         else:
             self.set_context()
 
-    async def _initialize_widget_tree(self):
-        """Pass 1: every descendant's `set_context()`, parent before child."""
+    def _initialize_widget_tree(self):
+        """Pass 1 for `render()`: every descendant's `set_context()`, parent before child."""
+        for widget in self._child_widgets():
+            self._share_render_state_with(widget)
+            widget._call_set_context()
+            widget._initialize_widget_tree()
+
+    async def _ainitialize_widget_tree(self):
+        """Pass 1 for pages and `arender()`: every descendant's `set_context()`, parent before child."""
+        for widget in self._child_widgets():
+            self._share_render_state_with(widget)
+            await widget._acall_set_context()
+            await widget._ainitialize_widget_tree()
+
+    def _child_widgets(self) -> list[Widget]:
+        widgets = []
         for key, value in self.context.children.items():
-            if value is None:
-                continue
-            elif isinstance(value, list):
+            if isinstance(value, list):
                 for widget in value:
                     if not isinstance(widget, Widget):
                         raise TypeError(f"Expected Widget in children['{key}'] list, got {type(widget)}")
-                    await self._initialize_child(widget)
+                    widgets.append(widget)
             elif isinstance(value, Widget):
-                await self._initialize_child(value)
+                widgets.append(value)
+        return widgets
 
-    async def _initialize_child(self, widget: Widget):
+    def _share_render_state_with(self, widget: Widget):
         # Request and page context are shared by reference across the whole tree.
         widget._request = self._request
         widget.context.page = self.context.page
-        await widget._call_set_context()
-        await widget._initialize_widget_tree()
 
-    async def _render_children_to_html(self):
+    def _render_children_to_html(self):
         """Pass 3: replaces each child in `context.children` with its rendered `SafeText`."""
         self._children_rendered = True
 
@@ -172,13 +203,13 @@ class Widget:
                 for widget in value:
                     if not isinstance(widget, Widget):
                         raise TypeError(f"Expected Widget in children['{key}'] list, got {type(widget)}")
-                    await widget._render_children_to_html()
+                    widget._render_children_to_html()
                     html = widget._render_template()
                     rendered_list.append(html)
                 rendered_children[key] = rendered_list
             elif isinstance(value, Widget):
                 widget = value
-                await widget._render_children_to_html()
+                widget._render_children_to_html()
                 html = widget._render_template()
                 rendered_children[key] = html
             else:
@@ -259,9 +290,10 @@ class Widget:
 
     def _context_dict(self) -> dict:
         context = {}
-        context['request'] = self.request
-        # Absent when django.contrib.auth isn't installed.
-        context['user'] = getattr(self.request, 'user', None)
+        # None when rendered without a request.
+        context['request'] = self._request
+        # Also None without django.contrib.auth.
+        context['user'] = getattr(self._request, 'user', None)
         context['page'] = self.context.page
         context['data'] = self.context.data
         context['children'] = self.context.children
@@ -274,8 +306,8 @@ class Widget:
     ) -> SafeText:
         """
         Fill this widget's template with the context it already has: no `set_context()`, no
-        children rendered. The pipeline calls it once both are done; use a `render__` method to
-        render a widget from outside the pipeline.
+        children rendered. The pipeline calls it once both are done; use `render()` or `arender()`
+        to render a widget from outside the pipeline.
 
         Args:
             template_path: Full path to the template file, for a page's document template. If

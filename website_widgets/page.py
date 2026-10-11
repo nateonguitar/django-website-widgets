@@ -62,13 +62,13 @@ class Page(Widget):
         Override to wrap the whole request, such as turning an exception into a variant template:
 
             try:
-                await self._call_set_context()
+                await self._acall_set_context()
             except NotFoundException:
                 self.status_code = 404
                 self.template_filename = 'my_page__not_found.html'
             return await self.build_response()
         """
-        await self._call_set_context()
+        await self._acall_set_context()
         return await self.build_response()
 
     async def build_response(self) -> HttpResponse:
@@ -76,14 +76,14 @@ class Page(Widget):
         Renders the widget tree and wraps it in the document template. Override to change the response
         returned by `await super().build_response()`.
         """
-        await self._initialize_widget_tree()
+        await self._ainitialize_widget_tree()
 
         # Between the passes: every child is populated, and still a Widget rather than HTML.
         self._debug_tree_html = None
         if get_config().show_debug_tree:
             self._debug_tree_html = self._generate_debug_tree()
 
-        await self._render_children_to_html()
+        self._render_children_to_html()
 
         page_content_html = self._render_template()
 

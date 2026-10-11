@@ -192,9 +192,10 @@ Widgets:
 - Use `set_context()` to create child widgets (Widget objects or lists)
 - Store children in `self.context.children` - system renders them
 - Access `self.request` and `self.request.user` from `set_context()` onwards (not in `__init__()`)
-- Can be sync or async - use `async def set_context(self):` only when awaiting. Rendering always
-  runs in an async view, so database access in a sync `set_context()` raises
-  `SynchronousOnlyOperation`; use the async ORM
+- Can be sync or async - use `async def set_context(self):` only when awaiting. A page renders
+  in an async view, so database access in a sync `set_context()` there raises
+  `SynchronousOnlyOperation`; use the async ORM. A widget rendered with `render()` from sync code
+  is the reverse: it must use `def`, and the sync ORM works
 
 ### Page
 
@@ -241,21 +242,48 @@ System renders widgets to HTML automatically. Lists iterate in templates via `{%
 
 ### Rendering a widget on its own
 
-Outside a page, for an endpoint returning HTML fragments (an infinite scroller, a "load more"
-button), construct the widget, adjust it, and render it once:
+A widget doesn't need a `Page`. `render()` returns its HTML as `SafeText`, so it drops into any
+ordinary Django template, and a project can adopt widgets piece by piece without converting its
+views. Construct the widget, adjust it, and render it once:
 
 ```python
-widget = ProjectListTile(project=project)
-# Provide any custom values the widget might need.
-widget.context.page['foo'] = bar
-html = await widget.render__standalone(request)
+from django.shortcuts import render
+
+
+def project_list(request):
+    tiles = []
+    for project in Project.objects.all():
+        widget = ProjectListTile(project=project)
+        # Provide any custom values the widget might need.
+        widget.context.page['foo'] = bar
+        tiles.append(widget.render(request))
+    return render(request, 'projects/list.html', {'tiles': tiles})
 ```
 
-Tests render a widget directly against a mock request, optionally as a given user:
+```django
+{% extends 'base.html' %}
+{% block content %}
+  {% for tile in tiles %}{{ tile }}{% endfor %}
+{% endblock %}
+```
+
+`render()` runs with no event loop, so its widgets use plain `def set_context()` and the sync
+ORM; it raises on an `async def set_context()`. The request is optional: an email body or an
+admin hook has none, and a widget that reads `self.request` without one raises rather than
+getting a fake.
+
+In async code, such as an endpoint returning HTML fragments for an infinite scroller, await
+`arender()` instead. It runs sync and async `set_context()`s alike, as a page does:
 
 ```python
-html = await ProjectListTile(project=project).render__test(user=user)   # async def test
-html = ProjectListTile(project=project).render__test_sync(user=user)    # def test
+html = await ProjectListTile(project=project).arender(request)
+```
+
+Tests render a widget against a mock `GET /`, optionally as a given user:
+
+```python
+html = ProjectListTile(project=project).render__test(user=user)          # def test
+html = await ProjectListTile(project=project).arender__test(user=user)   # async def test
 ```
 
 Each runs the widget's `set_context()` and every descendant's, then the templates. No document

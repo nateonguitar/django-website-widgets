@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [project]
 name = "django-website-widgets"
-version = "0.1.0"
+version = "0.2.0"
 description = "Server-rendered pages built from composable widgets, for Django"
 readme = "README.md"
 authors = [

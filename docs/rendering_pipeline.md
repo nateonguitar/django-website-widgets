@@ -9,7 +9,7 @@ in, which is where the surprises are. Read this before overriding `handle_reques
 Primary code:
 - `website_widgets/page.py` — `Page.as_view()`, `handle_request()`, `build_response()`
 - `website_widgets/widget.py` — `_initialize_widget_tree()`, `_render_children_to_html()`,
-  `get_template_path()`, `_context_dict()`, `_render_template()`, and the `render__` methods
+  `get_template_path()`, `_context_dict()`, `_render_template()`, `render()` and `arender()`
 - `website_widgets/widget_context.py` — `WidgetContext`
 - `website_widgets/config.py` — `WebsiteWidgetsConfig`, `get_config()`
 
@@ -37,15 +37,15 @@ is shared across every request in the process.
 
 The default `handle_request()` calls the page's own `set_context()`, then `build_response()`. Every
 other widget's `set_context()` runs later, inside `build_response()`. An override calls
-`await self._call_set_context()` rather than `set_context()` directly, so a sync or async
+`await self._acall_set_context()` rather than `set_context()` directly, so a sync or async
 `set_context()` both work.
 
 ## `build_response()` runs the tree in four passes
 
 ```
-1. await self._initialize_widget_tree()    every descendant's set_context()
+1. await self._ainitialize_widget_tree()   every descendant's set_context()
 2. self._generate_debug_tree()             only if show_debug_tree is on
-3. await self._render_children_to_html()   every descendant's _render_template()
+3. self._render_children_to_html()         every descendant's _render_template()
 4. self._render_template(), twice         the page's own template, then the document template
 ```
 
@@ -80,20 +80,29 @@ each widget's optional `_debug_label`.
 
 ## Rendering a widget outside a page
 
-A widget can be rendered on its own, for an endpoint returning HTML fragments (an infinite scroller,
-a "load more" button) or for a test. The widget is constructed, adjusted if needed (a value put in
+A widget can be rendered on its own: into an ordinary Django template, an email body or an admin
+page from sync code, as an HTML fragment from an async endpoint (an infinite scroller, a "load
+more" button), or in a test. The widget is constructed, adjusted if needed (a value put in
 `context.page` beforehand reaches every descendant), then rendered once:
 
-| Method | Request | For |
+| Method | Runs | For |
 |---|---|---|
-| `await widget.render__standalone(request)` | the caller's, required | endpoints |
-| `await widget.render__test(user=None)` | a mock `GET /`, `user` or `AnonymousUser` | `async def` tests |
-| `widget.render__test_sync(user=None)` | same, through `async_to_sync` | plain `def` tests |
+| `widget.render(request=None)` | a synchronous tree walk, no event loop | sync code: a Django view, an admin hook, an email |
+| `await widget.arender(request=None)` | the async pass 1 a page uses | async code: an endpoint returning HTML |
+| `widget.render__test(user=None)` / `await widget.arender__test(user=None)` | the same, against a mock `GET /`, `user` or `AnonymousUser` | tests only |
 
-All three run the widget's own `set_context()`, then passes 1 and 3 above, then the widget's
-template. There is no debug tree and no document template. The request is required in the endpoint
-form so production code can't fall back to a mock by omission. `render__test_sync()` raises
-inside a running event loop, so an async test awaits `render__test()`.
+Each runs the widget's own `set_context()`, then passes 1 and 3 above, then the widget's
+template. There is no debug tree and no document template.
+
+**`render()` never touches an event loop.** It calls each plain `def set_context()` directly, so
+synchronous ORM calls work there, and raises `TypeError` naming the widget when it meets an
+`async def set_context()`, which it can't await. A widget meant for sync contexts is written with
+`def`. `arender()` awaits async `set_context()`s and calls sync ones, exactly as a page does, so
+the async ORM gotcha below applies to it and not to `render()`.
+
+**Without a request, nothing is mocked.** `self.request` raises, so a widget that needs a request
+fails loudly and production code can't end up with a fake one by omission. Templates see
+`request` and `user` as `None`. Only the `__test` methods build a mock request.
 
 This is the line between a widget and a page: a widget renders a fragment, and only a page wraps
 one in a whole HTML document, since the document belongs to the response the page returns.
@@ -138,8 +147,8 @@ renders it against a bare `Context`. Three consequences, all easy to get wrong:
 
 | Key | Value |
 |---|---|
-| `request` | `self.request` |
-| `user` | `self.request.user`, or `None` when the request has none (no `django.contrib.auth`) |
+| `request` | the request, or `None` when `render()`/`arender()` was given none |
+| `user` | `request.user`, or `None` without a request or without `django.contrib.auth` |
 | `page` | `self.context.page`, shared by reference down the whole tree |
 | `data` | `self.context.data`, this widget only |
 | `children` | `self.context.children`, this widget only |
@@ -184,14 +193,15 @@ markup.
 undefined, so a `{% if %}` guarding a block is false and the block never renders, with nothing
 logged. This is the most common cause of "my widget renders but its content is missing".
 
-**A sync `set_context()` still runs inside the async view.** The whole pipeline runs in the event
-loop `as_view()`'s view executes in, and sync or async is only detected per widget with
-`inspect.iscoroutinefunction`. A plain `def set_context()` making a synchronous ORM call raises
-`SynchronousOnlyOperation`. So does a lazy queryset put in `context.data` and first evaluated by
-the template, because every `_render_template()` call happens inside the same async pipeline,
-the `render__` methods included. Fetch with
-the async ORM (`aget`, `async for`, and so on) in an `async def set_context()`, and hand templates
-evaluated data. A test harness that sets `DJANGO_ALLOW_ASYNC_UNSAFE` hides this.
+**A sync `set_context()` still runs inside the async view.** A page's whole pipeline runs in the
+event loop `as_view()`'s view executes in, as does `arender()`'s, and sync or async is only
+detected per widget with `inspect.iscoroutinefunction`. A plain `def set_context()` making a
+synchronous ORM call there raises `SynchronousOnlyOperation`. So does a lazy queryset put in
+`context.data` and first evaluated by the template, because every `_render_template()` call
+happens inside the same async pipeline. Fetch with the async ORM (`aget`, `async for`, and so on)
+in an `async def set_context()`, and hand templates evaluated data. A test harness that sets
+`DJANGO_ALLOW_ASYNC_UNSAFE` hides this. `render()` is the exception: called from sync code, it
+runs no event loop, so the sync ORM works in its widgets.
 
 **`context.children` changes type mid-pipeline.** Code that runs after `_render_children_to_html()`,
 such as a `build_response()` override doing work after `await super().build_response()`, sees
