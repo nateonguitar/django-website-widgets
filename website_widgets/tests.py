@@ -199,9 +199,9 @@ class RenderInPlaceTestCase(WidgetTestCase):
         self.assertEqual(await widget.render__test(), 'one|two,three,|none')
 
     async def test_render__test__shares_page_context_with_children__when_set_before_rendering(self):
-        widget = ParentWidget(self.write_template('{{ page.nonce }}'))
+        widget = ParentWidget(self.write_template('{{ page.foo }}'))
         widget.template_filename = self.write_template('{{ children.single }}')
-        widget.context.page['nonce'] = 'abc'
+        widget.context.page['foo'] = 'abc'
 
         self.assertEqual(await widget.render__test(), 'abc')
 

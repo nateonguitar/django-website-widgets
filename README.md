@@ -246,7 +246,8 @@ button), construct the widget, adjust it, and render it once:
 
 ```python
 widget = ProjectListTile(project=project)
-widget.context.page['nonce'] = nonce
+# Provide any custom values the widget might need.
+widget.context.page['foo'] = bar
 html = await widget.render__standalone(request)
 ```
 

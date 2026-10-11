@@ -86,8 +86,9 @@ class Widget:
 
         Construct the widget, adjust it if needed, then call this once:
 
-            widget = ForumPostListItem(post=post)
-            widget.context.page['nonce'] = nonce
+            widget = ProjectListTile(project=project)
+            # Provide any custom values the widget might need.
+            widget.context.page['foo'] = bar
             html = await widget.render__standalone(request)
 
         Runs the whole lifecycle: this widget's `set_context()`, every descendant's, then the
