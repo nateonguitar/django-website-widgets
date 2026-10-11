@@ -2,6 +2,17 @@
 
 A reusable Django app for building component-based web interfaces with widgets and pages.
 
+A widget can also render on its own into the Django you already have: an ordinary view and
+template, an email, the admin. So a site can adopt widgets one piece at a time, with no `Page`
+and no build step.
+
+## Example
+
+[django-website-widgets-example-minimal](https://github.com/nateonguitar/django-website-widgets-example-minimal)
+is a small working site with no build step: inline scripts and stylesheet widgets. Besides its
+pages, it shows widgets in a traditional Django view and template, an email body rendered with
+no request, and a custom admin page.
+
 ## Installation
 
 Requires Python 3.12+ and Django 5.2+.
@@ -270,7 +281,8 @@ def project_list(request):
 `render()` runs with no event loop, so its widgets use plain `def set_context()` and the sync
 ORM; it raises on an `async def set_context()`. The request is optional: an email body or an
 admin hook has none, and a widget that reads `self.request` without one raises rather than
-getting a fake.
+getting a fake. The [minimal example](#example) has all three: a traditional view and template,
+an email body and an admin tool.
 
 In async code, such as an endpoint returning HTML fragments for an infinite scroller, await
 `arender()` instead. It runs sync and async `set_context()`s alike, as a page does:
