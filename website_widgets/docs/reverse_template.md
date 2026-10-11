@@ -5,7 +5,7 @@ it turns a URL name into a template such as `/posts/{post_id}`. Read this before
 to TypeScript, or when a placeholder comes out wrong.
 
 Primary code:
-- `website_widgets/url_templates.py` — `reverse_template()`
+- `website_widgets.url_templates` — `reverse_template()`
 
 ## What it returns
 

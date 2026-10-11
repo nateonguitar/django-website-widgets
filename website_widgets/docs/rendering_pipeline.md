@@ -2,16 +2,18 @@
 
 What happens between a request arriving at a `Page` and HTML going back out: the order the widget
 tree is built and rendered in, what a template can see, and where the async boundary sits. The
-README covers the shapes of `Widget`, `Page` and `WidgetContext`; this covers the order things run
-in, which is where the surprises are. Read this before overriding `handle_request()` or
-`build_response()`, or when a widget renders but its content is missing.
+package's [README](https://github.com/nateonguitar/django-website-widgets#readme) covers the
+shapes of `Widget`, `Page` and `WidgetContext`; this covers the order things run in, which is
+where the surprises are. Read this before overriding `handle_request()` or `build_response()`,
+or when a widget renders but its content is missing.
 
 Primary code:
-- `website_widgets/page.py` — `Page.as_view()`, `handle_request()`, `build_response()`
-- `website_widgets/widget.py` — `_initialize_widget_tree()`, `_render_children_to_html()`,
-  `get_template_path()`, `_context_dict()`, `_render_template()`, `render()` and `arender()`
-- `website_widgets/widget_context.py` — `WidgetContext`
-- `website_widgets/config.py` — `WebsiteWidgetsConfig`, `get_config()`
+- `website_widgets.page` — `Page.as_view()`, `handle_request()`, `build_response()`
+- `website_widgets.widget` — `_initialize_widget_tree()` and `_ainitialize_widget_tree()`,
+  `_render_children_to_html()`, `get_template_path()`, `_context_dict()`, `_render_template()`,
+  `render()` and `arender()`
+- `website_widgets.widget_context` — `WidgetContext`
+- `website_widgets.config` — `WebsiteWidgetsConfig`, `get_config()`
 
 ## One instance per request
 
@@ -174,7 +176,7 @@ class in `info_card/info_card.py` renders `info_card/info_card.html`. **A file c
 `..` raises `ValueError`. It is read in pass 3 or 4, after every `set_context()` has run, so a
 widget can assign it in `set_context()` to choose between templates at runtime: a page with a
 not-found state keeps `project_page__not_found.html` beside `project_page.html` and switches to it
-there. The README suggests that `<module>__<variant>.html` naming.
+there. The package's README suggests that `<module>__<variant>.html` naming.
 
 **The lookup walks the class hierarchy, the concrete class first.** `get_template_path()` checks
 the folder of each class in the MRO, skipping the library's own `Widget` and `Page`, and returns

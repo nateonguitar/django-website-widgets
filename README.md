@@ -23,6 +23,7 @@ inside the package, indexed by
 - [`routing.md`](https://github.com/nateonguitar/django-website-widgets/blob/main/website_widgets/docs/routing.md): `@register_url`, route discovery and ordering
 - [`frontend_controllers.md`](https://github.com/nateonguitar/django-website-widgets/blob/main/website_widgets/docs/frontend_controllers.md): the TypeScript `Controller`, `App` and `Completer`
 - [`reverse_template.md`](https://github.com/nateonguitar/django-website-widgets/blob/main/website_widgets/docs/reverse_template.md): URL templates for the frontend
+- [`init_website_widgets.md`](https://github.com/nateonguitar/django-website-widgets/blob/main/website_widgets/docs/init_website_widgets.md): copying the framework's TypeScript and these docs into a project
 - [`npm_watch.md`](https://github.com/nateonguitar/django-website-widgets/blob/main/website_widgets/docs/npm_watch.md): starting `npm run watch` with `runserver`
 
 `AGENTS.md` is written for AI coding assistants as well as people: an index plus the rules
@@ -521,6 +522,16 @@ List the `@register_url` routes in the order they are tried, and check each reac
 python manage.py show_page_resolve_order
 python manage.py show_page_resolve_order --columns=url,name,page,reaches_page --path-param-type=type
 ```
+
+Copy the framework's TypeScript (`App`, `Controller`, `Completer`) and the package's docs into
+the website app's `ts/website_widgets/` folder, and rerun after every upgrade:
+```bash
+python manage.py init_website_widgets
+```
+It overwrites only the files the package ships, deletes ones it no longer ships, and leaves
+anything else in the folder alone. Commit the folder, so an upgrade shows up as a diff. It also
+offers to point your `CLAUDE.md`, `.claude/CLAUDE.md` or `AGENTS.md` at the copied docs. See
+[`docs/init_website_widgets.md`](https://github.com/nateonguitar/django-website-widgets/blob/main/website_widgets/docs/init_website_widgets.md).
 
 ## License
 

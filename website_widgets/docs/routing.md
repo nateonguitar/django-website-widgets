@@ -5,11 +5,11 @@ discovery, or listed by hand in `urls.py`. Read this before adding a page, renam
 when a URL goes to the wrong page.
 
 Primary code:
-- `website_widgets/page_routes.py` — `PageRoutes`: `register_url()`, `urls()`, discovery, the
+- `website_widgets.page_routes` — `PageRoutes`: `register_url()`, `urls()`, discovery, the
   ordering key, `check_for_ties()`
-- `website_widgets/management/commands/show_page_resolve_order.py` — the order and reachability
+- `website_widgets.management.commands.show_page_resolve_order` — the order and reachability
   report
-- `website_widgets/page.py` — `Page.as_view()`, which both kinds of route call
+- `website_widgets.page` — `Page.as_view()`, which both kinds of route call
 
 ## Two ways to route a page
 

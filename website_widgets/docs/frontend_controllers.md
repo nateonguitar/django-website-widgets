@@ -4,19 +4,20 @@ The framework's TypeScript: `Controller`, the base class of every page and widge
 `App`, which starts controllers and holds the singleton registry, and `Completer`. Read this
 before writing a controller, or when two controllers need to talk to each other.
 
-Primary code, in a project's `<website app>/ts/website_widgets/`:
+Primary code, in `ts/website_widgets/` beside `AGENTS.md`:
 - `controller.ts` — `Controller`
 - `app.ts` — `App`: `initializeController()`, `registerSingleton()`, `getSingleton()`
 - `completer.ts` — `Completer`
-- `README.md` — the don't-edit notice
+- `README.md` — the don't-edit notice, the package version and the list of files init wrote
 
 ## The files belong to the package
 
-**Never edit the framework's TypeScript files.** They are the package's code, kept in the
-project only because a bundler needs them in the project tree, and replacing the folder is how
-a project takes a newer version. A project changes behaviour by subclassing `Controller` or
-`App` in its own files. A project's own frontend state, such as the logged-in user or feature
-flags, lives in its own classes, never on `App`.
+**Never edit the framework's TypeScript files.** They are the package's code, copied into the
+project by `python manage.py init_website_widgets` only because a bundler needs them in the
+project tree. Rerunning init after a package upgrade overwrites them, so an edit is lost; with
+the folder committed, the diff shows what init replaced. A project changes behaviour by
+subclassing `Controller` or `App` in its own files. A project's own frontend state, such as the
+logged-in user or feature flags, lives in its own classes, never on `App`.
 
 ## A controller's lifecycle
 
@@ -102,6 +103,6 @@ so the framework doesn't impose that opinion:
 - **No network method.** A `Controller.fetch()` was tried and moved out, because the HTTP client
   is the project's choice (plain `fetch`, axios, a wrapper of its own).
 - **No state.** `App` holds only the framework's mechanics.
-
-`App` also has a `nonce` field that a document template can assign; nothing in the framework
-reads it.
+- **No CSP nonce.** Whether a site sends a Content Security Policy is its own security decision,
+  so nothing the package ships mentions a nonce. A project that uses one adds it to its own
+  `<script>` tags.

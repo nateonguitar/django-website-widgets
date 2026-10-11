@@ -5,7 +5,7 @@ rebuilds while `runserver` serves. Read this before changing how `manage.py` sta
 watchers or none are running.
 
 Primary code:
-- `website_widgets/npm_watch.py` — `NpmWatch`, exported as `start_npm_watch = NpmWatch.start`
+- `website_widgets.npm_watch` — `NpmWatch`, exported as `start_npm_watch = NpmWatch.start`
 
 ## Calling it
 

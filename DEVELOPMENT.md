@@ -69,6 +69,8 @@ django-website-widgets/
 └── website_widgets/            # The Python package, and the only thing shipped
     ├── AGENTS.md               # The index of docs/ and the rules every change follows
     ├── docs/                   # How each part works, and why
+    ├── frontend/               # The framework TypeScript and its README, which
+    │                           # init_website_widgets copies into a project
     ├── __init__.py             # Exports Widget, Page, WidgetContext, PageRoutes, register_url,
     │                           # reverse_template, NpmWatch, start_npm_watch
     ├── apps.py
@@ -81,7 +83,8 @@ django-website-widgets/
     ├── widget_context.py
     ├── tests/                  # One test class per file; see "Tests" above
     └── management/
-        └── commands/           # test_website_widgets, show_page_resolve_order
+        └── commands/           # test_website_widgets, show_page_resolve_order,
+                                # init_website_widgets
 ```
 
 ## Docs
@@ -92,6 +95,15 @@ indexes them, one line per doc, and `tests/test_agents_md.py` fails when a doc h
 or an index line names a doc that doesn't exist. A new doc gets its line in the same change, and
 a README section that grows past an introduction moves into a doc with a link left behind. The
 README's links are absolute GitHub URLs, since PyPI shows the README but not the files beside it.
+
+**`init_website_widgets` copies `AGENTS.md` and `docs/` into projects as they are,** so they're
+written for where they land: a TypeScript file by its name, a doc by its path beside
+`AGENTS.md`, and Python by its dotted name (`website_widgets.page`), never a repo path like
+`website_widgets/page.py`. `frontend/README.md` is the one template: init fills in its
+`{version}` and `{file_list}`.
+
+**The framework TypeScript in `frontend/` is the source of truth.** Gametabs and every other
+project get it by running init; a change is made here and reaches them in a release.
 
 ## Gotchas
 
