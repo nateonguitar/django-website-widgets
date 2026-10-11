@@ -56,13 +56,14 @@ django-website-widgets/
 ├── docs/                       # How the library works internally
 └── website_widgets/            # The Python package, and the only thing shipped
     ├── __init__.py             # Exports Widget, Page, WidgetContext, PageRoutes, register_url,
-    │                           # reverse_template
+    │                           # reverse_template, NpmWatch, start_npm_watch
     ├── apps.py
     ├── config.py               # WebsiteWidgetsConfig, get_config()
     ├── widget.py
     ├── page.py
     ├── page_routes.py          # @register_url, route discovery, the overlapping-route check
     ├── url_templates.py        # reverse_template()
+    ├── npm_watch.py            # start_npm_watch(), for manage.py
     ├── widget_context.py
     ├── tests.py
     └── management/

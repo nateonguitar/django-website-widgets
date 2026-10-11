@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [project]
 name = "django-website-widgets"
-version = "0.2.0"
+version = "0.3.0"
 description = "Server-rendered pages built from composable widgets, for Django"
 readme = "README.md"
 authors = [
@@ -15,6 +15,7 @@ license-files = ["LICENSE"]
 requires-python = ">=3.12"
 dependencies = [
     "django>=5.2",
+    "psutil>=5.9",
 ]
 classifiers = [
     "Development Status :: 3 - Alpha",

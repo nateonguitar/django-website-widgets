@@ -394,6 +394,29 @@ wherever a parameter goes. Pass `paramnames` to rename the placeholders in route
 `re_path()` with unnamed groups needs: `reverse_template('legacy', ['legacy_id'])`. A name whose
 routes take different parameters raises `ValueError` unless `paramnames` picks one by count.
 
+### Starting the frontend watcher with `runserver`
+
+A project that builds its frontend with npm can start `npm run watch` whenever Django's
+development server starts. Call `start_npm_watch()` in `manage.py`, after
+`DJANGO_SETTINGS_MODULE` is set:
+
+```python
+from website_widgets import start_npm_watch
+
+
+def main():
+    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'mysite.settings')
+    start_npm_watch()
+    from django.core.management import execute_from_command_line
+    execute_from_command_line(sys.argv)
+```
+
+It acts only on `runserver`, and runs `npm run watch` in the folder of the app named by
+`website_app_name`. It starts one watcher per folder: not again when the autoreloader restarts
+the server, and not when `npm run watch` is already running in that folder, from another
+`runserver` or a terminal. Another project's watcher on the same machine runs in another folder,
+so it doesn't count. When npm isn't installed it prints a warning and the server starts anyway.
+
 ## Templates
 
 A widget's template sits next to its Python file and shares its name: `my_widget.py` renders
@@ -460,7 +483,7 @@ from website_widgets.config import WebsiteWidgetsConfig
 
 WEBSITE_WIDGETS = WebsiteWidgetsConfig(
     show_debug_tree=True,  # Show widget tree visualization on pages (default: False)
-    website_app_name='website',  # Label of the app holding your pages/ (default: 'website')
+    website_app_name='website',  # Label of the app holding pages/ and package.json (default: 'website')
 )
 ```
 
