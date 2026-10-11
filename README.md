@@ -23,6 +23,7 @@ inside the package, indexed by
 - [`routing.md`](https://github.com/nateonguitar/django-website-widgets/blob/main/website_widgets/docs/routing.md): `@register_url`, route discovery and ordering
 - [`frontend_controllers.md`](https://github.com/nateonguitar/django-website-widgets/blob/main/website_widgets/docs/frontend_controllers.md): the TypeScript `Controller`, `App` and `Completer`
 - [`reverse_template.md`](https://github.com/nateonguitar/django-website-widgets/blob/main/website_widgets/docs/reverse_template.md): URL templates for the frontend
+- [`generate_component.md`](https://github.com/nateonguitar/django-website-widgets/blob/main/website_widgets/docs/generate_component.md): generating a page or widget, and overriding the generator's templates
 - [`init_website_widgets.md`](https://github.com/nateonguitar/django-website-widgets/blob/main/website_widgets/docs/init_website_widgets.md): copying the framework's TypeScript and these docs into a project
 - [`npm_watch.md`](https://github.com/nateonguitar/django-website-widgets/blob/main/website_widgets/docs/npm_watch.md): starting `npm run watch` with `runserver`
 
@@ -460,11 +461,17 @@ for the full render order.
 Configure django-website-widgets in your `settings.py`:
 
 ```python
-from website_widgets.config import WebsiteWidgetsConfig
+from website_widgets.config import GenerateComponentConfig, WebsiteWidgetsConfig
 
 WEBSITE_WIDGETS = WebsiteWidgetsConfig(
     show_debug_tree=True,  # Show widget tree visualization on pages (default: False)
     website_app_name='website',  # Label of the app holding pages/ and package.json (default: 'website')
+    generate_component=GenerateComponentConfig(
+        # Dotted path of a generated page's base class (default: '<website_app_name>.pages.app_page.AppPage')
+        app_page_class='website.pages.app_page.AppPage',
+        # Your own generator templates, each replacing the package's of the same name (default: None)
+        templates_dir=BASE_DIR / 'website' / 'generator_templates',
+    ),
 )
 ```
 
@@ -532,6 +539,17 @@ It overwrites only the files the package ships, deletes ones it no longer ships,
 anything else in the folder alone. Commit the folder, so an upgrade shows up as a diff. It also
 offers to point your `CLAUDE.md`, `.claude/CLAUDE.md` or `AGENTS.md` at the copied docs. See
 [`docs/init_website_widgets.md`](https://github.com/nateonguitar/django-website-widgets/blob/main/website_widgets/docs/init_website_widgets.md).
+
+Generate a page or widget, with an optional TypeScript controller and stylesheet registered in
+`ts/main.ts` (it asks when a flag is left out):
+```bash
+python manage.py generate_component widget like_button --tscontroller=true --stylesheet=true
+python manage.py generate_component page profile_page --tscontroller=false --stylesheet=false
+```
+It needs `init_website_widgets` to have run, and for a page, the base class at
+`GenerateComponentConfig.app_page_class`. A project overrides any of its templates with its own,
+in `templates_dir`. See
+[`docs/generate_component.md`](https://github.com/nateonguitar/django-website-widgets/blob/main/website_widgets/docs/generate_component.md).
 
 ## License
 

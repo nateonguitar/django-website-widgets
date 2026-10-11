@@ -71,10 +71,11 @@ django-website-widgets/
     ├── docs/                   # How each part works, and why
     ├── frontend/               # The framework TypeScript and its README, which
     │                           # init_website_widgets copies into a project
+    ├── generator_templates/    # generate_component's default templates (*.tmpl)
     ├── __init__.py             # Exports Widget, Page, WidgetContext, PageRoutes, register_url,
     │                           # reverse_template, NpmWatch, start_npm_watch
     ├── apps.py
-    ├── config.py               # WebsiteWidgetsConfig, get_config()
+    ├── config.py               # WebsiteWidgetsConfig, GenerateComponentConfig, get_config()
     ├── widget.py
     ├── page.py
     ├── page_routes.py          # @register_url, route discovery, the overlapping-route check
@@ -84,7 +85,7 @@ django-website-widgets/
     ├── tests/                  # One test class per file; see "Tests" above
     └── management/
         └── commands/           # test_website_widgets, show_page_resolve_order,
-                                # init_website_widgets
+                                # init_website_widgets, generate_component
 ```
 
 ## Docs
@@ -101,6 +102,11 @@ written for where they land: a TypeScript file by its name, a doc by its path be
 `AGENTS.md`, and Python by its dotted name (`website_widgets.page`), never a repo path like
 `website_widgets/page.py`. `frontend/README.md` is the one template: init fills in its
 `{version}` and `{file_list}`.
+
+**`generator_templates/` holds no project opinions**: no logging, no nonce, no HTTP client.
+`tests/commands/test_generate_component.py` fails when one creeps in. They're named `*.tmpl`
+and kept out of a `templates/` folder, so neither Python tooling nor Django's template loader
+mistakes them for real files.
 
 **The framework TypeScript in `frontend/` is the source of truth.** Gametabs and every other
 project get it by running init; a change is made here and reaches them in a release.

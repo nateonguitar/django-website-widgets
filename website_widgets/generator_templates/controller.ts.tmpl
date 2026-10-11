@@ -1,0 +1,32 @@
+import { App } from "__framework_path__/app";
+import { Controller } from "__framework_path__/controller";
+
+class Elements {
+}
+
+export class __ClassName__Controller extends Controller {
+    public focusElementSelector = null;
+    private elements = new Elements();
+
+    public static async initializeController(): Promise<void> {
+        await App.initializeController({
+            controllerClass: __ClassName__Controller,
+        });
+    }
+
+    public async initState(): Promise<void> {
+        await super.initState();
+        this.buildElements();
+        this.initializeListeners();
+    }
+
+    public buildElements(): void {
+        const elements = this.elements;
+    }
+
+    public setState(): void {
+    }
+
+    public initializeListeners(): void {
+    }
+}

@@ -7,7 +7,7 @@ built on it. One line per doc, enough to pick the right one; the detail is in th
 
 - **A page is a `Page` subclass, a component a `Widget` subclass,** each in its own folder with
   its template beside its `.py` file and named after it (`info_card.py` renders
-  `info_card.html`). A variant render is `<name>__<variant>.html`, chosen by setting
+  `info_card.html`). Create one with `python manage.py generate_component`, not by hand. A variant render is `<name>__<variant>.html`, chosen by setting
   `template_filename` to a bare file name.
 - **Data flows down, through constructors.** A widget's `set_context()` builds its children, and
   a parent never reads a child's context. What every widget needs goes in `context.page`.
@@ -28,5 +28,6 @@ built on it. One line per doc, enough to pick the right one; the detail is in th
 - `docs/routing.md` — routing a page by hand or with `@register_url`: discovery under `pages/`, the namespace and default names, most-specific-first ordering, the tie check, `show_page_resolve_order`
 - `docs/frontend_controllers.md` — the framework TypeScript: why it is never edited, a controller's lifecycle, `setState()`, element lookups, singletons and `Completer`, what `Controller` leaves to the project
 - `docs/reverse_template.md` — `reverse_template()`: URL names into `/posts/{post_id}` templates for the frontend, why it reads the route, `paramnames`, why it isn't called `reverse`
+- `docs/generate_component.md` — `generate_component`: the files it writes, registering in `main.ts`, what it needs first, `app_page_class`, overriding its templates with `templates_dir`, the placeholders
 - `docs/init_website_widgets.md` — `init_website_widgets`: what it copies into `ts/website_widgets/`, why file by file, the version and file list in the README, what a rerun deletes, the docs pointer
 - `docs/npm_watch.md` — `start_npm_watch()` in `manage.py`: when it starts `npm run watch`, how it avoids a second watcher, why it sets Django up early
