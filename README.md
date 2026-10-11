@@ -13,6 +13,21 @@ is a small working site with no build step: inline scripts and stylesheet widget
 pages, it shows widgets in a traditional Django view and template, an email body rendered with
 no request, and a custom admin page.
 
+## Documentation
+
+This README introduces the library. How each part works, and why, is in the docs that ship
+inside the package, indexed by
+[`website_widgets/AGENTS.md`](https://github.com/nateonguitar/django-website-widgets/blob/main/website_widgets/AGENTS.md):
+
+- [`rendering_pipeline.md`](https://github.com/nateonguitar/django-website-widgets/blob/main/website_widgets/docs/rendering_pipeline.md): how a request becomes HTML, and rendering a widget outside a page
+- [`routing.md`](https://github.com/nateonguitar/django-website-widgets/blob/main/website_widgets/docs/routing.md): `@register_url`, route discovery and ordering
+- [`frontend_controllers.md`](https://github.com/nateonguitar/django-website-widgets/blob/main/website_widgets/docs/frontend_controllers.md): the TypeScript `Controller`, `App` and `Completer`
+- [`reverse_template.md`](https://github.com/nateonguitar/django-website-widgets/blob/main/website_widgets/docs/reverse_template.md): URL templates for the frontend
+- [`npm_watch.md`](https://github.com/nateonguitar/django-website-widgets/blob/main/website_widgets/docs/npm_watch.md): starting `npm run watch` with `runserver`
+
+`AGENTS.md` is written for AI coding assistants as well as people: an index plus the rules
+every change follows.
+
 ## Installation
 
 Requires Python 3.12+ and Django 5.2+.
@@ -331,49 +346,14 @@ urlpatterns = [
 ]
 ```
 
-- **Pages are found by importing every module under the website app's `pages/` folder**, the app
-  being `WebsiteWidgetsConfig.website_app_name` (default `'website'`). A page elsewhere isn't found.
-- **Routes live in a namespace named after that app.** `name` defaults to the class name, so
-  `HomePage` reverses as `reverse('website:HomePage')`, and `forum_post` as `'website:forum_post'`.
-- **`kwargs` reach the page's constructor** alongside the URL's parameters.
-- **Routes are tried most specific first, never in file order.** They are compared segment by
-  segment: a fixed segment comes before `int`, then `uuid`, `slug`, `str` and `path`, and equally
-  specific routes fall back to alphabetical order. So `profile/settings` is always tried before
-  `profile/<str:username>`, wherever either is declared.
-- **Two equally specific routes that can match the same URL fail a system check**
-  (`website_widgets.E001`), such as `a/<str:x>` and `a/<str:y>`.
-- **A decorated route is an ordinary `path()`.** `reverse()`, `{% url %}`, `resolve()` and URL
-  tools such as django-extensions' `show_urls` all see it. Routing a page by hand with
-  `path('...', MyPage.as_view(), name='...')` still works, and the two mix freely; a hand-routed
-  page's name sits outside the namespace.
-
-To see the order routes are tried in, and check that nothing clobbers them, run
-`show_page_resolve_order`:
-
-```
-$ python manage.py show_page_resolve_order
-#   URL                                              Segments  Page
-1   /moderation/reports/<int:report_id>              f/f/i     ViewReportPage
-...
-15  /profile/<str:username>                          f/s       UserProfilePage
-...
-17  /                                                f         HomePage
-
-Segments: f fixed, i int, s str, g slug, u uuid, p path, and a project converter by its name.
-All 37 page routes reach their page.
-```
-
-For each route it reverses a sample URL (`/profile/a`) and resolves it through the whole project,
-so it also catches a route that never reaches its page because something earlier in `urls.py`
-takes its URLs, such as a hand-written route or a catch-all, or because `PageRoutes.urls()` isn't
-included. A route that fails prints in red with the reason, and the command exits non-zero, so it
-can run in CI.
-
-- `--columns` picks the columns after `#`, in order, from `url,segments,name,page,reaches_page`
-  (default `url,segments,page`). The reachability check runs either way.
-- `--path-param-type` shows a path parameter as declared (`full`, the default:
-  `<str:game_slug>`), as its converter (`type`: `<str>`) or as the sample value the check uses
-  (`example`: `a`).
+Pages are found by importing every module under the website app's `pages/` folder, and their
+routes reverse as `website:<name>`, the name defaulting to the class name. Routes are tried most
+specific first, never in file order, so `profile/settings` always beats
+`profile/<str:username>`. `python manage.py show_page_resolve_order` lists them in that order
+and checks that each reaches its page. Routing a page by hand with `MyPage.as_view()` still
+works, and the two mix freely. See
+[`docs/routing.md`](https://github.com/nateonguitar/django-website-widgets/blob/main/website_widgets/docs/routing.md)
+for discovery, the ordering rule, the tie check and the command's options.
 
 ### URL templates for the frontend
 
@@ -389,10 +369,9 @@ reverse_template('project_list')   # '/projects', as reverse() returns it
 ```
 
 Placeholders take the route's own parameter names, and namespaces, `include()` prefixes and the
-script prefix apply as they do in `reverse()`. Converters don't run, so a placeholder is accepted
-wherever a parameter goes. Pass `paramnames` to rename the placeholders in route order, which a
-`re_path()` with unnamed groups needs: `reverse_template('legacy', ['legacy_id'])`. A name whose
-routes take different parameters raises `ValueError` unless `paramnames` picks one by count.
+script prefix apply as they do in `reverse()`. See
+[`docs/reverse_template.md`](https://github.com/nateonguitar/django-website-widgets/blob/main/website_widgets/docs/reverse_template.md)
+for `paramnames`, which a `re_path()` with unnamed groups needs.
 
 ### Starting the frontend watcher with `runserver`
 
@@ -412,10 +391,10 @@ def main():
 ```
 
 It acts only on `runserver`, and runs `npm run watch` in the folder of the app named by
-`website_app_name`. It starts one watcher per folder: not again when the autoreloader restarts
-the server, and not when `npm run watch` is already running in that folder, from another
-`runserver` or a terminal. Another project's watcher on the same machine runs in another folder,
-so it doesn't count. When npm isn't installed it prints a warning and the server starts anyway.
+`website_app_name`, once per folder: not again when the autoreloader restarts the server, and
+not when one is already running there. See
+[`docs/npm_watch.md`](https://github.com/nateonguitar/django-website-widgets/blob/main/website_widgets/docs/npm_watch.md)
+for how it tells watchers apart.
 
 ## Templates
 
@@ -472,7 +451,8 @@ Override `get_template_path()` when the choice needs more than an attribute.
 
 Templates are opened directly rather than through Django's template loader, so context processors
 do not run. The context holds only `request`, `user`, `page`, `data` and `children`. See
-`docs/rendering_pipeline.md` for the full render order.
+[`docs/rendering_pipeline.md`](https://github.com/nateonguitar/django-website-widgets/blob/main/website_widgets/docs/rendering_pipeline.md)
+for the full render order.
 
 ## Configuration
 

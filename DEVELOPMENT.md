@@ -63,11 +63,12 @@ django-website-widgets/
 ├── poetry.lock                 # The development environment's pins
 ├── test_settings.py            # Settings for the tests, not shipped
 ├── .github/workflows/          # The test matrix
-├── README.md                   # User documentation (shows on PyPI)
+├── README.md                   # The introduction (shows on PyPI), linking to the docs
 ├── DEVELOPMENT.md              # This file
 ├── LICENSE
-├── docs/                       # How the library works internally
 └── website_widgets/            # The Python package, and the only thing shipped
+    ├── AGENTS.md               # The index of docs/ and the rules every change follows
+    ├── docs/                   # How each part works, and why
     ├── __init__.py             # Exports Widget, Page, WidgetContext, PageRoutes, register_url,
     │                           # reverse_template, NpmWatch, start_npm_watch
     ├── apps.py
@@ -82,6 +83,15 @@ django-website-widgets/
     └── management/
         └── commands/           # test_website_widgets, show_page_resolve_order
 ```
+
+## Docs
+
+**The docs live inside the Python package,** in `website_widgets/docs/`, so they ship in the wheel
+and a project's installed copy carries the docs for its version. `website_widgets/AGENTS.md`
+indexes them, one line per doc, and `tests/test_agents_md.py` fails when a doc has no index line
+or an index line names a doc that doesn't exist. A new doc gets its line in the same change, and
+a README section that grows past an introduction moves into a doc with a link left behind. The
+README's links are absolute GitHub URLs, since PyPI shows the README but not the files beside it.
 
 ## Gotchas
 
