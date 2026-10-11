@@ -43,14 +43,20 @@ class GenerateComponentTestCase(SimpleTestCase):
         for module in ('init_website_widgets', 'generate_component'):
             mock_apps = self.enterContext(patch(f'website_widgets.management.commands.{module}.apps'))
             mock_apps.get_app_config.return_value = app_config
-        self.config = WebsiteWidgetsConfig(generate_component=GenerateComponentConfig(
-            app_page_class='website_widgets.page.Page',
-            templates_dir=self.templates_dir))
+        self.config = WebsiteWidgetsConfig(
+            generate_component=GenerateComponentConfig(
+                app_page_class='website_widgets.page.Page',
+                templates_dir=self.templates_dir))
         self.enterContext(patch(
             'website_widgets.management.commands.generate_component.get_config',
             side_effect=lambda: self.config))
 
-        call_command('init_website_widgets', '--noinput', '--project-root', self.project_root, stdout=io.StringIO())
+        call_command(
+            'init_website_widgets',
+            '--noinput',
+            '--project-root',
+            self.project_root,
+            stdout=io.StringIO())
 
     def generate(self, *args: str) -> str:
         output = io.StringIO()

@@ -2,6 +2,7 @@ import importlib
 import os
 import re
 from dataclasses import dataclass, field
+from typing import NamedTuple
 
 from django.apps import apps
 from django.core import checks
@@ -44,11 +45,17 @@ class PageRoute:
         segment_keys = [self._get_segment_key(segment) for segment in self.route.split('/')]
         return (*segment_keys, self.END_OF_ROUTE_KEY)
 
-    def can_match_same_url_as(self, other: 'PageRoute') -> bool:
+    def can_match_same_url_as(
+        self,
+        other: 'PageRoute'
+    ) -> bool:
         """For two equally specific routes, which have the same number of segments."""
-        return all(
+        segment_pairs = zip(self.route.split('/'), other.route.split('/'))
+        segments_match = [
             self._get_segment_regex(segment) == self._get_segment_regex(other_segment)
-            for segment, other_segment in zip(self.route.split('/'), other.route.split('/')))
+            for segment, other_segment in segment_pairs
+        ]
+        return all(segments_match)
 
     def get_segment_labels(self) -> list[str]:
         """What each segment matches: `fixed`, a converter name, or `fixed+<converter>` for both."""
@@ -126,13 +133,30 @@ class PageRoute:
         return ''.join(parts)
 
 
+class PageRoutesUrls(NamedTuple):
+    """
+    What `PageRoutes.urls()` returns. A tuple, because `path()` only accepts an include as a list
+    or a tuple, as with `admin.site.urls`; the field names are for reading it.
+    """
+
+    url_patterns: list[URLPattern]
+    app_name: str
+    namespace: str
+
+
 class PageRoutes:
     """The pages routed with `@register_url`."""
 
     _routes: dict[str, PageRoute] = {}
 
     @classmethod
-    def register_url(cls, route: str, *, name: str | None = None, kwargs: dict | None = None):
+    def register_url(
+        cls,
+        route: str,
+        *,
+        name: str | None = None,
+        kwargs: dict | None = None
+    ):
         """
         Adds the decorated page to the project's URLs, with `path()`'s arguments. The name
         defaults to the class name, and is reversed inside the website app's namespace:
@@ -170,7 +194,7 @@ class PageRoutes:
         return decorator
 
     @classmethod
-    def urls(cls) -> tuple[list[URLPattern], str, str]:
+    def urls(cls) -> PageRoutesUrls:
         """
         Every registered page's URL pattern, most specific route first, in a namespace named after
         the website app. Included in `urls.py` the way the admin is:
@@ -180,7 +204,10 @@ class PageRoutes:
         cls.discover()
         url_patterns = [route.to_url_pattern() for route in cls.get_ordered_routes()]
         namespace = cls.get_namespace()
-        return url_patterns, namespace, namespace
+        return PageRoutesUrls(
+            url_patterns=url_patterns,
+            app_name=namespace,
+            namespace=namespace)
 
     @staticmethod
     def get_namespace() -> str:
@@ -212,7 +239,10 @@ class PageRoutes:
             key=lambda page_route: (page_route.get_specificity_key(), page_route.route))
 
     @staticmethod
-    def check_for_ties(app_configs=None, **kwargs) -> list[checks.Error]:
+    def check_for_ties(
+        app_configs=None,
+        **kwargs
+    ) -> list[checks.Error]:
         """
         Fails on two equally specific routes that can match the same URL, since only their
         alphabetical order would decide which page serves it.

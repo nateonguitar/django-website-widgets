@@ -5,7 +5,6 @@ export class Controller {
     /** Set this if a dom element is associated with this controller */
     public focusElementSelector: string | null = null;
 
-    /** Call super.initState() as the first line of sub-class initState() */
     public async initState(): Promise<void> {
         // To be overridden by subclasses
     }
@@ -18,7 +17,6 @@ export class Controller {
         // To be overridden by subclasses
     }
 
-    /** Call super.dispose() as the final line of sub-class dispose() */
     public dispose(): void {
         // To be overridden by subclasses
     }

@@ -10,6 +10,8 @@ from website_widgets.widget_context import WidgetContext
 
 class Widget:
     template_filename: str | None = None
+    # Shown beside the class name in the debug tree, to tell instances apart.
+    _debug_label: object | None = None
     # Library base classes, whose folders hold no application templates.
     _LIBRARY_MODULES = ('website_widgets.widget', 'website_widgets.page')
 
@@ -78,7 +80,10 @@ class Widget:
         """
         pass
 
-    def render(self, request: HttpRequest | None = None) -> SafeText:
+    def render(
+        self,
+        request: HttpRequest | None = None
+    ) -> SafeText:
         """
         Render this widget on its own from synchronous code: an ordinary Django view, an admin
         hook, an email body. The result drops into any Django template unescaped.
@@ -104,7 +109,10 @@ class Widget:
         self._render_children_to_html()
         return self._render_template()
 
-    async def arender(self, request: HttpRequest | None = None) -> SafeText:
+    async def arender(
+        self,
+        request: HttpRequest | None = None
+    ) -> SafeText:
         """
         `render()` for async code, such as an endpoint returning an HTML fragment. Awaits each
         `async def set_context()` and calls each plain one, as a page's pipeline does.
@@ -115,7 +123,10 @@ class Widget:
         self._render_children_to_html()
         return self._render_template()
 
-    def render__test(self, user=None) -> SafeText:
+    def render__test(
+        self,
+        user=None
+    ) -> SafeText:
         """
         `render()` against a mock `GET /` request, for tests only. `user` becomes `request.user`;
         without one it is `AnonymousUser` when `django.contrib.auth` is installed.
@@ -138,7 +149,10 @@ class Widget:
             request.user = AnonymousUser()
         return request
 
-    def _start_rendering(self, request: HttpRequest | None):
+    def _start_rendering(
+        self,
+        request: HttpRequest | None
+    ):
         if self._children_rendered:
             raise RuntimeError(
                 f'{type(self).__name__} has already been rendered; rendering replaces its children '
@@ -221,9 +235,8 @@ class Widget:
         """This widget and its descendants as indented HTML lines, labelled by `_debug_label`."""
         lines = []
 
-        debug_label = getattr(self, '_debug_label', None)
-        if debug_label is not None:
-            display_name = f"{self.__class__.__name__}({str(debug_label)})"
+        if self._debug_label is not None:
+            display_name = f"{self.__class__.__name__}({str(self._debug_label)})"
         else:
             display_name = self.__class__.__name__
         lines.append(f"<div style='margin-left: {indent * 20}px; color: #000;'>{display_name}</div>")

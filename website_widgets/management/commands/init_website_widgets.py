@@ -1,6 +1,8 @@
+import enum
 import importlib.metadata
 import os
 import re
+from dataclasses import dataclass
 
 from django.apps import apps
 from django.conf import settings
@@ -10,6 +12,23 @@ from website_widgets.config import get_config
 
 
 PACKAGE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+
+class FileStatus(enum.Enum):
+    """What a run did to one of the package's files in the framework folder."""
+
+    ADDED = 'added'
+    CHANGED = 'changed'
+    REMOVED = 'removed'
+    UNCHANGED = 'unchanged'
+
+
+@dataclass(frozen=True)
+class FileChange:
+    """One file in the framework folder, by its path there, and what this run did to it."""
+
+    path: str
+    status: FileStatus
 
 
 class Command(BaseCommand):
@@ -42,8 +61,8 @@ class Command(BaseCommand):
         version = importlib.metadata.version('django-website-widgets')
         files = self._package_files(version)
         previous_files = self._previous_file_list(folder)
-        statuses = self._write_files(folder, files, previous_files)
-        self._report(folder, version, statuses)
+        file_changes = self._write_files(folder, files, previous_files)
+        self._report(folder, version, file_changes)
         project_root = options['project_root'] or getattr(settings, 'BASE_DIR', None) or os.getcwd()
         self._offer_docs_pointer(str(project_root), folder)
 
@@ -57,7 +76,10 @@ class Command(BaseCommand):
                 f"INSTALLED_APPS, or set WEBSITE_WIDGETS.website_app_name to its label.")
         return os.path.join(app_config.path, self.FRAMEWORK_FOLDER)
 
-    def _package_files(self, version: str) -> dict[str, str]:
+    def _package_files(
+        self,
+        version: str
+    ) -> dict[str, str]:
         """Each file init writes, by its path in the framework folder, the README last."""
         files = {}
         frontend_dir = os.path.join(PACKAGE_DIR, 'frontend')
@@ -71,10 +93,15 @@ class Command(BaseCommand):
                 files[f'docs/{filename}'] = self._read(os.path.join(docs_dir, filename))
         file_list = '\n'.join(f'- `{path}`' for path in [*files, 'README.md'])
         readme = self._read(os.path.join(frontend_dir, 'README.md'))
-        files['README.md'] = readme.replace('{version}', version).replace('{file_list}', file_list)
+        files['README.md'] = readme \
+            .replace('{version}', version) \
+            .replace('{file_list}', file_list)
         return files
 
-    def _previous_file_list(self, folder: str) -> list[str]:
+    def _previous_file_list(
+        self,
+        folder: str
+    ) -> list[str]:
         """The files the last run wrote, from the list in the README it left."""
         readme_path = os.path.join(folder, 'README.md')
         if not os.path.isfile(readme_path):
@@ -95,51 +122,80 @@ class Command(BaseCommand):
         # The list is read back from a file in the project, so it may only name files in the folder.
         return not os.path.isabs(path) and '..' not in path.replace('\\', '/').split('/')
 
-    def _write_files(self, folder: str, files: dict[str, str], previous_files: list[str]) -> list[tuple[str, str]]:
-        statuses = []
+    def _write_files(
+        self,
+        folder: str,
+        files: dict[str, str],
+        previous_files: list[str]
+    ) -> list[FileChange]:
+        file_changes = []
         for path, content in files.items():
             file_path = os.path.join(folder, path)
             existed = os.path.isfile(file_path)
             if existed and self._read(file_path) == content:
-                statuses.append(('unchanged', path))
+                file_changes.append(FileChange(path=path, status=FileStatus.UNCHANGED))
                 continue
             os.makedirs(os.path.dirname(file_path), exist_ok=True)
             with open(file_path, 'w', encoding='utf-8', newline='') as file:
                 file.write(content)
-            statuses.append(('changed' if existed else 'added', path))
+            status = FileStatus.CHANGED if existed else FileStatus.ADDED
+            file_changes.append(FileChange(path=path, status=status))
         for path in previous_files:
             file_path = os.path.join(folder, path)
             if path in files or not os.path.isfile(file_path):
                 continue
             os.remove(file_path)
-            statuses.append(('removed', path))
+            file_changes.append(FileChange(path=path, status=FileStatus.REMOVED))
             self._remove_folder_if_empty(os.path.dirname(file_path), folder)
-        return statuses
+        return file_changes
 
     @staticmethod
-    def _remove_folder_if_empty(subfolder: str, folder: str):
+    def _remove_folder_if_empty(
+        subfolder: str,
+        folder: str
+    ):
         if os.path.abspath(subfolder) != os.path.abspath(folder) and not os.listdir(subfolder):
             os.rmdir(subfolder)
 
-    def _report(self, folder: str, version: str, statuses: list[tuple[str, str]]):
+    def _report(
+        self,
+        folder: str,
+        version: str,
+        file_changes: list[FileChange]
+    ):
         shown_folder = self._display_path(folder)
-        changes = [(status, path) for status, path in statuses if status != 'unchanged']
+        changes = [
+            file_change
+            for file_change in file_changes
+            if file_change.status != FileStatus.UNCHANGED
+        ]
         if not changes:
             self.stdout.write(f'{shown_folder}/ is already up to date with django-website-widgets {version}.')
             return
         self.stdout.write(f'Updated {shown_folder}/ to django-website-widgets {version}:')
-        for status, path in changes:
-            suffix = ' (no longer shipped)' if status == 'removed' else ''
-            self.stdout.write(f'  {status:<10} {path}{suffix}')
-        unchanged_count = len(statuses) - len(changes)
+        for file_change in changes:
+            suffix = ' (no longer shipped)' if file_change.status == FileStatus.REMOVED else ''
+            self.stdout.write(f'  {file_change.status.value:<10} {file_change.path}{suffix}')
+        unchanged_count = len(file_changes) - len(changes)
         if unchanged_count:
-            self.stdout.write(f'  {"unchanged":<10} {unchanged_count} file{"s" if unchanged_count != 1 else ""}')
+            unchanged_label = FileStatus.UNCHANGED.value
+            self.stdout.write(f'  {unchanged_label:<10} {unchanged_count} file{"s" if unchanged_count != 1 else ""}')
         self.stdout.write(f'Commit {shown_folder}/ to keep the diff of what changed.')
 
-    def _offer_docs_pointer(self, project_root: str, folder: str):
-        target = os.path.relpath(os.path.join(folder, 'AGENTS.md'), project_root).replace(os.sep, '/')
+    def _offer_docs_pointer(
+        self,
+        project_root: str,
+        folder: str
+    ):
+        target = os.path \
+            .relpath(os.path.join(folder, 'AGENTS.md'), project_root) \
+            .replace(os.sep, '/')
         line = f'- `{target}` — how django-website-widgets works; read before changing pages, widgets or controllers'
-        existing = [name for name in self.ASSISTANT_FILES if os.path.isfile(os.path.join(project_root, name))]
+        existing = [
+            name
+            for name in self.ASSISTANT_FILES
+            if os.path.isfile(os.path.join(project_root, name))
+        ]
         if not existing:
             self._offer_new_agents_md(project_root, target, line)
             return
@@ -162,7 +218,12 @@ class Command(BaseCommand):
                     file.write(f'{separator}{line}\n')
                 self.stdout.write(f'Added the pointer to {name}.')
 
-    def _offer_new_agents_md(self, project_root: str, target: str, line: str):
+    def _offer_new_agents_md(
+        self,
+        project_root: str,
+        target: str,
+        line: str
+    ):
         if not self.interactive:
             self.stdout.write(
                 f'No CLAUDE.md, .claude/CLAUDE.md or AGENTS.md in {self._display_path(project_root)}; '

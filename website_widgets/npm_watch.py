@@ -40,7 +40,10 @@ class NpmWatch:
             sys.stderr.write(f'start_npm_watch(): npm was not found, so `{cls.COMMAND_LINE}` was not started.\n')
 
     @staticmethod
-    def _should_start(argv: list[str], environ) -> bool:
+    def _should_start(
+        argv: list[str],
+        environ
+    ) -> bool:
         from django.utils.autoreload import DJANGO_AUTORELOAD_ENV
 
         is_runserver = len(argv) > 1 and argv[1] == 'runserver'

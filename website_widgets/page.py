@@ -25,6 +25,8 @@ class Page(Widget):
     # is shared rather than kept beside one page. Resolved against the concrete class's folder
     # unless absolute.
     document_template_path: str | None = None
+    # The widget tree as HTML, set by `build_response()` when `show_debug_tree` is on.
+    _debug_tree_html: str | None = None
 
     @classmethod
     def as_view(cls, *initargs, **initkwargs):
@@ -87,7 +89,7 @@ class Page(Widget):
 
         page_content_html = self._render_template()
 
-        if hasattr(self, '_debug_tree_html') and self._debug_tree_html:
+        if self._debug_tree_html:
             debug_tree_html = f"""
             <div style="margin-top: 40px; padding: 20px; background: #f5f5f5; border-top: 2px solid #ddd; font-family: monospace; font-size: 14px; box-sizing: border-box; width: 100%; max-width: 100%;">
                 <h3 style="margin-top: 0; color: #333;">Widget Tree Debug View</h3>

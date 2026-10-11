@@ -1,5 +1,7 @@
 from unittest.mock import patch
 
+from django.urls import path
+
 from website_widgets import PageRoutes, register_url
 from website_widgets.config import WebsiteWidgetsConfig
 from website_widgets.page import Page
@@ -11,9 +13,19 @@ class UrlsTestCase(PageRoutesTestCase):
         config = WebsiteWidgetsConfig(website_app_name='storefront')
         self.enterContext(patch('website_widgets.page_routes.get_config', return_value=config))
 
-        _url_patterns, app_name, namespace = PageRoutes.urls()
+        urls = PageRoutes.urls()
 
-        self.assertEqual((app_name, namespace), ('storefront', 'storefront'))
+        self.assertEqual((urls.app_name, urls.namespace), ('storefront', 'storefront'))
+
+    def test_urls__is_accepted_by_path__when_included(self):
+        @register_url('forum/<int:post_id>', name='forum_post')
+        class ForumPostPage(Page):
+            pass
+
+        url_resolver = path('', PageRoutes.urls())
+
+        self.assertEqual((url_resolver.app_name, url_resolver.namespace), ('website', 'website'))
+        self.assertEqual([str(url_pattern.pattern) for url_pattern in url_resolver.url_patterns], ['forum/<int:post_id>'])
 
     def test_urls__routes_page__when_only_discovery_imports_its_module(self):
         self.write_page_module('nested_page/__init__.py', '')

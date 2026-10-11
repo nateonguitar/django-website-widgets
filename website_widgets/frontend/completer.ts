@@ -6,27 +6,62 @@ A utility that mimics Dart's Completer<T>, allowing external resolution
 or rejection of a Promise. Use when the logic to fulfill a promise is deferred or
 triggered by external events.
 
-Example:
+Example: `RoleChecker` loads the user's role and signals when it has. A controller shows a
+loading state until then, and the admin toolbar after, if the user is an admin.
 ```ts
-const completer = new Completer<number | null>();
+class RoleChecker {
+  static readonly initializedCompleter = new Completer<null>();
+  private static role: string | null = null;
 
-// Somewhere that waits for completion:
-try {
-  const result = await completer.promise;
-  console.log("Completed with:", result);
-} catch (e) {
-  console.error("Rejected with:", e);
+  // Called once, from main.ts
+  static async initialize(): Promise<void> {
+    try {
+      const response = await fetch("/api/me/");
+      RoleChecker.role = (await response.json()).role;
+      RoleChecker.initializedCompleter.resolve(null);
+    } catch (e) {
+      RoleChecker.initializedCompleter.reject(e);
+    }
+  }
+
+  static hasRole(role: string): boolean {
+    return RoleChecker.role === role;
+  }
 }
-// or
-completer.promise
-  .then((result) => console.log("Completed with:", result))
-  .catch((err) => console.error("Rejected with:", err));
 
-// Somewhere else in the code, later:
-if (somethingWentWrong) {
-  completer.reject("Failed due to bad state");
-} else {
-  completer.resolve("All done!");
+export class AdminToolbarController extends Controller {
+  private isLoading = true;
+  private isAdmin = false;
+  private loadingElement: HTMLElement | null = null;
+  private toolbarElement: HTMLElement | null = null;
+
+  static initializeController(): void {
+    App.initializeController({ controllerClass: AdminToolbarController });
+  }
+
+  public async initState(): Promise<void> {
+    this.loadingElement = this.getElementByIdOrWarn("admin-toolbar-loading");
+    this.toolbarElement = this.getElementByIdOrWarn("admin-toolbar");
+    // Not awaited: App calls setState() once initState() returns, so the
+    // loading state shows while the role is still being fetched.
+    this.waitForRole();
+  }
+
+  private async waitForRole(): Promise<void> {
+    try {
+      await RoleChecker.initializedCompleter.promise;
+      this.isAdmin = RoleChecker.hasRole("admin");
+    } catch (e) {
+      console.error("Couldn't load the user's role:", e);
+    }
+    this.isLoading = false;
+    this.setState();
+  }
+
+  public setState(): void {
+    this.loadingElement?.toggleAttribute("hidden", !this.isLoading);
+    this.toolbarElement?.toggleAttribute("hidden", this.isLoading || !this.isAdmin);
+  }
 }
 ```
 

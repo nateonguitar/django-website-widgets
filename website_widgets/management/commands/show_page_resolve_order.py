@@ -1,10 +1,27 @@
 import argparse
+from dataclasses import dataclass
 
 from django.core.management.base import BaseCommand, CommandError
 from django.urls import NoReverseMatch, Resolver404, resolve, reverse
 
 from website_widgets.page_routes import PATH_PARAMETER_RE, PageRoute, PageRoutes
 from website_widgets.url_templates import reverse_template
+
+
+@dataclass(frozen=True)
+class ReachabilityCheck:
+    """Whether a route's sample URL reaches its own page, and what the table says about it."""
+
+    reaches_page: bool
+    description: str
+
+
+@dataclass(frozen=True)
+class TableRow:
+    """One route's cells, in column order, and whether to print them as a failure."""
+
+    cells: list[str]
+    reaches_page: bool
 
 
 class Command(BaseCommand):
@@ -61,19 +78,19 @@ class Command(BaseCommand):
         for position, page_route in enumerate(ordered_routes, start=1):
             view_name = f'{namespace}:{page_route.name}'
             url = self._describe_url(page_route, view_name, path_param_type)
-            is_reachable, check_result = self._check_reachable(page_route, view_name)
-            if not is_reachable:
-                unreachable_lines.append(f'#{position} {url}: {check_result}')
+            reachability = self._check_reachable(page_route, view_name)
+            if not reachability.reaches_page:
+                unreachable_lines.append(f'#{position} {url}: {reachability.description}')
             cells_by_column = {
                 'url': url,
                 'segments': self._abbreviate_segments(page_route),
                 'name': view_name,
                 'page': self._describe_page(page_route),
-                'reaches_page': check_result,
+                'reaches_page': reachability.description,
             }
-            rows.append((
-                is_reachable,
-                [str(position), *(cells_by_column[column] for column in columns)]))
+            rows.append(TableRow(
+                cells=[str(position), *(cells_by_column[column] for column in columns)],
+                reaches_page=reachability.reaches_page))
 
         self._write_table(
             ['#', *(self.COLUMN_HEADERS[column] for column in columns)],
@@ -95,7 +112,10 @@ class Command(BaseCommand):
             f'All {len(ordered_routes)} page routes reach their page.'))
 
     @classmethod
-    def _parse_columns(cls, value: str) -> list[str]:
+    def _parse_columns(
+        cls,
+        value: str
+    ) -> list[str]:
         columns = [column.strip() for column in value.split(',') if column.strip()]
         unknown_columns = [column for column in columns if column not in cls.COLUMN_HEADERS]
         if unknown_columns or not columns:
@@ -104,24 +124,36 @@ class Command(BaseCommand):
                 f"{','.join(cls.COLUMN_HEADERS)}")
         return columns
 
-    def _check_reachable(self, page_route: PageRoute, view_name: str) -> tuple[bool, str]:
+    def _check_reachable(
+        self,
+        page_route: PageRoute,
+        view_name: str
+    ) -> ReachabilityCheck:
         sample_kwargs = page_route.get_sample_kwargs()
         if None in sample_kwargs.values():
-            return False, 'no sample value fits a converter'
+            return ReachabilityCheck(reaches_page=False, description='no sample value fits a converter')
         try:
             sample_url = reverse(view_name, kwargs=sample_kwargs)
         except NoReverseMatch:
-            return False, 'not in ROOT_URLCONF, is PageRoutes.urls() included?'
+            return ReachabilityCheck(
+                reaches_page=False,
+                description='not in ROOT_URLCONF, is PageRoutes.urls() included?')
         try:
             match = resolve(sample_url)
         except Resolver404:
-            return False, f'{sample_url} matches nothing'
+            return ReachabilityCheck(reaches_page=False, description=f'{sample_url} matches nothing')
         if match.view_name != view_name:
-            return False, f'{sample_url} goes to {match.view_name} instead'
-        return True, 'yes'
+            return ReachabilityCheck(
+                reaches_page=False,
+                description=f'{sample_url} goes to {match.view_name} instead')
+        return ReachabilityCheck(reaches_page=True, description='yes')
 
     @staticmethod
-    def _describe_url(page_route: PageRoute, view_name: str, path_param_type: str) -> str:
+    def _describe_url(
+        page_route: PageRoute,
+        view_name: str,
+        path_param_type: str
+    ) -> str:
         """The full path, prefix included, with each parameter shown as `path_param_type` asks."""
         try:
             url = reverse_template(view_name)
@@ -141,7 +173,10 @@ class Command(BaseCommand):
         return url
 
     @classmethod
-    def _abbreviate_segments(cls, page_route: PageRoute) -> str:
+    def _abbreviate_segments(
+        cls,
+        page_route: PageRoute
+    ) -> str:
         return '/'.join(
             '+'.join(
                 cls.SEGMENT_ABBREVIATIONS.get(part, part)
@@ -155,16 +190,26 @@ class Command(BaseCommand):
         kwargs_text = ', '.join(f'{key}={value!r}' for key, value in page_route.kwargs.items())
         return f'{page_route.page_class.__qualname__}({kwargs_text})'
 
-    def _write_table(self, headers: list[str], rows: list[tuple[bool, list[str]]]):
+    def _write_table(
+        self,
+        headers: list[str],
+        rows: list[TableRow]
+    ):
         column_widths = [
-            max(len(cells[column]) for cells in [headers, *(cells for _ok, cells in rows)])
+            max(len(cells[column]) for cells in [headers, *(row.cells for row in rows)])
             for column in range(len(headers))
         ]
         self.stdout.write(self.style.MIGRATE_HEADING(self._format_row(headers, column_widths)))
-        for is_reachable, cells in rows:
-            line = self._format_row(cells, column_widths)
-            self.stdout.write(line if is_reachable else self.style.ERROR(line))
+        for row in rows:
+            line = self._format_row(row.cells, column_widths)
+            self.stdout.write(line if row.reaches_page else self.style.ERROR(line))
 
     @staticmethod
-    def _format_row(cells: list[str], column_widths: list[int]) -> str:
-        return '  '.join(cell.ljust(width) for cell, width in zip(cells, column_widths)).rstrip()
+    def _format_row(
+        cells: list[str],
+        column_widths: list[int]
+    ) -> str:
+        return '  '.join(
+            cell.ljust(width)
+            for cell, width in zip(cells, column_widths)
+        ).rstrip()

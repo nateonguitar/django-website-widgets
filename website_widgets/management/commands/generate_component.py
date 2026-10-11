@@ -1,14 +1,23 @@
 import os
+from dataclasses import dataclass
 
 from django.apps import apps
 from django.core.management.base import BaseCommand, CommandError
 from django.utils.module_loading import import_string
 
-from website_widgets.config import get_config
+from website_widgets.config import WebsiteWidgetsConfig, get_config
 from website_widgets.page import Page
 
 
 PACKAGE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+
+@dataclass(frozen=True)
+class PageBaseClass:
+    """The class a generated page extends, as its import line will name it."""
+
+    module_path: str
+    class_name: str
 
 
 class Command(BaseCommand):
@@ -66,9 +75,9 @@ class Command(BaseCommand):
             '__framework_path__': self._relative_import_path(framework_folder, target_folder),
         }
         if component_type == 'page':
-            app_page_module, app_page_class = self._app_page_class(config)
-            replacements['__app_page_module__'] = app_page_module
-            replacements['__AppPageClass__'] = app_page_class
+            page_base_class = self._page_base_class(config)
+            replacements['__app_page_module__'] = page_base_class.module_path
+            replacements['__AppPageClass__'] = page_base_class.class_name
 
         generate_ts = self._choice(options['generate_ts'], 'Generate a TypeScript controller?')
         generate_styles = self._choice(options['generate_styles'], 'Generate a stylesheet?')
@@ -100,7 +109,10 @@ class Command(BaseCommand):
         if generate_ts or generate_styles:
             self.stdout.write('Run `npm run watch` (or `runserver`, with start_npm_watch()) to rebuild the bundle.')
 
-    def _website_app_folder(self, app_label: str) -> str:
+    def _website_app_folder(
+        self,
+        app_label: str
+    ) -> str:
         try:
             return apps.get_app_config(app_label).path
         except LookupError:
@@ -108,7 +120,10 @@ class Command(BaseCommand):
                 f"No installed app is labelled '{app_label}'. Add the website app to "
                 f"INSTALLED_APPS, or set WEBSITE_WIDGETS.website_app_name to its label.")
 
-    def _require_framework_files(self, framework_folder: str):
+    def _require_framework_files(
+        self,
+        framework_folder: str
+    ):
         missing = [
             filename for filename in self.FRAMEWORK_FILES
             if not os.path.isfile(os.path.join(framework_folder, filename))
@@ -118,7 +133,10 @@ class Command(BaseCommand):
                 f'{self._display_path(framework_folder)} has no {", ".join(missing)}. Run '
                 f'`python manage.py init_website_widgets` first: generated controllers import them.')
 
-    def _app_page_class(self, config) -> tuple[str, str]:
+    def _page_base_class(
+        self,
+        config: WebsiteWidgetsConfig
+    ) -> PageBaseClass:
         dotted_path = config.generate_component.get_app_page_class(config.website_app_name)
         try:
             page_class = import_string(dotted_path)
@@ -127,18 +145,32 @@ class Command(BaseCommand):
                 f'There is no page base class at {dotted_path}. Create it, or set '
                 f'WEBSITE_WIDGETS.generate_component.app_page_class to the dotted path of yours.')
         if not isinstance(page_class, type) or not issubclass(page_class, Page):
-            raise CommandError(f'{dotted_path} is not a subclass of website_widgets.Page.')
+            raise CommandError(
+                f'{dotted_path} is not a subclass of website_widgets.Page.')
         module_path, class_name = dotted_path.rsplit('.', 1)
-        return module_path, class_name
+        return PageBaseClass(
+            module_path=module_path,
+            class_name=class_name)
 
-    def _write(self, folder: str, filename: str, template_name: str, templates_dir: str | None, replacements: dict):
+    def _write(
+        self,
+        folder: str,
+        filename: str,
+        template_name: str,
+        templates_dir: str | None,
+        replacements: dict
+    ):
         content = self._read(self._template_path(template_name, templates_dir))
         for placeholder, value in replacements.items():
             content = content.replace(placeholder, value)
         with open(os.path.join(folder, filename), 'w', encoding='utf-8') as file:
             file.write(content)
 
-    def _template_path(self, template_name: str, templates_dir: str | None) -> str:
+    def _template_path(
+        self,
+        template_name: str,
+        templates_dir: str | None
+    ) -> str:
         """The project's template of this name when it has one, otherwise the package's."""
         if templates_dir is not None:
             project_template = os.path.join(templates_dir, template_name)
@@ -146,7 +178,11 @@ class Command(BaseCommand):
                 return project_template
         return os.path.join(self.TEMPLATES_DIR, template_name)
 
-    def _insert_into_main_ts(self, main_ts_path: str, start_marker: str, line_to_insert: str):
+    def _insert_into_main_ts(
+        self, main_ts_path: str,
+        start_marker: str,
+        line_to_insert: str
+    ):
         """Adds the line between a marker pair in main.ts, keeping the section sorted."""
         if not os.path.isfile(main_ts_path):
             self.stderr.write(f'No {self._display_path(main_ts_path)} to add `{line_to_insert}` to.')
@@ -171,7 +207,11 @@ class Command(BaseCommand):
         with open(main_ts_path, 'w', encoding='utf-8') as file:
             file.writelines(updated_lines)
 
-    def _choice(self, flag: str | None, question: str) -> bool:
+    def _choice(
+        self,
+        flag: str | None,
+        question: str
+    ) -> bool:
         if flag is not None:
             return flag == 'true'
         while True:
@@ -183,7 +223,10 @@ class Command(BaseCommand):
             self.stdout.write("Answer 'y' or 'n'.")
 
     @staticmethod
-    def _relative_import_path(target: str, start: str) -> str:
+    def _relative_import_path(
+        target: str,
+        start: str
+    ) -> str:
         relative_path = os.path.relpath(target, start).replace(os.sep, '/')
         return relative_path if relative_path.startswith('.') else f'./{relative_path}'
 

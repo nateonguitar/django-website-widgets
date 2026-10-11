@@ -13,7 +13,7 @@ class RegisterUrlTestCase(PageRoutesTestCase):
         class ForumPostPage(Page):
             pass
 
-        url_patterns, _app_name, _namespace = PageRoutes.urls()
+        url_patterns = PageRoutes.urls().url_patterns
 
         self.assertEqual(
             {url_pattern.name: url_pattern.callback.view_class for url_pattern in url_patterns},
@@ -27,7 +27,7 @@ class RegisterUrlTestCase(PageRoutesTestCase):
         class HomePage(Page):
             pass
 
-        url_patterns, _app_name, _namespace = PageRoutes.urls()
+        url_patterns = PageRoutes.urls().url_patterns
 
         self.assertEqual([url_pattern.name for url_pattern in url_patterns], ['HomePage'])
 
@@ -36,7 +36,7 @@ class RegisterUrlTestCase(PageRoutesTestCase):
         class CreatePostPage(Page):
             pass
 
-        url_patterns, _app_name, _namespace = PageRoutes.urls()
+        url_patterns = PageRoutes.urls().url_patterns
 
         self.assertEqual(url_patterns[0].default_args, {'post_type': 'tab_request'})
 

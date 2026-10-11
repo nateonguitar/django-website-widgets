@@ -45,9 +45,8 @@ By convention a controller has a static `initializeController()` that calls
 6. calls `afterFirstSetState()`.
 
 So `initState()` looks elements up and adds listeners, and never calls `setState()` itself,
-since `App` calls it next. An override calls `super.initState()` first. `dispose()` is there to
-override, ending with `super.dispose()`, but nothing in the framework calls it; a project that
-removes a controller's element calls it.
+since `App` calls it next. `dispose()` is there to override, but nothing in the framework calls
+it; a project that removes a controller's element calls it.
 
 **State drives the DOM.** A controller keeps state in fields, an event handler only changes them
 and calls `setState()`, and `setState()` writes the whole DOM from the fields. A DOM change made
@@ -77,7 +76,6 @@ export class ChildController extends Controller {
     public static singletonInitializationCompleter = new Completer<null>();
 
     public afterFirstSetState(): void {
-        super.afterFirstSetState();
         ChildController.singletonInitializationCompleter.resolve(null);
     }
 }
