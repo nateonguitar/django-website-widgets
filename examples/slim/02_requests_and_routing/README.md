@@ -11,7 +11,7 @@ poetry run python manage.py runserver
 ```
 
 Then open http://localhost:8000/. Log in as `reader` or `editor` (staff), password `try-the-widgets`.
-`poetry run python manage.py show_page_resolve_order` lists the routes in the order they're tried.
+`poetry run python manage.py ww_show_routes` lists the routes in the order they're tried.
 Tests: `poetry run python manage.py test`.
 
 | URL | Shows |

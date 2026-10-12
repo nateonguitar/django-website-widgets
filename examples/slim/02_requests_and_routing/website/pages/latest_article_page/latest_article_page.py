@@ -15,7 +15,7 @@ class LatestArticlePage(SitePage):
 
     Its route also shows the ordering rule: `articles/latest/` and `articles/<slug:slug>/` could
     both match `/articles/latest/`, and the fixed segment is tried first, wherever either page is
-    declared. `show_page_resolve_order` lists the two in that order.
+    declared. `ww_show_routes` lists the two in that order.
     """
 
     async def handle_request(

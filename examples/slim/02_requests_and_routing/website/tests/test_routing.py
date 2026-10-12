@@ -27,10 +27,10 @@ class RoutingTestCase(ExampleTestCase):
 
         self.assertIs(match.func.view_class, LatestArticlePage)
 
-    def test_show_page_resolve_order__succeeds__when_every_route_reaches_its_page(self):
+    def test_show_routes__succeeds__when_every_route_reaches_its_page(self):
         output = io.StringIO()
 
-        call_command('show_page_resolve_order', stdout=output, no_color=True)
+        call_command('ww_show_routes', stdout=output, no_color=True)
 
         self.assertIn('All 6 page routes reach their page.', output.getvalue())
         self.assertLess(output.getvalue().index('/articles/latest/'), output.getvalue().index('/articles/<slug:slug>/'))
