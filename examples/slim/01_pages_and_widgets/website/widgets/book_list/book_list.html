@@ -1,0 +1,25 @@
+<div class="example-card">
+    <p class="example-muted">
+        <span class="example-code">BookList</span> has an
+        <span class="example-code">async def set_context()</span> that runs
+        <span class="example-code">[book async for book in Book.objects.order_by('year')]</span>.
+    </p>
+    <table class="example-table">
+        <thead>
+            <tr>
+                <th>Title</th>
+                <th>Author</th>
+                <th>Year</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for book in data.books %}
+                <tr>
+                    <td>{{ book.title }}</td>
+                    <td>{{ book.author }}</td>
+                    <td>{{ book.year }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>

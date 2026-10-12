@@ -1,0 +1,15 @@
+[project]
+name = "website-widgets-example-pages-and-widgets"
+version = "0.1.0"
+description = "django-website-widgets example: pages, widgets and how data reaches them"
+requires-python = ">=3.12"
+
+[tool.poetry]
+# A site to run, not a package to publish.
+package-mode = false
+
+[tool.poetry.dependencies]
+python = ">=3.12"
+django = ">=5.2"
+# The package from this repository, so the example always runs its current code.
+django-website-widgets = {path = "../../..", develop = true}

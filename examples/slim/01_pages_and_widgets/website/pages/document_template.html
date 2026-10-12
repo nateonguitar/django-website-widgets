@@ -1,0 +1,20 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>{% if page.title %}{{ page.title }} | {% endif %}{{ page.site_name }}</title>
+        <meta name="description" content="{{ page.description }}">
+        <link rel="stylesheet" href="{% static 'website/styles.css' %}">
+        <script src="{% static 'website/analytics.js' %}" defer></script>
+    </head>
+    <body>
+        <main class="example-main">
+            {% if request.path != page.index_url %}
+                <p class="example-back"><a href="{{ page.index_url }}">&larr; {{ page.site_name }}</a></p>
+            {% endif %}
+            {{ page_content_html }}
+        </main>
+    </body>
+</html>

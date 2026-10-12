@@ -1,0 +1,43 @@
+<section id="example-async">
+    <h1>Async widgets</h1>
+    <p class="example-lead">
+        Any widget's <span class="example-code">set_context()</span> can be
+        <span class="example-code">async def</span> and await the async ORM or an HTTP call. A page
+        renders inside an async view, so this is the normal way to load data.
+    </p>
+
+    <h2>The async ORM</h2>
+    {{ children.book_list }}
+
+    <h2>A synchronous query</h2>
+    {{ children.sync_orm_trap_note }}
+
+    <h2>Slow calls, together</h2>
+    <p class="example-muted">
+        Each simulated API call takes {{ data.call_ms }} ms. The page's own
+        <span class="example-code">set_context()</span> runs all three at once with
+        <span class="example-code">asyncio.gather()</span>, then hands each result to a
+        <span class="example-code">QueryCard</span> through its constructor. They start and finish at
+        about the same time. Times are milliseconds since the page started building.
+    </p>
+    {% for card in children.together %}
+        {{ card }}
+    {% endfor %}
+
+    <h2>Slow calls, one after another</h2>
+    <p class="example-muted">
+        Each <span class="example-code">SlowQueryCard</span> awaits its own call in its own
+        <span class="example-code">set_context()</span>, and the library finishes one widget's
+        <span class="example-code">set_context()</span> before starting the next. When several widgets
+        need slow data, fetch it together in their parent and pass it down.
+        <span class="example-code">SlowQueryCard</span> also renders its base class's template,
+        <span class="example-code">query_card.html</span>, found beside the base class's module.
+    </p>
+    {% for card in children.one_after_another %}
+        {{ card }}
+    {% endfor %}
+    <p class="example-muted">
+        Gathering speeds up calls to other services. It doesn't speed up database queries: Django's
+        async ORM runs every query on one shared thread, so they still run one at a time.
+    </p>
+</section>

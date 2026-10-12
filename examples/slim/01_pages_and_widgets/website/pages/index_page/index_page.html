@@ -1,0 +1,19 @@
+<section id="example-index">
+    <h1>Pages and widgets</h1>
+    <p class="example-lead">
+        Every page here is a <span class="example-code">Page</span>, built from
+        <span class="example-code">Widget</span>s, each with its template beside its Python file.
+        Pages share one document template, which links the site's stylesheet and analytics script
+        from <span class="example-code">static/</span>.
+    </p>
+    <p class="example-muted">
+        Run the server with <span class="example-code">SHOW_DEBUG_TREE=1</span> to see each page's
+        widget tree drawn under it.
+    </p>
+    {% for demo in data.demos %}
+        <a class="example-card example-link-card" href="{{ demo.url }}">
+            <span class="example-link-card-name">{{ demo.name }}</span>
+            <span class="example-muted">{{ demo.description }}</span>
+        </a>
+    {% endfor %}
+</section>

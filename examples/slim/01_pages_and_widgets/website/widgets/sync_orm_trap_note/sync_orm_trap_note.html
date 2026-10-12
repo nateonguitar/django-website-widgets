@@ -1,0 +1,18 @@
+<div class="example-card">
+    <p class="example-muted">
+        <span class="example-code">SyncOrmTrapNote</span> has a plain
+        <span class="example-code">def set_context()</span> that calls
+        <span class="example-code">Book.objects.count()</span>. It still runs inside the page's async
+        view, so Django refuses the query:
+    </p>
+    {% if data.error %}
+        <p class="example-message example-message-error" role="status">{{ data.error }}</p>
+    {% else %}
+        <p class="example-message example-message-success" role="status">It counted {{ data.book_count }} books, so this ran outside an event loop.</p>
+    {% endif %}
+    <p class="example-muted">
+        Use the async ORM in an <span class="example-code">async def set_context()</span>, as
+        <span class="example-code">BookList</span> does. Outside a page, a widget rendered with
+        <span class="example-code">render()</span> from sync code can use the sync ORM.
+    </p>
+</div>

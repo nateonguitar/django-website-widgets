@@ -1,0 +1,14 @@
+<section id="example-book">
+    <h1>{{ data.book.title }}</h1>
+    <p class="example-lead">{{ data.book.author }}, {{ data.book.year }}</p>
+    <p class="example-muted">
+        This is <span class="example-code">book_page.html</span>. Ask for a book that doesn't exist,
+        such as <a href="{% url 'website:BookPage' book_id=999 %}">book 999</a>, and the same page
+        renders <span class="example-code">book_page__not_found.html</span> instead, with a 404.
+    </p>
+    <div class="example-actions">
+        {% if data.next_book %}
+            <a class="example-button" href="{% url 'website:BookPage' book_id=data.next_book.id %}">Next: {{ data.next_book.title }}</a>
+        {% endif %}
+    </div>
+</section>
