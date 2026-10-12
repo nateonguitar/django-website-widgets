@@ -6,7 +6,7 @@ from website.widgets.events_table.events_table import EventsTable
 
 class EventsAdminToolView(TemplateView):
     """
-    A custom admin page holding a widget's HTML. It is a plain view rather than a `Page`, because
+    A custom admin page holding a widget's HTML. It is a plain view rather than a `WebPage`, because
     the admin's templates need `admin_site.each_context()` and a page's template sees only its
     five keys.
     """

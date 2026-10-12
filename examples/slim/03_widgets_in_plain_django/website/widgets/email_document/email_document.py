@@ -5,7 +5,7 @@ class EmailDocument(Widget):
     """
     The whole HTML document every email shares: the `<head>`, a header and a footer, around the
     one email's own part, passed in as `content`. A widget's template can be a whole document,
-    so an email needs no `Page`, which answers a request.
+    so an email needs no `WebPage`, which answers a web request.
 
     Sets `events_url` in `context.page` before its children run, so `content` and anything
     inside it can link back to the site.

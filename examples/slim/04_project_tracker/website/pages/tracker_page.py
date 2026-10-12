@@ -6,7 +6,7 @@ from django.http import HttpRequest, HttpResponse
 from django.middleware.csrf import get_token
 from django.urls import reverse
 
-from website_widgets import Page
+from website_widgets import WebPage
 
 from website.api.errors import (
     ForbiddenException,
@@ -19,7 +19,7 @@ from website.widgets.appbar.appbar import Appbar
 from website.widgets.footer.footer import Footer
 
 
-class TrackerPage(Page):
+class TrackerPage(WebPage):
     """
     The tracker's base page: the document template, the appbar and footer, the viewer, flash
     messages, and the access variants. It has no `@register_url`, so it isn't routed.

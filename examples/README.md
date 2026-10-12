@@ -23,9 +23,9 @@ an inline `<script>` in its template. Read them in order.
 
 | Project | Shows |
 | --- | --- |
-| [`slim/01_pages_and_widgets`](slim/01_pages_and_widgets) | a `Page` and its document template, child widgets, data passed down through constructors, `context.page`, list and `None` children, variant templates, template lookup through base classes, the debug tree, and async `set_context()` with the async ORM, including what a synchronous query does inside a page |
+| [`slim/01_pages_and_widgets`](slim/01_pages_and_widgets) | a `WebPage` and its document template, child widgets, data passed down through constructors, `context.page`, list and `None` children, variant templates, template lookup through base classes, the debug tree, and async `set_context()` with the async ORM, including what a synchronous query does inside a page |
 | [`slim/02_requests_and_routing`](slim/02_requests_and_routing) | routing with `@register_url` beside a page routed by hand, `show_page_resolve_order`, `handle_request()` for access variants (401, 403, 404), a redirect and an ETag with a 304, and `arender()` behind a "load more" endpoint |
-| [`slim/03_widgets_in_plain_django`](slim/03_widgets_in_plain_django) | no `Page` at all: `render()` in an ordinary `TemplateView`, HTML emails built from a document widget around each email's own content widget, and an admin tool page beside a real `ModelAdmin` |
+| [`slim/03_widgets_in_plain_django`](slim/03_widgets_in_plain_django) | no `WebPage` at all: `render()` in an ordinary `TemplateView`, HTML emails built from a document widget around each email's own content widget, and an admin tool page beside a real `ModelAdmin` |
 | [`slim/04_project_tracker`](slim/04_project_tracker) | a small working app using all of it: logins, an appbar and footer, access variants, and creating, editing and deleting through JSON endpoints |
 
 For a real project built on the package, see [Gametabs](https://gametabs.net).

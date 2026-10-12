@@ -6,13 +6,13 @@ from django.http import HttpRequest, HttpResponse
 from django.middleware.csrf import get_token
 from django.urls import reverse
 
-from website_widgets import Page
+from website_widgets import WebPage
 
 from website.refusals import PageRefusal
 from website.widgets.site_header.site_header import SiteHeader
 
 
-class SitePage(Page):
+class SitePage(WebPage):
     """
     The base of every page here. It has no `@register_url`, so it isn't routed.
 

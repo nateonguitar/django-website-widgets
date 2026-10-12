@@ -39,7 +39,7 @@ bcrypt = ["bcrypt (>=4.1.1)"]
 
 [[package]]
 name = "django-website-widgets"
-version = "0.5.1"
+version = "0.6.0"
 description = "Server-rendered pages built from composable widgets, for Django"
 optional = false
 python-versions = ">=3.12"

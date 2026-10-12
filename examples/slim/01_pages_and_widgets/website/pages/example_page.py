@@ -2,10 +2,10 @@ import os
 
 from django.urls import reverse
 
-from website_widgets import Page
+from website_widgets import WebPage
 
 
-class ExamplePage(Page):
+class ExamplePage(WebPage):
     """
     The base of every page here: the shared document template and the `<head>` values. It has no
     `@register_url`, so route discovery leaves it unrouted, as a base class should be.

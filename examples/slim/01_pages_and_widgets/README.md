@@ -1,6 +1,6 @@
 # Pages and widgets
 
-How a page is built: a `Page` and its document template, child widgets, how data reaches them,
+How a page is built: a `WebPage` and its document template, child widgets, how data reaches them,
 variant templates, and loading data in `async def set_context()`.
 
 ```bash
