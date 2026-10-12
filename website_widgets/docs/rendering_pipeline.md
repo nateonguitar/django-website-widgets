@@ -109,6 +109,12 @@ fails loudly and production code can't end up with a fake one by omission. Templ
 This is the line between a widget and a page: a widget renders a fragment, and only a page wraps
 one in a whole HTML document, since the document belongs to the response the page returns.
 
+**A whole document that answers no request is a widget whose template is the document.** An HTML
+email is one: an `EmailDocument` widget whose template holds the `<head>`, header and footer
+every email shares, taking the email's own part as a child widget in its constructor
+(`EmailDocument(subject='Welcome', content=WelcomeMessage(user=user)).render()`). Nothing about a
+widget's template limits it to a fragment.
+
 **A widget renders once.** Pass 3 replaces its children with their HTML, so a second render
 raises `RuntimeError`; construct a new instance instead.
 

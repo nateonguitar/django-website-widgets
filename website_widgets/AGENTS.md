@@ -16,7 +16,8 @@ built on it. One line per doc, enough to pick the right one; the detail is in th
 - **A page reaches a URL by `@register_url` on its class,** in a module under the website app's
   `pages/` folder, or by hand in `urls.py` with `Page.as_view()`.
 - **Outside a page, a widget renders with `render()`** from sync code or `await arender()` from
-  async code, never by calling its template.
+  async code, never by calling its template. A whole document that answers no request, such as
+  an HTML email, is a widget whose template is the document, never a `Page`.
 - **A widget's frontend is a `Controller` subclass,** started by `App.initializeController()`
   from the widget's `<script>`. **Never edit the framework's TypeScript files** (`app.ts`,
   `controller.ts`, `completer.ts`); subclass `Controller` or `App` instead, and keep project
@@ -24,7 +25,7 @@ built on it. One line per doc, enough to pick the right one; the detail is in th
 
 ## Docs
 
-- `docs/rendering_pipeline.md` — what happens between a request and HTML: one page instance per request, the four passes of `build_response()`, `render()` and `arender()` outside a page, the five-key template context, template lookup, and the async ORM trap
+- `docs/rendering_pipeline.md` — what happens between a request and HTML: one page instance per request, the four passes of `build_response()`, `render()` and `arender()` outside a page, a whole document with no request (email) as a widget, the five-key template context, template lookup, and the async ORM trap
 - `docs/routing.md` — routing a page by hand or with `@register_url`: discovery under `pages/`, the namespace and default names, most-specific-first ordering, the tie check, `show_page_resolve_order`
 - `docs/frontend_controllers.md` — the framework TypeScript: why it is never edited, a controller's lifecycle, `setState()`, element lookups, singletons and `Completer`, what `Controller` leaves to the project
 - `docs/reverse_template.md` — `reverse_template()`: URL names into `/posts/{post_id}` templates for the frontend, why it reads the route, `paramnames`, why it isn't called `reverse`

@@ -44,6 +44,20 @@ class ClassLevelDocumentPage(Page):
     document_template_path = '../templates/document_template.html'
 
 
+class DocumentPage(Page):
+    """A page whose test sets both its templates, with a child for its own template to place."""
+
+    def __init__(self, document_template_filename: str, template_filename: str, child_template_filename: str):
+        super().__init__()
+        self.document_template_path = document_template_filename
+        self.template_filename = template_filename
+        self.child_template_filename = child_template_filename
+
+    def set_context(self):
+        self.context.data['word'] = 'sync'
+        self.context.children['child'] = WordWidget('child', self.child_template_filename)
+
+
 class SyncContextWidget(Widget):
     def set_context(self):
         self.context.data['word'] = 'sync'

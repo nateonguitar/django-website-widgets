@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [project]
 name = "django-website-widgets"
-version = "0.5.0"
+version = "0.5.1"
 description = "Server-rendered pages built from composable widgets, for Django"
 readme = "README.md"
 authors = [
@@ -44,6 +44,8 @@ Issues = "https://github.com/nateonguitar/django-website-widgets/issues"
 [tool.poetry]
 # The distribution name doesn't match the import name, so the package is named explicitly.
 packages = [{include = "website_widgets"}]
+# The tests run from a checkout and the examples are their own projects; neither ships.
+exclude = ["website_widgets/tests/**", "examples/**"]
 
 [tool.djlint]
 # Ignore:

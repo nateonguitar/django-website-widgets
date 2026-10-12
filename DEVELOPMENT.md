@@ -42,16 +42,43 @@ adding it to the matrix and the classifiers in `pyproject.toml` together**, and 
 removing it from both, along with `requires-python` or the `django` requirement when the lowest
 version changes.
 
+## Examples
+
+`examples/` holds small Django projects that show the library in use, grouped by what they need
+to run and numbered in reading order. `slim/` needs only Poetry: static CSS and JavaScript files,
+and each widget's behaviour inline. `examples/README.md` is the reader's index; keep it in step
+when one is added.
+
+- **Each is its own project:** its own `manage.py`, settings and `pyproject.toml`, so one folder
+  copies out as the start of someone's site. Each depends on the package by relative path,
+  `django-website-widgets = {path = "../../..", develop = true}`, so it runs the code in this
+  checkout, and a package change shows up in every example at once.
+- **They run on models and SQLite**, seeded by a data migration, so `migrate` alone gives a
+  working site and every test starts from the same rows. `db.sqlite3` is git-ignored.
+- **Run one:** `cd examples/slim/01_pages_and_widgets`, `poetry install`,
+  `poetry run python manage.py migrate`, then `runserver` or `test`.
+- **CI runs every example's tests**, finding each folder with a `manage.py`, so a new example needs
+  no workflow edit. An example that a package change breaks fails the build like a package test.
+- **They never ship.** `exclude` in `[tool.poetry]` keeps `examples/` out of the wheel and the
+  source archive.
+
 ## Releasing
 
 A change reaches a project using the library only through a published version.
 
 1. Bump `version` in `pyproject.toml`. The `0.x` series allows breaking changes in any release.
 2. Run the tests, and check the GitHub Actions matrix is green.
-3. Build and publish: `poetry build`, then `poetry publish`. Publishing needs a PyPI token, set
-   once with `poetry config pypi-token.pypi <token>`.
-4. Tag the release (`git tag v0.2.0`) and push the tag.
-5. Bump the requirement in the project using it.
+3. Build with `poetry build`, then check that nothing but the package ships: both commands must
+   print nothing.
+   ```bash
+   unzip -Z1 dist/*.whl | grep -vE '^website_widgets/|\.dist-info/' ; unzip -Z1 dist/*.whl | grep '/tests/'
+   tar tzf dist/*.tar.gz | sed 's|^[^/]*/||' | grep -vE '^(website_widgets/|$|README.md|LICENSE|pyproject.toml|PKG-INFO)' ; tar tzf dist/*.tar.gz | grep -E '/tests/|/examples/'
+   ```
+   `exclude` in `[tool.poetry]` keeps `website_widgets/tests/` and `examples/` out.
+4. Publish with `poetry publish`. Publishing needs a PyPI token, set once with
+   `poetry config pypi-token.pypi <token>`.
+5. Tag the release (`git tag v0.2.0`) and push the tag.
+6. Bump the requirement in the project using it.
 
 `poetry build` writes the wheel and source archive to `dist/`, which is git-ignored.
 
@@ -62,11 +89,12 @@ django-website-widgets/
 ├── pyproject.toml              # Package metadata and build config
 ├── poetry.lock                 # The development environment's pins
 ├── test_settings.py            # Settings for the tests, not shipped
-├── .github/workflows/          # The test matrix
+├── .github/workflows/          # The test matrix and the examples' tests
+├── examples/                   # Runnable example projects, not shipped; see "Examples"
 ├── README.md                   # The introduction (shows on PyPI), linking to the docs
 ├── DEVELOPMENT.md              # This file
 ├── LICENSE
-└── website_widgets/            # The Python package, and the only thing shipped
+└── website_widgets/            # The Python package, the only thing shipped (minus tests/)
     ├── AGENTS.md               # The index of docs/ and the rules every change follows
     ├── docs/                   # How each part works, and why
     ├── frontend/               # The framework TypeScript and its README, which
@@ -82,7 +110,7 @@ django-website-widgets/
     ├── url_templates.py        # reverse_template()
     ├── npm_watch.py            # start_npm_watch(), for manage.py
     ├── widget_context.py
-    ├── tests/                  # One test class per file; see "Tests" above
+    ├── tests/                  # One test class per file, not shipped; see "Tests" above
     └── management/
         └── commands/           # test_website_widgets, show_page_resolve_order,
                                 # init_website_widgets, generate_component

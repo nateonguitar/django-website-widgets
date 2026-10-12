@@ -6,12 +6,15 @@ A widget can also render on its own into the Django you already have: an ordinar
 template, an email, the admin. So a site can adopt widgets one piece at a time, with no `Page`
 and no build step.
 
-## Example
+## Examples
 
-[django-website-widgets-example-minimal](https://github.com/nateonguitar/django-website-widgets-example-minimal)
-is a small working site with no build step: inline scripts and stylesheet widgets. Besides its
-pages, it shows widgets in a traditional Django view and template, an email body rendered with
-no request, and a custom admin page.
+The repository's [`examples/`](https://github.com/nateonguitar/django-website-widgets/tree/main/examples)
+folder holds small Django projects you can run, each showing one part of the library: pages and
+widgets, requests and routing, widgets in plain Django views, an email and the admin, and a small
+project tracker using all of it. They aren't installed with the package; clone the repository,
+`cd` into one, then `poetry install`, `migrate` and `runserver`.
+[`examples/README.md`](https://github.com/nateonguitar/django-website-widgets/blob/main/examples/README.md)
+lists them all. [Gametabs](https://gametabs.net) is a real site built on it.
 
 ## Documentation
 
@@ -298,14 +301,21 @@ def project_list(request):
 `render()` runs with no event loop, so its widgets use plain `def set_context()` and the sync
 ORM; it raises on an `async def set_context()`. The request is optional: an email body or an
 admin hook has none, and a widget that reads `self.request` without one raises rather than
-getting a fake. The [minimal example](#example) has all three: a traditional view and template,
-an email body and an admin tool.
+getting a fake. The `03_widgets_in_plain_django` [example](#examples) has all three: a
+traditional view and template, emails and an admin tool.
 
 In async code, such as an endpoint returning HTML fragments for an infinite scroller, await
 `arender()` instead. It runs sync and async `set_context()`s alike, as a page does:
 
 ```python
 html = await ProjectListTile(project=project).arender(request)
+```
+
+A widget's template can be a whole document. An HTML email is a widget holding what every email
+repeats, the `<head>`, a header and a footer, with the email's own part passed in as a child:
+
+```python
+html = EmailDocument(subject='Welcome', content=WelcomeMessage(user=user)).render()
 ```
 
 Tests render a widget against a mock `GET /`, optionally as a given user:

@@ -21,3 +21,36 @@ jobs:
       # Installs the package for its dependencies, pinning Django to the matrix version.
       - run: pip install . "django~=${{ matrix.django }}.0"
       - run: django-admin test website_widgets --settings=test_settings --pythonpath=.
+
+  # Every folder under examples/ holding a manage.py is a project, so a new example needs no edit here.
+  find-examples:
+    runs-on: ubuntu-latest
+    outputs:
+      examples: ${{ steps.find.outputs.examples }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: find
+        run: |
+          examples=$(find examples -name manage.py -printf '%h\n' | sort | jq -R . | jq -sc .)
+          echo "examples=$examples" >> "$GITHUB_OUTPUT"
+
+  example:
+    needs: find-examples
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        example: ${{ fromJson(needs.find-examples.outputs.examples) }}
+    name: Example ${{ matrix.example }}
+    defaults:
+      run:
+        working-directory: ${{ matrix.example }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.14'
+      - run: pip install poetry
+      - run: poetry install --no-interaction
+      - run: poetry run python manage.py migrate --noinput
+      - run: poetry run python manage.py test
