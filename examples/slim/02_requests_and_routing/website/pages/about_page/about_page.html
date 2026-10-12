@@ -1,0 +1,13 @@
+<section id="example-about">
+    <h1>About</h1>
+    <p class="example-lead">This page is routed by hand, in <span class="example-code">example_site/urls.py</span>:</p>
+    <pre class="example-card example-code">path('about/', AboutPage.as_view(), name='about')</pre>
+    <p class="example-muted">
+        Every other page declares its own route with <span class="example-code">@register_url</span>
+        and is included with one line, <span class="example-code">path('', PageRoutes.urls())</span>.
+        The two mix freely: a hand-routed page can live anywhere, and reverses by the name
+        <span class="example-code">urls.py</span> gives it, here
+        <span class="example-code">reverse('about')</span>, while decorated pages reverse as
+        <span class="example-code">reverse('website:&lt;name&gt;')</span>.
+    </p>
+</section>

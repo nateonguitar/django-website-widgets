@@ -1,0 +1,36 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>Log in | Requests and routing</title>
+        <link rel="stylesheet" href="{% static 'website/styles.css' %}">
+    </head>
+    <body>
+        <main class="example-main">
+            <p><a href="{% url 'website:IndexPage' %}">&larr; Requests and routing</a></p>
+            <h1>Log in</h1>
+            <p class="example-muted">
+                Django's own <span class="example-code">LoginView</span>, rendering this plain Django
+                template. Log in as <span class="example-code">reader</span> or
+                <span class="example-code">editor</span> (staff), password
+                <span class="example-code">try-the-widgets</span>.
+            </p>
+            <form class="example-form example-card" method="post">
+                {% csrf_token %}
+                {% if form.errors %}
+                    <p class="example-message example-message-error">That username and password don't match.</p>
+                {% endif %}
+                <label for="id_username">Username</label>
+                <input id="id_username" name="username" autocomplete="username" required>
+                <label for="id_password">Password</label>
+                <input id="id_password" name="password" type="password" autocomplete="current-password" required>
+                <input type="hidden" name="next" value="{{ next }}">
+                <div class="example-actions">
+                    <button class="example-button" type="submit">Log in</button>
+                </div>
+            </form>
+        </main>
+    </body>
+</html>

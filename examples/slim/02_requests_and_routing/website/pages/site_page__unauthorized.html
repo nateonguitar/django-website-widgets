@@ -1,0 +1,13 @@
+<section class="example-card">
+    <p class="example-muted">{{ data.status_code }}</p>
+    <h1>{{ page.title }}</h1>
+    <p class="example-muted">
+        This is <span class="example-code">site_page__unauthorized.html</span>, beside
+        <span class="example-code">site_page.py</span>. The page raised
+        <span class="example-code">NotLoggedIn</span> in <span class="example-code">set_context()</span>,
+        and <span class="example-code">SitePage.handle_request()</span> rendered this instead.
+    </p>
+    <div class="example-actions">
+        <a class="example-button" href="{{ page.login_url }}">Log in</a>
+    </div>
+</section>

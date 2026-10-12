@@ -1,0 +1,4 @@
+<a class="example-card example-link-card example-article-card" href="{% url 'website:article' slug=data.article.slug %}">
+    <span class="example-link-card-name">{{ data.article.title }}{% if data.article.members_only %} (members only){% endif %}</span>
+    <span class="example-muted">{{ data.article.summary }}</span>
+</a>

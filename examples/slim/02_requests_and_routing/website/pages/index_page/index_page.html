@@ -1,0 +1,21 @@
+<section id="example-index">
+    <h1>Requests and routing</h1>
+    <p class="example-lead">
+        How a request reaches a page, and the ways a page can answer. Pages declare their own routes
+        with <span class="example-code">@register_url</span>, found by importing every module under
+        <span class="example-code">website/pages/</span>, and reverse as
+        <span class="example-code">website:&lt;name&gt;</span>. One page is routed by hand instead.
+    </p>
+    <p class="example-muted">
+        Log in as <span class="example-code">reader</span> or <span class="example-code">editor</span>
+        (staff), password <span class="example-code">try-the-widgets</span>. Run
+        <span class="example-code">python manage.py show_page_resolve_order</span> to see the order the
+        routes are tried in.
+    </p>
+    {% for demo in data.demos %}
+        <a class="example-card example-link-card" href="{{ demo.url }}">
+            <span class="example-link-card-name">{{ demo.name }}</span>
+            <span class="example-muted">{{ demo.description }}</span>
+        </a>
+    {% endfor %}
+</section>

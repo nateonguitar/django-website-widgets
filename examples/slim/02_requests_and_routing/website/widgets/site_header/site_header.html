@@ -1,0 +1,17 @@
+<header class="example-header">
+    <div class="example-header-inner">
+        <a class="example-header-home" href="{{ page.index_url }}">{{ page.site_name }}</a>
+        <div class="example-header-viewer">
+            {% if page.viewer %}
+                <span>{{ page.viewer.username }}{% if page.viewer.is_staff %} (staff){% endif %}</span>
+                <form method="post" action="{% url 'logout' %}">
+                    {# The token comes from context.page: widget templates have no csrf_token tag value. #}
+                    <input type="hidden" name="csrfmiddlewaretoken" value="{{ page.csrf_token }}">
+                    <button class="example-button example-button-secondary" type="submit">Log out</button>
+                </form>
+            {% else %}
+                <a class="example-button" href="{{ page.login_url }}">Log in</a>
+            {% endif %}
+        </div>
+    </div>
+</header>

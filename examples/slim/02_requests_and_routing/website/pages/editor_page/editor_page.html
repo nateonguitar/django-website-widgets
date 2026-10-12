@@ -1,0 +1,26 @@
+<section id="example-editor">
+    <h1>Editor</h1>
+    <p class="example-muted">
+        Only staff get this page. Logged out, it's the 401 variant; logged in as a reader, the 403 one.
+    </p>
+    <table class="example-table">
+        <thead>
+            <tr>
+                <th>Title</th>
+                <th>Slug</th>
+                <th>Members only</th>
+                <th>Published</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for article in data.articles %}
+                <tr>
+                    <td>{{ article.title }}</td>
+                    <td><span class="example-code">{{ article.slug }}</span></td>
+                    <td>{{ article.members_only|yesno:"Yes,No" }}</td>
+                    <td>{{ article.published_at|date:"j M Y" }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</section>

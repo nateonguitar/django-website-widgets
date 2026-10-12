@@ -1,0 +1,29 @@
+<section id="example-changelog">
+    <h1>Changelog</h1>
+    <p>
+        This page's ETag is <span class="example-code">{{ data.etag }}</span>, built from how many
+        articles there are, when the newest change was made, and who is viewing.
+    </p>
+    <p class="example-muted">
+        Reload with the browser's network panel open. The browser sends the ETag back in
+        <span class="example-code">If-None-Match</span>, and while nothing changed the server answers
+        <span class="example-code">304 Not Modified</span> without building any widgets: the page
+        overrides <span class="example-code">handle_request()</span> to check first.
+    </p>
+    <table class="example-table">
+        <thead>
+            <tr>
+                <th>Article</th>
+                <th>Last changed</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for article in data.articles %}
+                <tr>
+                    <td>{{ article.title }}</td>
+                    <td>{{ article.updated_at|date:"j M Y, H:i:s" }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</section>

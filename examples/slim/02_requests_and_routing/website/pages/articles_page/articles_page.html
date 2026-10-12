@@ -1,0 +1,53 @@
+<section id="example-articles">
+    <h1>Articles</h1>
+    <p class="example-lead">
+        The first cards rendered with the page. The button asks
+        <span class="example-code">GET {% url 'api_article_cards' %}?offset=N</span> for more, and that
+        endpoint renders the same <span class="example-code">ArticleCard</span> widget on the server
+        with <span class="example-code">await widget.arender(request)</span>, returning its HTML in JSON.
+    </p>
+    <div id="example-articles-list">
+        {% for card in children.cards %}
+            {{ card }}
+        {% endfor %}
+    </div>
+    {% if data.has_more %}
+        <div class="example-actions">
+            <button id="example-articles-load-more" class="example-button" type="button" data-next-offset="{{ data.next_offset }}">Load more</button>
+        </div>
+        <p id="example-articles-error" class="example-message example-message-error" role="alert"></p>
+    {% endif %}
+</section>
+{% if data.has_more %}
+    {# This widget's own behaviour, beside the markup it drives. #}
+    <script>
+        (() => {
+            const cardsUrl = '{% url "api_article_cards" %}';
+            const loadMoreButton = document.getElementById('example-articles-load-more');
+            const list = document.getElementById('example-articles-list');
+            const error = document.getElementById('example-articles-error');
+
+            loadMoreButton.addEventListener('click', async () => {
+                error.textContent = '';
+                loadMoreButton.disabled = true;
+                try {
+                    const response = await fetch(`${cardsUrl}?offset=${loadMoreButton.dataset.nextOffset}`);
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}`);
+                    }
+                    const data = await response.json();
+                    list.insertAdjacentHTML('beforeend', data.html);
+                    loadMoreButton.dataset.nextOffset = data.next_offset;
+                    window.exampleAnalytics.track('load_more', { next_offset: data.next_offset });
+                    if (!data.has_more) {
+                        loadMoreButton.remove();
+                        return;
+                    }
+                } catch {
+                    error.textContent = 'Something went wrong loading more articles. Try again.';
+                }
+                loadMoreButton.disabled = false;
+            });
+        })();
+    </script>
+{% endif %}

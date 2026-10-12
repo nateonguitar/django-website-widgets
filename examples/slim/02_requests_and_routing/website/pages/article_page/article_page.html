@@ -1,0 +1,9 @@
+<article id="example-article">
+    <h1>{{ data.article.title }}</h1>
+    <p class="example-lead">{{ data.article.summary }}</p>
+    {% if data.article.members_only %}
+        <p class="example-message example-message-success">Members only. Logged out, this page renders the 401 variant instead.</p>
+    {% endif %}
+    <p>{{ data.article.body }}</p>
+    <p class="example-muted"><a href="{% url 'website:articles' %}">All articles</a></p>
+</article>
