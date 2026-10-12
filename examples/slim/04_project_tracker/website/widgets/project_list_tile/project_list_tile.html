@@ -1,0 +1,9 @@
+<article class="example-card example-tile" data-project-id="{{ data.project.pk }}">
+    <h3><a href="{{ data.project.url }}">{{ data.project.name }}</a></h3>
+    {% if data.project.description %}
+        <p>{{ data.project.description|truncatechars:140 }}</p>
+    {% else %}
+        <p class="example-muted">No description.</p>
+    {% endif %}
+    <p class="example-tile-meta">By {{ data.project.created_by.get_full_name|default:data.project.created_by.username }}</p>
+</article>

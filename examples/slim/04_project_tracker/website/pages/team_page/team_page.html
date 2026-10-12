@@ -1,0 +1,28 @@
+<section id="example-team">
+    <h1>Team</h1>
+    <p class="example-muted">
+        Only staff get this page. Logged out, it's the Unauthorized variant; as a regular user, the
+        Forbidden one. The check runs before anything else, so no data is loaded for a viewer who
+        can't see it.
+    </p>
+    <table class="example-table">
+        <thead>
+            <tr>
+                <th>Username</th>
+                <th>Name</th>
+                <th>Role</th>
+                <th>Projects created</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for user in data.users %}
+                <tr>
+                    <td><span class="example-code">{{ user.username }}</span></td>
+                    <td>{{ user.get_full_name }}</td>
+                    <td>{% if user.is_staff %}Staff{% else %}User{% endif %}</td>
+                    <td>{{ user.project_count }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</section>

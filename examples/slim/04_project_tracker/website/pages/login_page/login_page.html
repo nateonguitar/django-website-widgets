@@ -1,0 +1,64 @@
+<section id="example-login">
+    <h1>Log in</h1>
+    <p>
+        A real Django login, through the async auth API. Every demo user's password is
+        <span class="example-code">try-the-widgets</span>:
+    </p>
+    <table class="example-table">
+        <thead>
+            <tr>
+                <th>Username</th>
+                <th>Name</th>
+                <th>Can see</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for user in data.users %}
+                <tr>
+                    <td><span class="example-code">{{ user.username }}</span></td>
+                    <td>{{ user.get_full_name }}</td>
+                    <td>{% if user.is_staff %}Every project, and the team page{% else %}Their own projects{% endif %}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <form id="example-login-form" class="example-form example-card" novalidate>
+        <label for="example-login-username">Username</label>
+        <input id="example-login-username" name="username" autocomplete="username" required>
+        <p id="example-login-username-error" class="example-field-error" role="alert"></p>
+        <label for="example-login-password">Password</label>
+        <input id="example-login-password" name="password" type="password" autocomplete="current-password" required>
+        <p id="example-login-password-error" class="example-field-error" role="alert"></p>
+        <input id="example-login-next" type="hidden" value="{{ data.next }}">
+        <div class="example-actions">
+            <button id="example-login-submit" class="example-button" type="submit">Log in</button>
+        </div>
+        <p id="example-login-error" class="example-message example-message-error" role="alert"></p>
+    </form>
+</section>
+<script>
+    document.getElementById('example-login-form').addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const submitButton = document.getElementById('example-login-submit');
+        const errors = {
+            username: document.getElementById('example-login-username-error'),
+            password: document.getElementById('example-login-password-error'),
+        };
+        const formError = document.getElementById('example-login-error');
+        Object.values(errors).forEach((element) => { element.textContent = ''; });
+        formError.textContent = '';
+        submitButton.disabled = true;
+
+        const result = await exampleApi.send('POST', '{% url "api_login" %}', {
+            username: document.getElementById('example-login-username').value,
+            password: document.getElementById('example-login-password').value,
+            next: document.getElementById('example-login-next').value,
+        });
+        if (result.ok) {
+            exampleApi.navigateWithMessage(result.data.next, `Logged in as ${result.data.user.name}.`);
+            return;
+        }
+        submitButton.disabled = false;
+        exampleApi.showErrors(result, errors, formError);
+    });
+</script>

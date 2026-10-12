@@ -1,0 +1,11 @@
+<section id="example-projects">
+    <h1>{{ page.title }}</h1>
+    <div class="example-actions">
+        <a class="example-button" href="{% url 'website:ProjectCreatePage' %}">New project</a>
+    </div>
+    {% for tile in children.tiles %}
+        {{ tile }}
+    {% empty %}
+        <p class="example-card example-muted">No projects yet. <a href="{% url 'website:ProjectCreatePage' %}">Create one</a>.</p>
+    {% endfor %}
+</section>

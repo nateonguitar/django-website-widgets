@@ -1,0 +1,36 @@
+<header id="example-appbar">
+    <div id="example-appbar-inner">
+        <a id="example-appbar-home" href="{% url 'website:ProjectsPage' %}">{{ page.site_name }}</a>
+        <nav id="example-appbar-nav">
+            <a href="{% url 'website:ProjectsPage' %}">Your projects</a>
+            <a href="{% url 'website:ProjectCreatePage' %}">New project</a>
+            <a href="{% url 'website:TeamPage' %}">Team</a>
+        </nav>
+        <div id="example-appbar-viewer">
+            {% if page.viewer %}
+                <span>{{ page.viewer.get_full_name|default:page.viewer.username }}{% if page.viewer.is_staff %} (staff){% endif %}</span>
+                <button id="example-appbar-logout" class="example-button example-button-secondary" type="button">Log out</button>
+                <span id="example-appbar-error" class="example-field-error" role="alert"></span>
+            {% else %}
+                <a class="example-button" href="{{ page.login_url }}">Log in</a>
+            {% endif %}
+        </div>
+    </div>
+</header>
+{% if page.viewer %}
+    <script>
+        (() => {
+            const logoutButton = document.getElementById('example-appbar-logout');
+            logoutButton.addEventListener('click', async () => {
+                logoutButton.disabled = true;
+                const result = await exampleApi.send('POST', '{% url "api_logout" %}');
+                if (result.ok) {
+                    window.location.reload();
+                    return;
+                }
+                logoutButton.disabled = false;
+                document.getElementById('example-appbar-error').textContent = result.error;
+            });
+        })();
+    </script>
+{% endif %}

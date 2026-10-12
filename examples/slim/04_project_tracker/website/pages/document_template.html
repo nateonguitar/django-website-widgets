@@ -1,0 +1,26 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>{{ page.title }} | {{ page.site_name }}</title>
+        <meta name="description" content="{{ page.description }}">
+        {# Read by api.js, which as a static file can't use template values itself. #}
+        <meta name="csrf-token" content="{{ page.csrf_token }}">
+        <meta name="flash-cookie-name" content="{{ page.flash_cookie_name }}">
+        <link rel="stylesheet" href="{% static 'website/styles.css' %}">
+        <script src="{% static 'website/api.js' %}"></script>
+        <script src="{% static 'website/analytics.js' %}" defer></script>
+    </head>
+    <body>
+        {{ children.appbar }}
+        <main class="example-main">
+            {% if page.flash %}
+                <p id="example-flash" class="example-message example-message-success" role="status">{{ page.flash }}</p>
+            {% endif %}
+            {{ page_content_html }}
+        </main>
+        {{ children.footer }}
+    </body>
+</html>
