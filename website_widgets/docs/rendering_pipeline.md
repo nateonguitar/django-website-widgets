@@ -1,14 +1,14 @@
 # The Rendering Pipeline
 
-What happens between a request arriving at a `Page` and HTML going back out: the order the widget
+What happens between a request arriving at a `WebPage` and HTML going back out: the order the widget
 tree is built and rendered in, what a template can see, and where the async boundary sits. The
 package's [README](https://github.com/nateonguitar/django-website-widgets#readme) covers the
-shapes of `Widget`, `Page` and `WidgetContext`; this covers the order things run in, which is
+shapes of `Widget`, `WebPage` and `WidgetContext`; this covers the order things run in, which is
 where the surprises are. Read this before overriding `handle_request()` or `build_response()`,
 or when a widget renders but its content is missing.
 
 Primary code:
-- `website_widgets.page` — `Page.as_view()`, `handle_request()`, `build_response()`
+- `website_widgets.web_page` — `WebPage.as_view()`, `handle_request()`, `build_response()`
 - `website_widgets.widget` — `_initialize_widget_tree()` and `_ainitialize_widget_tree()`,
   `_render_children_to_html()`, `get_template_path()`, `_context_dict()`, `_render_template()`,
   `render()` and `arender()`
@@ -17,7 +17,7 @@ Primary code:
 
 ## One instance per request
 
-`Page.as_view()` is a factory, not Django's class-based view. It returns an `async def` view that,
+`WebPage.as_view()` is a factory, not Django's class-based view. It returns an `async def` view that,
 for each request, constructs a **fresh page instance**, assigns `_request` (read as
 `self.request`), and calls `handle_request()`, awaiting it if it is a coroutine.
 
@@ -25,7 +25,7 @@ URL parameters are passed to **both** the constructor and `handle_request()`. Th
 page keep them as instance attributes:
 
 ```python
-class ProfilePage(Page):
+class ProfilePage(WebPage):
     def __init__(self, username: str):
         super().__init__()
         self.username = username
@@ -136,14 +136,14 @@ real path, resolved against the concrete class's folder unless absolute. The pag
 is chosen like any widget's, by module name or `template_filename` (below). An error state that
 replaces a page's body is a variant template, not a separate mechanism.
 
-`document_template_path` is `None` on `Page` itself, and `get_document_template_path()` raises
+`document_template_path` is `None` on `WebPage` itself, and `get_document_template_path()` raises
 `NotImplementedError` until a subclass sets it. The usual pattern is one intermediate subclass per
 project that sets the app's document template, kept beside it, with individual pages inheriting
 it. Pages that need a different document entirely, such as an admin area with its own `<head>`,
 get a second intermediate subclass pointing at a second document template.
 
 The response is `HttpResponse(html, status=self.status_code)`. `status_code` is a plain class
-attribute on `Page`, defaulting to `200`; assign it before `build_response()` to change it.
+attribute on `WebPage`, defaulting to `200`; assign it before `build_response()` to change it.
 
 ## Templates bypass Django's loader
 
@@ -185,7 +185,7 @@ not-found state keeps `project_page__not_found.html` beside `project_page.html` 
 there. The package's README suggests that `<module>__<variant>.html` naming.
 
 **The lookup walks the class hierarchy, the concrete class first.** `get_template_path()` checks
-the folder of each class in the MRO, skipping the library's own `Widget` and `Page`, and returns
+the folder of each class in the MRO, skipping the library's own `Widget` and `WebPage`, and returns
 the first folder holding the file. A base class's variant, kept beside the base class's module,
 therefore works for every subclass, wherever the subclass lives; a subclass with a file of the same
 name shadows it. A name found nowhere raises `FileNotFoundError` listing the folders searched.

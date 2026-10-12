@@ -5,7 +5,7 @@ built on it. One line per doc, enough to pick the right one; the detail is in th
 
 ## Rules every change follows
 
-- **A page is a `Page` subclass, a component a `Widget` subclass,** each in its own folder with
+- **A page is a `WebPage` subclass, a component a `Widget` subclass,** each in its own folder with
   its template beside its `.py` file and named after it (`info_card.py` renders
   `info_card.html`). Create one with `python manage.py generate_component`, not by hand. A variant render is `<name>__<variant>.html`, chosen by setting
   `template_filename` to a bare file name.
@@ -14,10 +14,11 @@ built on it. One line per doc, enough to pick the right one; the detail is in th
 - **A template sees five keys:** `request`, `user`, `page`, `data`, `children`. No context
   processors run.
 - **A page reaches a URL by `@register_url` on its class,** in a module under the website app's
-  `pages/` folder, or by hand in `urls.py` with `Page.as_view()`.
+  `pages/` folder, or by hand in `urls.py` with `WebPage.as_view()`.
 - **Outside a page, a widget renders with `render()`** from sync code or `await arender()` from
   async code, never by calling its template. A whole document that answers no request, such as
-  an HTML email, is a widget whose template is the document, never a `Page`.
+  an HTML email, is a widget whose template is the document, never a `WebPage`, which answers a
+  web request.
 - **A widget's frontend is a `Controller` subclass,** started by `App.initializeController()`
   from the widget's `<script>`. **Never edit the framework's TypeScript files** (`app.ts`,
   `controller.ts`, `completer.ts`); subclass `Controller` or `App` instead, and keep project

@@ -13,7 +13,7 @@ class Widget:
     # Shown beside the class name in the debug tree, to tell instances apart.
     _debug_label: object | None = None
     # Library base classes, whose folders hold no application templates.
-    _LIBRARY_MODULES = ('website_widgets.widget', 'website_widgets.page')
+    _LIBRARY_MODULES = ('website_widgets.widget', 'website_widgets.web_page')
 
     def __init__(self):
         """

@@ -3,7 +3,7 @@
 A reusable Django app for building component-based web interfaces with widgets and pages.
 
 A widget can also render on its own into the Django you already have: an ordinary view and
-template, an email, the admin. So a site can adopt widgets one piece at a time, with no `Page`
+template, an email, the admin. So a site can adopt widgets one piece at a time, with no `WebPage`
 and no build step.
 
 ## Examples
@@ -83,16 +83,16 @@ INSTALLED_APPS = [
 
 ```
 
-3. Create a `Page` subclass for every other page to extend, pointing at that template:
+3. Create a `WebPage` subclass for every other page to extend, pointing at that template:
 
 `website/app_page.py`
 ```python
 import os
 
-from website_widgets import Page
+from website_widgets import WebPage
 from website.widgets.appbar import Appbar
 
-class AppPage(Page):
+class AppPage(WebPage):
     # Absolute: a relative path resolves beside each concrete page, not beside this file.
     document_template_path = os.path.join(os.path.dirname(__file__), 'document_template.html')
 
@@ -228,9 +228,10 @@ Widgets:
   `SynchronousOnlyOperation`; use the async ORM. A widget rendered with `render()` from sync code
   is the reverse: it must use `def`, and the sync ORM works
 
-### Page
+### WebPage
 
-Extends `Widget` and represents a full page.
+Extends `Widget` and represents a full page answering a web request. (The name keeps it apart
+from Django's paginator `Page`.)
 
 **Key Pattern:**
 - URL parameters passed to `__init__()` - store them on self
@@ -273,7 +274,7 @@ System renders widgets to HTML automatically. Lists iterate in templates via `{%
 
 ### Rendering a widget on its own
 
-A widget doesn't need a `Page`. `render()` returns its HTML as `SafeText`, so it drops into any
+A widget doesn't need a `WebPage`. `render()` returns its HTML as `SafeText`, so it drops into any
 ordinary Django template, and a project can adopt widgets piece by piece without converting its
 views. Construct the widget, adjust it, and render it once:
 
@@ -450,7 +451,7 @@ editor tab or a search result names its component without the folder. Give the v
 root element as the main template, so the component's styles still apply to it.
 
 A page's document template is the one template set by path: `document_template_path` names a file
-shared by every page, so it lives beside the shared `Page` subclass rather than beside any one page.
+shared by every page, so it lives beside the shared `WebPage` subclass rather than beside any one page.
 
 Override `get_template_path()` when the choice needs more than an attribute.
 

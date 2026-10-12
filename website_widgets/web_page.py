@@ -7,9 +7,10 @@ from website_widgets.widget import Widget
 from website_widgets.config import get_config
 
 
-class Page(Widget):
+class WebPage(Widget):
     """
-    A widget served at a URL, rendering two templates against the same context: its own, found
+    A widget that answers a web request at a URL, rendering two templates against the same
+    context: its own, found
     like any widget's, then the document template at `document_template_path`, which receives the
     first as `{{ page_content_html }}`. Both see the same `page`, `data` and `children`, so a child
     widget can render in either one.

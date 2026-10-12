@@ -31,7 +31,7 @@ class Command(BaseCommand):
         if verbose:
             from django.apps import apps
             try:
-                from website_widgets import Widget, Page, WidgetContext
+                from website_widgets import Widget, WebPage, WidgetContext
 
                 app_config = apps.get_app_config('website_widgets')
 
@@ -43,7 +43,7 @@ class Command(BaseCommand):
 
                 self.stdout.write(self.style.HTTP_INFO('Available Classes:'))
                 self.stdout.write(f'  Widget: {Widget}')
-                self.stdout.write(f'  Page: {Page}')
+                self.stdout.write(f'  WebPage: {WebPage}')
                 self.stdout.write(f'  WidgetContext: {WidgetContext}')
                 self.stdout.write('')
             except Exception as e:

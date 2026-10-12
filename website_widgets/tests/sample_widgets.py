@@ -7,7 +7,7 @@ is defined in, so every template a test writes goes beside this one, through
 import asyncio
 import os
 
-from website_widgets.page import Page
+from website_widgets.web_page import WebPage
 from website_widgets.widget import Widget
 
 
@@ -36,15 +36,15 @@ class SubfolderWidget(BaseFolderWidget):
     pass
 
 
-class UnsetDocumentPage(Page):
+class UnsetDocumentPage(WebPage):
     pass
 
 
-class ClassLevelDocumentPage(Page):
+class ClassLevelDocumentPage(WebPage):
     document_template_path = '../templates/document_template.html'
 
 
-class DocumentPage(Page):
+class DocumentPage(WebPage):
     """A page whose test sets both its templates, with a child for its own template to place."""
 
     def __init__(self, document_template_filename: str, template_filename: str, child_template_filename: str):

@@ -100,12 +100,12 @@ django-website-widgets/
     ├── frontend/               # The framework TypeScript and its README, which
     │                           # init_website_widgets copies into a project
     ├── generator_templates/    # generate_component's default templates (*.tmpl)
-    ├── __init__.py             # Exports Widget, Page, WidgetContext, PageRoutes, register_url,
+    ├── __init__.py             # Exports Widget, WebPage, WidgetContext, PageRoutes, register_url,
     │                           # reverse_template, NpmWatch, start_npm_watch
     ├── apps.py
     ├── config.py               # WebsiteWidgetsConfig, GenerateComponentConfig, get_config()
     ├── widget.py
-    ├── page.py
+    ├── web_page.py
     ├── page_routes.py          # @register_url, route discovery, the overlapping-route check
     ├── url_templates.py        # reverse_template()
     ├── npm_watch.py            # start_npm_watch(), for manage.py
@@ -127,8 +127,8 @@ README's links are absolute GitHub URLs, since PyPI shows the README but not the
 
 **`init_website_widgets` copies `AGENTS.md` and `docs/` into projects as they are,** so they're
 written for where they land: a TypeScript file by its name, a doc by its path beside
-`AGENTS.md`, and Python by its dotted name (`website_widgets.page`), never a repo path like
-`website_widgets/page.py`. `frontend/README.md` is the one template: init fills in its
+`AGENTS.md`, and Python by its dotted name (`website_widgets.web_page`), never a repo path like
+`website_widgets/web_page.py`. `frontend/README.md` is the one template: init fills in its
 `{version}` and `{file_list}`.
 
 **`generator_templates/` holds no project opinions**: no logging, no nonce, no HTTP client.

@@ -6,7 +6,7 @@ from django.core.management.base import BaseCommand, CommandError
 from django.utils.module_loading import import_string
 
 from website_widgets.config import WebsiteWidgetsConfig, get_config
-from website_widgets.page import Page
+from website_widgets.web_page import WebPage
 
 
 PACKAGE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -144,9 +144,9 @@ class Command(BaseCommand):
             raise CommandError(
                 f'There is no page base class at {dotted_path}. Create it, or set '
                 f'WEBSITE_WIDGETS.generate_component.app_page_class to the dotted path of yours.')
-        if not isinstance(page_class, type) or not issubclass(page_class, Page):
+        if not isinstance(page_class, type) or not issubclass(page_class, WebPage):
             raise CommandError(
-                f'{dotted_path} is not a subclass of website_widgets.Page.')
+                f'{dotted_path} is not a subclass of website_widgets.WebPage.')
         module_path, class_name = dotted_path.rsplit('.', 1)
         return PageBaseClass(
             module_path=module_path,

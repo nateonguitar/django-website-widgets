@@ -9,7 +9,7 @@ Primary code:
   ordering key, `check_for_ties()`
 - `website_widgets.management.commands.show_page_resolve_order` — the order and reachability
   report
-- `website_widgets.page` — `Page.as_view()`, which both kinds of route call
+- `website_widgets.web_page` — `WebPage.as_view()`, which both kinds of route call
 
 ## Two ways to route a page
 
@@ -53,7 +53,7 @@ decorator is never routed automatically, which is what keeps base classes such a
 `AppPage` off the URL list.
 
 The decorator checks when the class is defined: it raises `TypeError` on a class that isn't a
-`Page`, and `ImproperlyConfigured` on a route name already registered. Its `kwargs` reach the
+`WebPage`, and `ImproperlyConfigured` on a route name already registered. Its `kwargs` reach the
 page's constructor alongside the URL's parameters, through `as_view()`, so one class can serve
 variants of a route without wrapper functions.
 

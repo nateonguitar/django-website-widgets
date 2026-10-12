@@ -4,7 +4,7 @@ from django.urls import path
 
 from website_widgets import PageRoutes, register_url
 from website_widgets.config import WebsiteWidgetsConfig
-from website_widgets.page import Page
+from website_widgets.web_page import WebPage
 from website_widgets.tests.page_routes.page_routes_test_case import PageRoutesTestCase
 
 
@@ -19,7 +19,7 @@ class UrlsTestCase(PageRoutesTestCase):
 
     def test_urls__is_accepted_by_path__when_included(self):
         @register_url('forum/<int:post_id>', name='forum_post')
-        class ForumPostPage(Page):
+        class ForumPostPage(WebPage):
             pass
 
         url_resolver = path('', PageRoutes.urls())
@@ -31,33 +31,33 @@ class UrlsTestCase(PageRoutesTestCase):
         self.write_page_module('nested_page/__init__.py', '')
         self.write_page_module(
             'nested_page/nested_page.py',
-            'from website_widgets import Page, register_url\n'
+            'from website_widgets import WebPage, register_url\n'
             '\n'
             '\n'
             "@register_url('nested', name='nested')\n"
-            'class NestedPage(Page):\n'
+            'class NestedPage(WebPage):\n'
             '    pass\n')
 
         self.assertEqual(self.get_routes_in_url_order(), ['nested'])
 
     def test_urls__orders_fixed_segment_first__when_parameter_could_match_it(self):
         @register_url('profile/<str:username>', name='profile')
-        class ProfilePage(Page):
+        class ProfilePage(WebPage):
             pass
 
         @register_url('profile/settings', name='profile_settings')
-        class SettingsPage(Page):
+        class SettingsPage(WebPage):
             pass
 
         self.assertEqual(self.get_routes_in_url_order(), ['profile/settings', 'profile/<str:username>'])
 
     def test_urls__orders_longer_route_first__when_path_parameter_could_match_it(self):
         @register_url('files/<path:file_path>', name='file')
-        class FilePage(Page):
+        class FilePage(WebPage):
             pass
 
         @register_url('files/<path:file_path>/history', name='file_history')
-        class FileHistoryPage(Page):
+        class FileHistoryPage(WebPage):
             pass
 
         self.assertEqual(
@@ -66,11 +66,11 @@ class UrlsTestCase(PageRoutesTestCase):
 
     def test_urls__orders_alphabetically__when_routes_are_equally_specific(self):
         @register_url('tabs/<int:tab_id>', name='tab')
-        class TabPage(Page):
+        class TabPage(WebPage):
             pass
 
         @register_url('forum/<int:post_id>', name='forum_post')
-        class ForumPostPage(Page):
+        class ForumPostPage(WebPage):
             pass
 
         self.assertEqual(self.get_routes_in_url_order(), ['forum/<int:post_id>', 'tabs/<int:tab_id>'])

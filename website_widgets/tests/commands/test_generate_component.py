@@ -45,7 +45,7 @@ class GenerateComponentTestCase(SimpleTestCase):
             mock_apps.get_app_config.return_value = app_config
         self.config = WebsiteWidgetsConfig(
             generate_component=GenerateComponentConfig(
-                app_page_class='website_widgets.page.Page',
+                app_page_class='website_widgets.web_page.WebPage',
                 templates_dir=self.templates_dir))
         self.enterContext(patch(
             'website_widgets.management.commands.generate_component.get_config',
@@ -101,8 +101,8 @@ class GenerateComponentTestCase(SimpleTestCase):
         self.generate('page', 'home_page', '--tscontroller=false', '--stylesheet=false')
 
         page_py = self.read(self.app_folder, 'pages', 'home_page', 'home_page.py')
-        self.assertIn('from website_widgets.page import Page', page_py)
-        self.assertIn('class HomePage(Page):', page_py)
+        self.assertIn('from website_widgets.web_page import WebPage', page_py)
+        self.assertIn('class HomePage(WebPage):', page_py)
 
     def test_generate_component__imports_framework_relative_to_depth__when_name_is_nested(self):
         self.generate('widget', 'dialogs/login_dialog', '--tscontroller=true', '--stylesheet=false')

@@ -1,4 +1,4 @@
-# Generating a Page or Widget
+# Generating a page or widget
 
 `python manage.py generate_component <page|widget> <name>` writes a new component's files into the
 website app and registers its controller and stylesheet in `ts/main.ts`. Read this before adding
@@ -45,7 +45,7 @@ which line to add by hand.
   `app.ts` or `controller.ts` isn't there.
 - **A page base class, for a page.** A generated page subclasses the class at
   `GenerateComponentConfig.app_page_class`, which defaults to
-  `<website_app_name>.pages.app_page.AppPage`. When nothing is at that path, or it isn't a `Page`,
+  `<website_app_name>.pages.app_page.AppPage`. When nothing is at that path, or it isn't a `WebPage`,
   the command stops before writing anything, rather than writing a page that fails on import.
 
 ## A project's own templates
