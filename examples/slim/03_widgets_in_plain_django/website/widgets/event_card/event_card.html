@@ -1,0 +1,29 @@
+<article class="example-card example-event-card" id="example-event-{{ data.event.id }}">
+    <h3>{{ data.event.name }}</h3>
+    <p class="example-muted">{{ data.event.starts_at|date:"D j M Y, H:i" }} at {{ data.event.location }}</p>
+    {% if data.event.description %}
+        <p class="example-event-description" hidden>{{ data.event.description }}</p>
+        <div class="example-actions">
+            <button class="example-button example-button-secondary example-event-toggle" type="button" aria-expanded="false">Show details</button>
+        </div>
+    {% endif %}
+</article>
+{% if data.event.description %}
+    {# The widget's own behaviour, beside its markup; it works in any template that holds the card. #}
+    <script>
+        (() => {
+            const card = document.getElementById('example-event-{{ data.event.id }}');
+            const toggle = card.querySelector('.example-event-toggle');
+            const description = card.querySelector('.example-event-description');
+            toggle.addEventListener('click', () => {
+                const isOpen = !description.hidden;
+                description.hidden = isOpen;
+                toggle.setAttribute('aria-expanded', String(!isOpen));
+                toggle.textContent = isOpen ? 'Show details' : 'Hide details';
+                if (!isOpen) {
+                    window.exampleAnalytics.track('event_details', { event: '{{ data.event.id }}' });
+                }
+            });
+        })();
+    </script>
+{% endif %}

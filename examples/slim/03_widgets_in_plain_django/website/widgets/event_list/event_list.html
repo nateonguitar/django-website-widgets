@@ -1,0 +1,7 @@
+<div id="example-event-list">
+    {% for card in children.cards %}
+        {{ card }}
+    {% empty %}
+        <p class="example-card example-muted">No upcoming events.</p>
+    {% endfor %}
+</div>

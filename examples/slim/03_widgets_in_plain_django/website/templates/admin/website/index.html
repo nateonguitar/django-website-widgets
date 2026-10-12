@@ -1,0 +1,14 @@
+{% extends 'admin/index.html' %}
+
+{% block content %}
+    <div class="module">
+        <table>
+            <caption>Tools</caption>
+            <tr>
+                <th scope="row"><a href="{% url 'admin:events_tool' %}">Events at a glance</a></th>
+                <td>Every event, from a widget.</td>
+            </tr>
+        </table>
+    </div>
+    {{ block.super }}
+{% endblock %}

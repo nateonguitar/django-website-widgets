@@ -1,0 +1,40 @@
+{% extends 'website/base.html' %}
+
+{% block title %}Upcoming events{% endblock %}
+
+{% block content %}
+    <section id="example-upcoming-events">
+        <h1>Upcoming events</h1>
+        <p class="example-lead">
+            This page is a Django <span class="example-code">TemplateView</span> whose template extends
+            a base template, the traditional way. It is not a <span class="example-code">Page</span>.
+            The list below is an <span class="example-code">EventList</span> widget the view rendered
+            with <span class="example-code">widget.render(request)</span> and put in the template's
+            context, and each card keeps its own "Show details" script.
+        </p>
+        <p class="example-muted">
+            <span class="example-code">render()</span> runs from sync code with no event loop, so the
+            widget queries with the plain sync ORM. It needs no request either. Two more places a
+            widget fits:
+        </p>
+        <ul>
+            <li>
+                <strong>Email:</strong> every email is an
+                <span class="example-code">EmailDocument</span> widget, a whole HTML document with its
+                head, header and footer, holding the email's own part as a child widget, rendered
+                with <span class="example-code">render()</span> and no request.
+                <span class="example-code">python manage.py send_event_digest --to you@example.com</span>
+                and <span class="example-code">send_event_reminder</span> print one each to the
+                console.
+            </li>
+            <li>
+                <strong>An admin tool:</strong> the
+                <a href="{% url 'admin:events_tool' %}">events tool in the admin</a> is a custom admin
+                view, beside the event admin, whose template extends the admin's own and holds a
+                widget's HTML. Log in as <span class="example-code">admin</span>, password
+                <span class="example-code">try-the-widgets</span>.
+            </li>
+        </ul>
+        {{ event_list_html }}
+    </section>
+{% endblock %}

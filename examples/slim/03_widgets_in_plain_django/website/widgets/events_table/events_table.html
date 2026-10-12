@@ -1,0 +1,22 @@
+<div class="module">
+    <table id="example-events-table">
+        <thead>
+            <tr>
+                <th scope="col">Event</th>
+                <th scope="col">Starts</th>
+                <th scope="col">Location</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in data.rows %}
+                <tr>
+                    <td><a href="{{ row.change_url }}">{{ row.event.name }}</a></td>
+                    <td>{{ row.event.starts_at|date:"j M Y, H:i" }}</td>
+                    <td>{{ row.event.location }}</td>
+                </tr>
+            {% empty %}
+                <tr><td colspan="3">No events.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>

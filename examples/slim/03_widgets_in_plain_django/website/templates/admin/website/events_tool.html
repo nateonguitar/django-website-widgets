@@ -1,0 +1,10 @@
+{% extends 'admin/base_site.html' %}
+
+{% block content %}
+    <p>
+        A custom admin view, added through the admin site's <code>get_urls()</code>. Its template
+        extends the admin's, and the table below is a widget rendered with
+        <code>widget.render(request)</code>, styled by the admin's own stylesheet.
+    </p>
+    {{ table_html }}
+{% endblock %}
