@@ -7,7 +7,7 @@ when a URL goes to the wrong page.
 Primary code:
 - `website_widgets.page_routes` — `PageRoutes`: `register_url()`, `urls()`, discovery, the
   ordering key, `check_for_ties()`
-- `website_widgets.management.commands.show_page_resolve_order` — the order and reachability
+- `website_widgets.management.commands.ww_show_routes` — the order and reachability
   report
 - `website_widgets.web_page` — `WebPage.as_view()`, which both kinds of route call
 
@@ -97,10 +97,10 @@ pattern, so `forum/create-post` and `forum/<int:post_id>` don't count as overlap
 
 ## Checking the order
 
-`show_page_resolve_order` lists the decorated routes in the order they are tried:
+`ww_show_routes` lists the decorated routes in the order they are tried:
 
 ```
-$ python manage.py show_page_resolve_order
+$ python manage.py ww_show_routes
 #   URL                                              Segments  Page
 1   /moderation/reports/<int:report_id>              f/f/i     ViewReportPage
 ...

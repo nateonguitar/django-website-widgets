@@ -7,7 +7,7 @@ built on it. One line per doc, enough to pick the right one; the detail is in th
 
 - **A page is a `WebPage` subclass, a component a `Widget` subclass,** each in its own folder with
   its template beside its `.py` file and named after it (`info_card.py` renders
-  `info_card.html`). Create one with `python manage.py generate_component`, not by hand. A variant render is `<name>__<variant>.html`, chosen by setting
+  `info_card.html`). Create one with `python manage.py ww_create_page` or `ww_create_widget`, not by hand. A variant render is `<name>__<variant>.html`, chosen by setting
   `template_filename` to a bare file name.
 - **Data flows down, through constructors.** A widget's `set_context()` builds its children, and
   a parent never reads a child's context. What every widget needs goes in `context.page`.
@@ -27,9 +27,9 @@ built on it. One line per doc, enough to pick the right one; the detail is in th
 ## Docs
 
 - `docs/rendering_pipeline.md` — what happens between a request and HTML: one page instance per request, the four passes of `build_response()`, `render()` and `arender()` outside a page, a whole document with no request (email) as a widget, the five-key template context, template lookup, and the async ORM trap
-- `docs/routing.md` — routing a page by hand or with `@register_url`: discovery under `pages/`, the namespace and default names, most-specific-first ordering, the tie check, `show_page_resolve_order`
+- `docs/routing.md` — routing a page by hand or with `@register_url`: discovery under `pages/`, the namespace and default names, most-specific-first ordering, the tie check, `ww_show_routes`
 - `docs/frontend_controllers.md` — the framework TypeScript: why it is never edited, a controller's lifecycle, `setState()`, element lookups, singletons and `Completer`, what `Controller` leaves to the project
 - `docs/reverse_template.md` — `reverse_template()`: URL names into `/posts/{post_id}` templates for the frontend, why it reads the route, `paramnames`, why it isn't called `reverse`
-- `docs/generate_component.md` — `generate_component`: the files it writes, registering in `main.ts`, what it needs first, `app_page_class`, overriding its templates with `templates_dir`, the placeholders
-- `docs/init_website_widgets.md` — `init_website_widgets`: what it copies into `ts/website_widgets/`, why file by file, the version and file list in the README, what a rerun deletes, the docs pointer
+- `docs/creating_pages_and_widgets.md` — `ww_create_page` and `ww_create_widget`: the files they write, registering in `main.ts`, what they need first, `app_page_class`, overriding their templates with `templates_dir`, the placeholders
+- `docs/creating_and_upgrading_an_app.md` — `ww_create_app` and `ww_upgrade`: why the app's name comes only from settings, what each writes, the framework folder file by file, the version and file list in its README, what an upgrade deletes, the out-of-date warning, the docs pointer
 - `docs/npm_watch.md` — `start_npm_watch()` in `manage.py`: when it starts `npm run watch`, how it avoids a second watcher, why it sets Django up early

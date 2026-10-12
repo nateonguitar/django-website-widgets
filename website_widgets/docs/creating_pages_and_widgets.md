@@ -1,21 +1,23 @@
-# Generating a page or widget
+# Creating a page or widget
 
-`python manage.py generate_component <page|widget> <name>` writes a new component's files into the
-website app and registers its controller and stylesheet in `ts/main.ts`. Read this before adding
-a component by hand, or before changing what the generator writes for a project.
+`python manage.py ww_create_page <name>` and `python manage.py ww_create_widget <name>` write a new
+component's files into the website app and register its controller and stylesheet in
+`ts/main.ts`. Read this before adding a component by hand, or before changing what the commands
+write for a project.
 
 Primary code:
-- `website_widgets.management.commands.generate_component` — the command
-- `website_widgets.config.GenerateComponentConfig` — its two settings
+- `website_widgets.management.commands.ww_create_page` and `website_widgets.management.commands.ww_create_widget` — the commands
+- `website_widgets.management.component_files.ComponentFiles` — the file work both call: a file from a template, a line in `main.ts`
+- `website_widgets.config.GenerateComponentConfig` — their two settings
 - the package's `generator_templates/` — the default templates, listed below
 
 ## What it writes
 
 ```
-python manage.py generate_component widget like_button --tscontroller=true --stylesheet=true
+python manage.py ww_create_widget like_button --tscontroller=true --stylesheet=true
 ```
 
-writes `<website app>/widgets/like_button/` (a page goes in `pages/`):
+writes `<website app>/widgets/like_button/` (`ww_create_page` writes into `pages/`):
 
 ```
 __init__.py         from .like_button import LikeButton
@@ -41,7 +43,7 @@ which line to add by hand.
 ## What it needs first
 
 - **The framework files.** A generated controller imports `App` and `Controller` from
-  `ts/website_widgets/`, so the command stops, pointing at `init_website_widgets`, when
+  `ts/website_widgets/`, so the command stops, pointing at `ww_upgrade`, when
   `app.ts` or `controller.ts` isn't there.
 - **A page base class, for a page.** A generated page subclasses the class at
   `GenerateComponentConfig.app_page_class`, which defaults to

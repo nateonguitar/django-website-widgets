@@ -98,8 +98,8 @@ django-website-widgets/
     ├── AGENTS.md               # The index of docs/ and the rules every change follows
     ├── docs/                   # How each part works, and why
     ├── frontend/               # The framework TypeScript and its README, which
-    │                           # init_website_widgets copies into a project
-    ├── generator_templates/    # generate_component's default templates (*.tmpl)
+    │                           # ww_create_app and ww_upgrade copy into a project
+    ├── generator_templates/    # ww_create_page's and ww_create_widget's default templates (*.tmpl)
     ├── __init__.py             # Exports Widget, WebPage, WidgetContext, PageRoutes, register_url,
     │                           # reverse_template, NpmWatch, start_npm_watch
     ├── apps.py
@@ -112,8 +112,12 @@ django-website-widgets/
     ├── widget_context.py
     ├── tests/                  # One test class per file, not shipped; see "Tests" above
     └── management/
-        └── commands/           # test_website_widgets, show_page_resolve_order,
-                                # init_website_widgets, generate_component
+        ├── framework_folder.py # FrameworkFolder: the copied ts/website_widgets/, and its
+        │                       # out-of-date system check
+        ├── component_files.py  # ComponentFiles: the file work ww_create_page and ww_create_widget
+        │                       # both call; each command's own handle() reads top to bottom
+        └── commands/           # ww_create_app, ww_upgrade, ww_create_page, ww_create_widget,
+                                # ww_show_routes
 ```
 
 ## Docs
@@ -125,19 +129,25 @@ or an index line names a doc that doesn't exist. A new doc gets its line in the 
 a README section that grows past an introduction moves into a doc with a link left behind. The
 README's links are absolute GitHub URLs, since PyPI shows the README but not the files beside it.
 
-**`init_website_widgets` copies `AGENTS.md` and `docs/` into projects as they are,** so they're
-written for where they land: a TypeScript file by its name, a doc by its path beside
+**`ww_create_app` and `ww_upgrade` copy `AGENTS.md` and `docs/` into projects as they are,** so
+they're written for where they land: a TypeScript file by its name, a doc by its path beside
 `AGENTS.md`, and Python by its dotted name (`website_widgets.web_page`), never a repo path like
-`website_widgets/web_page.py`. `frontend/README.md` is the one template: init fills in its
-`{version}` and `{file_list}`.
+`website_widgets/web_page.py`. `frontend/README.md` is the one template: `FrameworkFolder` fills
+in its `{version}` and `{file_list}`, and the out-of-date check reads the version back, so keep
+its "Copied from django-website-widgets {version} by" line.
 
 **`generator_templates/` holds no project opinions**: no logging, no nonce, no HTTP client.
-`tests/commands/test_generate_component.py` fails when one creeps in. They're named `*.tmpl`
+`tests/test_generator_templates.py` fails when one creeps in. They're named `*.tmpl`
 and kept out of a `templates/` folder, so neither Python tooling nor Django's template loader
 mistakes them for real files.
 
 **The framework TypeScript in `frontend/` is the source of truth.** Gametabs and every other
-project get it by running init; a change is made here and reaches them in a release.
+project get it through `ww_create_app` and then `ww_upgrade`; a change is made here and reaches
+them in a release.
+
+**Every command is `ww_`-prefixed, and `ww_create_*` is the one verb for writing new files.**
+A new command follows both, so `manage.py help`'s list and a project's shell history say where a
+command comes from.
 
 ## Gotchas
 
@@ -145,6 +155,3 @@ project get it by running init; a change is made here and reaches them in a rele
 `django-website-widgets` and imported as `website_widgets`, so `[tool.poetry]` names the package
 to include explicitly; without it Poetry looks for a `django_website_widgets` folder and builds an
 empty wheel.
-
-**`test_website_widgets` is an installation check, not a test suite.** It confirms the app loads
-and, with `--verbose`, prints the exported classes. It never renders a widget.

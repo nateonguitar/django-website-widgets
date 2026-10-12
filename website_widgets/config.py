@@ -3,8 +3,9 @@ import os
 
 class GenerateComponentConfig:
     """
-    Settings read only by `generate_component`, passed to `WebsiteWidgetsConfig` as
-    `generate_component`. Both have defaults, so a project keeping init's layout needs none.
+    Settings read only by `ww_create_page` and `ww_create_widget`, passed to
+    `WebsiteWidgetsConfig` as `generate_component`. Both have defaults, so a project keeping
+    `ww_create_app`'s layout needs none.
     """
 
     def __init__(
@@ -13,7 +14,7 @@ class GenerateComponentConfig:
         templates_dir: str | os.PathLike | None = None,
     ):
         # A dotted path to the base class of a generated page. None means
-        # `<website_app_name>.pages.app_page.AppPage`, where init creates one.
+        # `<website_app_name>.pages.app_page.AppPage`, where the website app keeps its page base class.
         self.app_page_class = app_page_class
         # A folder of the project's own generator templates. A file there replaces the
         # package's template of the same name; the others keep the package's.

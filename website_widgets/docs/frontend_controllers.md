@@ -8,14 +8,14 @@ Primary code, in `ts/website_widgets/` beside `AGENTS.md`:
 - `controller.ts` — `Controller`
 - `app.ts` — `App`: `initializeController()`, `registerSingleton()`, `getSingleton()`
 - `completer.ts` — `Completer`
-- `README.md` — the don't-edit notice, the package version and the list of files init wrote
+- `README.md` — the don't-edit notice, the package version and the list of files the package wrote
 
 ## The files belong to the package
 
 **Never edit the framework's TypeScript files.** They are the package's code, copied into the
-project by `python manage.py init_website_widgets` only because a bundler needs them in the
-project tree. Rerunning init after a package upgrade overwrites them, so an edit is lost; with
-the folder committed, the diff shows what init replaced. A project changes behaviour by
+project by `ww_create_app` and `ww_upgrade` only because a bundler needs them in the project
+tree. Running `ww_upgrade` after a package upgrade overwrites them, so an edit is lost; with the
+folder committed, the diff shows what it replaced. A project changes behaviour by
 subclassing `Controller` or `App` in its own files. A project's own frontend state, such as the
 logged-in user or feature flags, lives in its own classes, never on `App`.
 

@@ -26,8 +26,8 @@ inside the package, indexed by
 - [`routing.md`](https://github.com/nateonguitar/django-website-widgets/blob/main/website_widgets/docs/routing.md): `@register_url`, route discovery and ordering
 - [`frontend_controllers.md`](https://github.com/nateonguitar/django-website-widgets/blob/main/website_widgets/docs/frontend_controllers.md): the TypeScript `Controller`, `App` and `Completer`
 - [`reverse_template.md`](https://github.com/nateonguitar/django-website-widgets/blob/main/website_widgets/docs/reverse_template.md): URL templates for the frontend
-- [`generate_component.md`](https://github.com/nateonguitar/django-website-widgets/blob/main/website_widgets/docs/generate_component.md): generating a page or widget, and overriding the generator's templates
-- [`init_website_widgets.md`](https://github.com/nateonguitar/django-website-widgets/blob/main/website_widgets/docs/init_website_widgets.md): copying the framework's TypeScript and these docs into a project
+- [`creating_and_upgrading_an_app.md`](https://github.com/nateonguitar/django-website-widgets/blob/main/website_widgets/docs/creating_and_upgrading_an_app.md): `ww_create_app` and `ww_upgrade`, and the framework's TypeScript and these docs copied into a project
+- [`creating_pages_and_widgets.md`](https://github.com/nateonguitar/django-website-widgets/blob/main/website_widgets/docs/creating_pages_and_widgets.md): `ww_create_page` and `ww_create_widget`, and overriding their templates
 - [`npm_watch.md`](https://github.com/nateonguitar/django-website-widgets/blob/main/website_widgets/docs/npm_watch.md): starting `npm run watch` with `runserver`
 
 `AGENTS.md` is written for AI coding assistants as well as people: an index plus the rules
@@ -362,7 +362,7 @@ urlpatterns = [
 Pages are found by importing every module under the website app's `pages/` folder, and their
 routes reverse as `website:<name>`, the name defaulting to the class name. Routes are tried most
 specific first, never in file order, so `profile/settings` always beats
-`profile/<str:username>`. `python manage.py show_page_resolve_order` lists them in that order
+`profile/<str:username>`. `python manage.py ww_show_routes` lists them in that order
 and checks that each reaches its page. Routing a page by hand with `MyPage.as_view()` still
 works, and the two mix freely. See
 [`docs/routing.md`](https://github.com/nateonguitar/django-website-widgets/blob/main/website_widgets/docs/routing.md)
@@ -529,38 +529,43 @@ Without `_debug_label`, widgets display only their class name (e.g., `InfoCard`)
 
 ## Management Commands
 
-Check installation:
+Every command is prefixed `ww_`.
+
+Create the website app, named by `WEBSITE_WIDGETS.website_app_name` (`website` by default), with
+the framework's TypeScript (`App`, `Controller`, `Completer`) and the package's docs in its
+`ts/website_widgets/`. It lists every file and asks before writing:
 ```bash
-python manage.py test_website_widgets --verbose
+python manage.py ww_create_app
 ```
+
+After every upgrade of the package, bring that folder up to the installed version (and run it
+once on a website app that never ran `ww_create_app`):
+```bash
+python manage.py ww_upgrade
+```
+It overwrites only the files the package ships, deletes ones it no longer ships, and leaves
+anything else in the folder alone. Commit the folder, so an upgrade shows up as a diff. A system
+check warns when the folder is from another version than the installed package. Both commands
+offer to point your `CLAUDE.md`, `.claude/CLAUDE.md` or `AGENTS.md` at the copied docs. See
+[`docs/creating_and_upgrading_an_app.md`](https://github.com/nateonguitar/django-website-widgets/blob/main/website_widgets/docs/creating_and_upgrading_an_app.md).
+
+Create a page or widget, with an optional TypeScript controller and stylesheet registered in
+`ts/main.ts` (each asks when a flag is left out):
+```bash
+python manage.py ww_create_widget like_button --tscontroller=true --stylesheet=true
+python manage.py ww_create_page profile_page --tscontroller=false --stylesheet=false
+```
+They need the framework folder, and for a page, the base class at
+`GenerateComponentConfig.app_page_class`. A project overrides any of their templates with its
+own, in `templates_dir`. See
+[`docs/creating_pages_and_widgets.md`](https://github.com/nateonguitar/django-website-widgets/blob/main/website_widgets/docs/creating_pages_and_widgets.md).
 
 List the `@register_url` routes in the order they are tried, and check each reaches its page
 (see "Routing pages with `@register_url`"):
 ```bash
-python manage.py show_page_resolve_order
-python manage.py show_page_resolve_order --columns=url,name,page,reaches_page --path-param-type=type
+python manage.py ww_show_routes
+python manage.py ww_show_routes --columns=url,name,page,reaches_page --path-param-type=type
 ```
-
-Copy the framework's TypeScript (`App`, `Controller`, `Completer`) and the package's docs into
-the website app's `ts/website_widgets/` folder, and rerun after every upgrade:
-```bash
-python manage.py init_website_widgets
-```
-It overwrites only the files the package ships, deletes ones it no longer ships, and leaves
-anything else in the folder alone. Commit the folder, so an upgrade shows up as a diff. It also
-offers to point your `CLAUDE.md`, `.claude/CLAUDE.md` or `AGENTS.md` at the copied docs. See
-[`docs/init_website_widgets.md`](https://github.com/nateonguitar/django-website-widgets/blob/main/website_widgets/docs/init_website_widgets.md).
-
-Generate a page or widget, with an optional TypeScript controller and stylesheet registered in
-`ts/main.ts` (it asks when a flag is left out):
-```bash
-python manage.py generate_component widget like_button --tscontroller=true --stylesheet=true
-python manage.py generate_component page profile_page --tscontroller=false --stylesheet=false
-```
-It needs `init_website_widgets` to have run, and for a page, the base class at
-`GenerateComponentConfig.app_page_class`. A project overrides any of its templates with its own,
-in `templates_dir`. See
-[`docs/generate_component.md`](https://github.com/nateonguitar/django-website-widgets/blob/main/website_widgets/docs/generate_component.md).
 
 ## License
 
