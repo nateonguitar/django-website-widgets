@@ -26,6 +26,24 @@ class Command(BaseCommand):
             choices=['true', 'false'],
             dest='generate_styles',
             help='Generate a stylesheet. Asks when not given.')
+        set_context = parser.add_mutually_exclusive_group()
+        set_context.add_argument(
+            '--async',
+            action='store_const',
+            const='async',
+            dest='set_context',
+            help=(
+                'Write `async def set_context()`, for a widget in a page or behind arender(), '
+                'where database queries are awaited. The default unless '
+                'WEBSITE_WIDGETS.generate_component.widget_set_context says otherwise.'))
+        set_context.add_argument(
+            '--sync',
+            action='store_const',
+            const='sync',
+            dest='set_context',
+            help=(
+                'Write `def set_context()`, for a widget rendered with render() from sync code: '
+                'a plain Django view, an email, the admin.'))
 
     def handle(self, *args, **options):
         config = get_config()
@@ -47,12 +65,14 @@ class Command(BaseCommand):
         replacements = {
             '__ClassName__': name.class_name,
             '__module_name__': name.module_name,
+            '__css_name__': name.css_name,
             '__framework_path__': files.relative_import_path(framework_folder, widget_folder),
         }
+        set_context = options['set_context'] or config.generate_component.widget_set_context
         os.makedirs(widget_folder)
         files.write_from_template(widget_folder, '__init__.py', '__init__.py.tmpl', replacements)
-        files.write_from_template(widget_folder, f'{name.module_name}.py', 'widget.py.tmpl', replacements)
-        html_template = 'component__controller.html.tmpl' if generate_ts else 'component.html.tmpl'
+        files.write_from_template(widget_folder, f'{name.module_name}.py', f'widget__{set_context}.py.tmpl', replacements)
+        html_template = 'widget__controller.html.tmpl' if generate_ts else 'widget.html.tmpl'
         files.write_from_template(widget_folder, f'{name.module_name}.html', html_template, replacements)
 
         # main.ts imports each stylesheet so webpack bundles it, and exports each controller so a

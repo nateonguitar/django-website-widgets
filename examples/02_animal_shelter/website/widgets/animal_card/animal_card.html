@@ -1,0 +1,7 @@
+{# data-animal-type is what the filter's script compares. #}
+<li class="animal-card"
+    data-animal-type="{{ data.animal.animal_type }}">
+  <h2>{{ data.animal.name }}</h2>
+  <p class="animal-card__facts">{{ data.animal.get_animal_type_display }}, {{ data.animal.age_years }} year{{ data.animal.age_years|pluralize }} old</p>
+  <p>{{ data.animal.about }}</p>
+</li>

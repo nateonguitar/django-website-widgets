@@ -1,0 +1,19 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+    <title>{{ page.title }}</title>
+    <link rel="icon"
+          type="image/svg+xml"
+          href="{% static 'website/favicon.svg' %}">
+    {# A plain static file, the way any Django project serves CSS. No build step. #}
+    <link rel="stylesheet"
+          href="{% static 'website/styles.css' %}">
+  </head>
+  <body>
+    {{ page_content_html }}
+  </body>
+</html>

@@ -4,12 +4,17 @@
 // Your own styles and exports go here, above the sections the commands manage.
 import './styles.scss';
 import './web-components/loading-spinner.scss';
+import { LoadingSpinner } from './web-components/loading-spinner';
 
 export { App } from './website_widgets/app';
 export { Controller } from './website_widgets/controller';
 export { Completer } from './website_widgets/completer';
 export { AppState } from './app-state';
 export { AppUrls } from './app-urls';
+
+// Every page loads this bundle, so it defines the custom elements. An element already on the
+// page upgrades when its definition arrives.
+customElements.define(LoadingSpinner.htmlTag, LoadingSpinner);
 
 // Managed by ww_create_widget. Do not manually edit this section.
 // {{ WIDGET STYLES START }}

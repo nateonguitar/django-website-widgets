@@ -1,0 +1,47 @@
+{% load static %}
+<main id="sign-in-page"
+      class="sign-in-page"
+      data-next="{{ data.next }}">
+  <h1>Sign in</h1>
+  <p class="sign-in-page__hint">
+    The family is <code>alex</code>, <code>jordan</code> and <code>sam</code>, each with the
+    password <code>try-the-widgets</code>.
+  </p>
+  {# novalidate, so the endpoint's 400 shows its own field errors rather than the browser's. #}
+  <form class="sign-in-page__form"
+        novalidate>
+    <label>
+      Username
+      <input class="sign-in-page__username"
+             name="username"
+             autocomplete="username"
+             required>
+    </label>
+    <p class="sign-in-page__field-error"
+       data-field="username"></p>
+    <label>
+      Password
+      <input class="sign-in-page__password"
+             name="password"
+             type="password"
+             autocomplete="current-password"
+             required>
+    </label>
+    <p class="sign-in-page__field-error"
+       data-field="password"></p>
+    <div class="sign-in-page__submit">
+      <button type="submit"
+              class="sign-in-page__submit-button">Sign in</button>
+      <loading-spinner class="sign-in-page__spinner"
+                       hidden></loading-spinner>
+    </div>
+    <p class="sign-in-page__message"
+       role="alert"
+       hidden></p>
+  </form>
+</main>
+
+<script type="module">
+  import { SignInPageController } from '{% static "main.js" %}';
+  await SignInPageController.initializeController('#sign-in-page');
+</script>

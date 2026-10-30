@@ -32,8 +32,9 @@ again: `ww_upgrade` keeps only its two managed folders up to date, and checks th
 ├── widgets/
 │   └── app_urls/           the AppUrls widget, handing URLs to TypeScript
 ├── ts/
-│   ├── main.ts             the bundle's entry point, with the commands' four marker pairs
-│   ├── app-state.ts        AppState: data every page shares, and the startup
+│   ├── main.ts             the bundle's entry point, with the commands' four marker pairs,
+│   │                       and where the custom elements are defined
+│   ├── app-state.ts        AppState: data every page shares
 │   ├── app-urls.ts         AppUrls: the URLs the frontend reads
 │   ├── styles.scss         styles every page shares
 │   ├── web-components/loading-spinner.ts and .scss
@@ -77,8 +78,10 @@ The home page's controller shows both ways, by who needs the data:
 choice. A site that wants the user on its pages puts it in `context.page` once, in
 `AppPage.handle_request()`: with Django's `AuthenticationMiddleware`, from
 `await request.auser()` (`rendering_pipeline.md` says why that, and when `request.user` is fine
-instead). The home page links to the example apps, and `slim/04_project_tracker` has a
-real sign-in.
+instead). The home page links to the example apps.
+[`01_movie_manager`](https://github.com/nateonguitar/django-website-widgets/tree/main/examples/01_movie_manager)
+has a real sign-in: a custom `User` model, a Django Ninja sign-in endpoint called with `fetch`,
+and the user on `AppState`.
 
 ## URLs for the frontend
 

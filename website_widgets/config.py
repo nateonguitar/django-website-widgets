@@ -4,14 +4,17 @@ import os
 class GenerateComponentConfig:
     """
     Settings read only by `ww_create_page` and `ww_create_widget`, passed to
-    `WebsiteWidgetsConfig` as `generate_component`. Both have defaults, so a project keeping
+    `WebsiteWidgetsConfig` as `generate_component`. All have defaults, so a project keeping
     `ww_create_app`'s layout needs none.
     """
+
+    WIDGET_SET_CONTEXT_CHOICES = ('async', 'sync')
 
     def __init__(
         self,
         app_page_class: str | None = None,
         templates_dir: str | os.PathLike | None = None,
+        widget_set_context: str = 'async',
     ):
         # A dotted path to the base class of a generated page. None means
         # `<website_app_name>.pages.app_page.AppPage`, where the website app keeps its page base class.
@@ -19,6 +22,14 @@ class GenerateComponentConfig:
         # A folder of the project's own generator templates. A file there replaces the
         # package's template of the same name; the others keep the package's.
         self.templates_dir = os.fspath(templates_dir) if templates_dir is not None else None
+        # The set_context() a generated widget gets, unless `ww_create_widget --async`/`--sync`
+        # says otherwise. 'async' suits widgets in pages and behind `arender()`; 'sync' suits a
+        # project rendering its widgets with `render()` from sync code. A string, since Python
+        # can't take `async=` as an argument name.
+        if widget_set_context not in self.WIDGET_SET_CONTEXT_CHOICES:
+            raise ValueError(
+                f"widget_set_context is {widget_set_context!r}; it must be 'async' or 'sync'.")
+        self.widget_set_context = widget_set_context
 
     def get_app_page_class(self, website_app_name: str) -> str:
         if self.app_page_class is not None:

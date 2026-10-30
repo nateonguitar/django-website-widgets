@@ -11,22 +11,21 @@ class Elements {
 }
 
 export class HomePageController extends Controller {
-    public focusElementSelector = '#home-page';
     private elements = new Elements();
     private loading = false;
     private greeting = '';
 
-    public static async initializeController(): Promise<void> {
-        await App.initializeController({
-            controllerClass: HomePageController,
-        });
+    public static async initializeController(selector: string): Promise<void> {
+        const controller = new HomePageController();
+        controller.focusElementSelector = selector;
+        await App.initializeController({ controller: controller });
     }
 
     public async initState(): Promise<void> {
         this.buildElements();
         this.initializeListeners();
-        // Data for this element alone is a data- attribute on its root, the element
-        // focusElementSelector found.
+        // Data for this element alone is a data- attribute on its root, the element the
+        // selector found.
         if (this.elements.nameInput) {
             this.elements.nameInput.value = this.__element?.dataset.defaultName ?? '';
         }

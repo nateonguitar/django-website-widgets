@@ -8,7 +8,7 @@ write for a project.
 Primary code:
 - `website_widgets.management.commands.ww_create_page` and `website_widgets.management.commands.ww_create_widget` — the commands
 - `website_widgets.management.component_files.ComponentFiles` — the file work both call: a file from a template, a line in `main.ts`
-- `website_widgets.config.GenerateComponentConfig` — their two settings
+- `website_widgets.config.GenerateComponentConfig` — their three settings
 - the package's `generator_templates/` — the default templates, listed below
 
 ## What it writes
@@ -21,8 +21,8 @@ writes `<website app>/widgets/like_button/` (`ww_create_page` writes into `pages
 
 ```
 __init__.py         from .like_button import LikeButton
-like_button.py      class LikeButton(Widget)
-like_button.html    its template, starting the controller when there is one
+like_button.py      class LikeButton(Widget), with an async set_context()
+like_button.html    its template: a root <div id="like-button">, starting the controller when there is one
 like_button.ts      class LikeButtonController extends Controller   (--tscontroller)
 like_button.scss    empty                                            (--stylesheet)
 ```
@@ -34,6 +34,25 @@ imports, so each must be a lowercase identifier (`login_dialog`, not `LoginDialo
 `login-dialog` or `class`), and `..` can't climb out of `pages/` or `widgets/`. Without
 `--tscontroller` or `--stylesheet`, the command asks. It stops without writing anything when the
 name breaks that rule or the folder already exists.
+
+**The root element's id and class are the module name in kebab case** (`like-button`), and a
+page's root is a `<main>` holding an `<h1>`. The generated controller takes the root's selector,
+`await LikeButtonController.initializeController('#like-button')`, and looks its elements up
+inside that root, so a widget shown several times on a page works once each root has its own id
+(`like-button-{{ data.movie.id }}`, passed the same way). The one example value, `label`, shows
+how data reaches a controller: `set_context()` puts it in `context.data`, the template writes it
+in a `data-` attribute on the root, and the controller reads it from `this.__element.dataset` and
+writes it in `setState()`.
+
+**A widget's `set_context()` is `async def` unless the project or the command says otherwise.**
+Async is right for a widget in a page or behind `arender()`, where a database query is awaited; a
+sync `def set_context()` runs on the page's event loop, where a sync query raises
+`SynchronousOnlyOperation`. Sync is right for a widget rendered with `render()` from sync code (a
+plain Django view, an email, the admin), which refuses an `async def`. `--async` or `--sync`
+chooses for one widget; `GenerateComponentConfig.widget_set_context` (`'async'` or `'sync'`) sets
+the project's default. A page is always async, since a page only renders through the async
+pipeline, and calls no `super().set_context()`, since `WebPage`'s does nothing; a project whose
+page base class does work there adds the call in its own `page.py.tmpl`.
 
 **`ts/main.ts` gets the new lines between its marker pairs**, each section kept sorted:
 `// {{ WIDGET STYLES START }}` / `END`, `PAGE STYLES`, `WIDGET CONTROLLERS` and
@@ -57,20 +76,21 @@ which line to add by hand.
 ## A project's own templates
 
 The package's templates hold no project opinions: no logging, no CSP nonce, no HTTP client, and
-a page that is a plain sync `set_context()`. A project bakes its conventions in by keeping its
-own templates in `GenerateComponentConfig.templates_dir`. **A file there replaces the package's
-template of the same name**, and the others keep the package's, the way a project overrides one
-Django admin template:
+no layout beyond a root element. A project bakes its conventions in by keeping its own templates
+in `GenerateComponentConfig.templates_dir`. **A file there replaces the package's template of the
+same name**, and the others keep the package's, the way a project overrides one Django admin
+template. Pages and widgets have separate templates, so a site can wrap every page in its layout
+without wrapping every widget in it:
 
 | Template | Writes |
 | --- | --- |
 | `__init__.py.tmpl` | `__init__.py` |
 | `page.py.tmpl` | a page's class |
-| `widget.py.tmpl` | a widget's class |
-| `component.html.tmpl` | the template, with no controller |
-| `component__controller.html.tmpl` | the template, starting the controller |
-| `controller.ts.tmpl` | the controller |
-| `component.scss.tmpl` | the stylesheet |
+| `widget__async.py.tmpl`, `widget__sync.py.tmpl` | a widget's class, with `async def` or `def set_context()` |
+| `page.html.tmpl`, `widget.html.tmpl` | the template, with no controller |
+| `page__controller.html.tmpl`, `widget__controller.html.tmpl` | the template, starting the controller |
+| `controller.ts.tmpl` | the controller, for pages and widgets |
+| `component.scss.tmpl` | the stylesheet, for pages and widgets |
 
 ```python
 from website_widgets.config import GenerateComponentConfig, WebsiteWidgetsConfig
@@ -89,6 +109,7 @@ something in an HTML template and `${...}` in TypeScript:
 | --- | --- |
 | `__ClassName__` | `LikeButton` |
 | `__module_name__` | `like_button` |
+| `__css_name__` | `like-button`, the root element's id and class |
 | `__framework_path__` | the relative import path to `ts/website_widgets`, such as `../../ts/website_widgets` |
 | `__app_page_module__`, `__AppPageClass__` | the two halves of `app_page_class`, in `page.py.tmpl` |
 

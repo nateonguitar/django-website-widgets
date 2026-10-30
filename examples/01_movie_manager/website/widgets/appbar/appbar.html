@@ -1,0 +1,26 @@
+{% load static %}
+<header id="appbar"
+        class="appbar">
+  <a class="appbar__site-name"
+     href="{% url 'website:HomePage' %}">{{ page.site_name }}</a>
+  <nav class="appbar__links">
+    <a href="{% url 'website:FindMoviePage' %}">Find a movie</a>
+    {% if page.user.is_authenticated %}
+      <a href="{% url 'website:MyMoviesPage' %}">My movies</a>
+      <a href="{% url 'website:MyHistoryPage' %}">My history</a>
+      <a href="{% url 'website:WhoHasWhatPage' %}">Who has what</a>
+      <a href="{% url 'website:AddMoviePage' %}">Add to inventory</a>
+      <a href="{% url 'website:CartPage' %}">
+        Cart <span class="appbar__cart-count">0</span>
+      </a>
+      {{ children.account_menu }}
+    {% else %}
+      <a href="{% url 'website:SignInPage' %}?next={{ request.get_full_path|urlencode }}">Sign in</a>
+    {% endif %}
+  </nav>
+</header>
+
+<script type="module">
+  import { AppbarController } from '{% static "main.js" %}';
+  await AppbarController.initializeController('#appbar');
+</script>

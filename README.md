@@ -9,12 +9,14 @@ and no build step.
 ## Examples
 
 The repository's [`examples/`](https://github.com/nateonguitar/django-website-widgets/tree/main/examples)
-folder holds small Django projects you can run, each showing one part of the library: pages and
-widgets, requests and routing, widgets in plain Django views, an email and the admin, and a small
-project tracker using all of it. They aren't installed with the package; clone the repository,
-`cd` into one, then `poetry install`, `migrate` and `runserver`.
+folder holds Django projects you can run. `01_movie_manager` is a whole site built the way the
+package means one to be, from `ww_create_app` on, with TypeScript, SCSS and webpack: sign-in,
+search through an endpoint, a cart and a Django Ninja API. `02_animal_shelter` is a tiny site
+with no build step. They aren't installed with the package; clone the repository and follow each
+one's README.
 [`examples/README.md`](https://github.com/nateonguitar/django-website-widgets/blob/main/examples/README.md)
-lists them all. [Gametabs](https://gametabs.net) is a real site built on it.
+lists them, and the lessons in the docs below cover the techniques too narrow for an example.
+[Gametabs](https://gametabs.net) is a real site built on it.
 
 ## Documentation
 
@@ -31,6 +33,13 @@ inside the package, indexed by
 - [`checking_the_setup.md`](https://github.com/nateonguitar/django-website-widgets/blob/main/website_widgets/docs/checking_the_setup.md): the system checks and `ww_doctor`
 - [`creating_pages_and_widgets.md`](https://github.com/nateonguitar/django-website-widgets/blob/main/website_widgets/docs/creating_pages_and_widgets.md): `ww_create_page` and `ww_create_widget`, and overriding their templates
 - [`npm_watch.md`](https://github.com/nateonguitar/django-website-widgets/blob/main/website_widgets/docs/npm_watch.md): starting `npm run watch` with `runserver`
+
+Lessons, with worked code:
+
+- [`loading_data.md`](https://github.com/nateonguitar/django-website-widgets/blob/main/website_widgets/docs/loading_data.md): the async ORM in a page, and gathering slow calls
+- [`widgets_in_plain_django.md`](https://github.com/nateonguitar/django-website-widgets/blob/main/website_widgets/docs/widgets_in_plain_django.md): widgets in an ordinary view and template, and in the admin
+- [`html_emails.md`](https://github.com/nateonguitar/django-website-widgets/blob/main/website_widgets/docs/html_emails.md): HTML emails built from widgets
+- [`etags_and_304s.md`](https://github.com/nateonguitar/django-website-widgets/blob/main/website_widgets/docs/etags_and_304s.md): answering 304 Not Modified from a page
 
 `AGENTS.md` is written for AI coding assistants as well as people: an index plus the rules
 every change follows.

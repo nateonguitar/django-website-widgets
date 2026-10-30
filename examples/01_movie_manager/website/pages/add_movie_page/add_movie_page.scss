@@ -1,0 +1,46 @@
+.add-movie-page__kind {
+  display: flex;
+  gap: 1.5rem;
+  margin-bottom: 1rem;
+  border: 0;
+  padding: 0;
+
+  legend {
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+  }
+
+  label {
+    flex-direction: row;
+    align-items: center;
+    font-weight: normal;
+  }
+}
+
+.add-movie-page__new,
+.add-movie-page__copies-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  max-width: 24rem;
+}
+
+.add-movie-page__field-error {
+  min-height: 1.25rem;
+  margin: 0 0 0.25rem;
+  color: var(--error-color);
+  font-size: 0.9rem;
+}
+
+.add-movie-page__added {
+  color: var(--success-color);
+  font-weight: 600;
+}
+
+.add-movie-page__search-results {
+  margin: 1rem 0;
+}
+
+.add-movie-page__copies-form {
+  margin-top: 1rem;
+}

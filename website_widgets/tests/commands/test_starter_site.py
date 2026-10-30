@@ -81,9 +81,9 @@ class StarterSiteTestCase(SimpleTestCase):
         self.assertIn("AppUrls.endpoint_greeting = '/api/greeting/{name}';", html)
         self.assertIn("AppUrls.static_bundled_styles = '/static/bundled\\u002Dstyles.css';", html)
         self.assertIn("AppState.siteName = 'My Site';", html)
-        self.assertIn('AppState.initializeApp();', html)
-        self.assertIn('HomePageController.initializeController();', html)
-        self.assertIn('examples/slim/04_project_tracker', html)
+        self.assertIn("await HomePageController.initializeController('#home-page');", html)
+        self.assertIn('examples/01_movie_manager', html)
+        self.assertIn('examples/02_animal_shelter', html)
 
     def test_starter_site__answers_403_with_forbidden_variant__when_page_always_raises(self):
         response = self.client.get('/forbidden-example')

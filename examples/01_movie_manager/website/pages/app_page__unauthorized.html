@@ -1,0 +1,8 @@
+<main class="app-page__refusal">
+  <h1>Sign in</h1>
+  <p>{{ data.message }}</p>
+  <p>
+    {# Back here once signed in: the sign-in endpoint follows next only to a path on this site. #}
+    <a href="{% url 'website:SignInPage' %}?next={{ request.get_full_path|urlencode }}">Sign in</a>
+  </p>
+</main>

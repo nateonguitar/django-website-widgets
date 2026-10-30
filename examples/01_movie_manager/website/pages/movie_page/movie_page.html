@@ -1,0 +1,38 @@
+<main id="movie-page"
+      class="movie-page">
+  <div class="movie-page__card">
+    {{ children.card }}
+  </div>
+
+  <h2>Copies</h2>
+  <table class="movie-page__copies">
+    <thead>
+      <tr>
+        <th scope="col">Copy</th>
+        <th scope="col">Arrived</th>
+        <th scope="col">Where it is</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for copy in data.copies %}
+        <tr>
+          <td>{{ forloop.counter }}</td>
+          <td>{{ copy.added_at|date:"j M Y" }}</td>
+          <td>
+            {% with rental=copy.open_rentals.0 %}
+              {% if not rental %}
+                On the shelf
+              {% elif page.user.is_authenticated %}
+                {# Names are for the family, so only someone signed in sees who. #}
+                Out with {% if rental.user_id == page.user.id %}you{% else %}{{ rental.user.username }}{% endif %}
+                for {{ rental.taken_at|timesince }}
+              {% else %}
+                Out
+              {% endif %}
+            {% endwith %}
+          </td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</main>

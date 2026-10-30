@@ -1,0 +1,35 @@
+{% load static %}
+{# Several cards share a page, so each root's id carries the movie's. #}
+<article id="movie-card-{{ data.movie.id }}"
+         class="movie-card"
+         data-movie-id="{{ data.movie.id }}"
+         data-title="{{ data.movie.title }}"
+         data-available="{{ data.movie.available_copies }}"
+         data-purpose="{{ data.purpose }}">
+  <h3 class="movie-card__title">
+    <a href="{% url 'website:MoviePage' data.movie.id %}">{{ data.movie.title }}</a>
+  </h3>
+  <p class="movie-card__details">
+    {{ data.movie.year }} · {{ data.movie.get_genre_display }} · {{ data.movie.get_rating_display }}
+  </p>
+  {% if data.note %}
+    <p class="movie-card__note">{{ data.note }}</p>
+  {% endif %}
+  <p class="movie-card__availability">
+    {{ data.movie.available_copies }} of {{ data.movie.total_copies }} available
+  </p>
+  {% if data.purpose == 'choose' or page.user.is_authenticated %}
+    {# The label depends on the cart, which only the browser knows, so the controller writes it. #}
+    <button type="button"
+            class="movie-card__action"></button>
+  {% else %}
+    {# Back to this movie's page, which works the same whether a page or the search endpoint rendered the card. #}
+    <a class="movie-card__sign-in"
+       href="{% url 'website:SignInPage' %}?next={% url 'website:MoviePage' data.movie.id %}">Sign in to take it</a>
+  {% endif %}
+</article>
+
+<script type="module">
+  import { MovieCardController } from '{% static "main.js" %}';
+  await MovieCardController.initializeController('#movie-card-{{ data.movie.id }}');
+</script>

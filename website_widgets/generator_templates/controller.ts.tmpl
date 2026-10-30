@@ -2,30 +2,38 @@ import { App } from "__framework_path__/app";
 import { Controller } from "__framework_path__/controller";
 
 class Elements {
+    label: HTMLElement | null = null;
 }
 
 export class __ClassName__Controller extends Controller {
-    public focusElementSelector = null;
     private elements = new Elements();
+    private label = '';
 
-    public static async initializeController(): Promise<void> {
-        await App.initializeController({
-            controllerClass: __ClassName__Controller,
-        });
+    public static async initializeController(selector: string): Promise<void> {
+        const controller = new __ClassName__Controller();
+        controller.focusElementSelector = selector;
+        await App.initializeController({ controller: controller });
     }
 
     public async initState(): Promise<void> {
         this.buildElements();
         this.initializeListeners();
+        // Data for this element alone is a data- attribute on its root, the element the
+        // selector found.
+        this.label = this.__element?.dataset.label ?? '';
     }
 
-    public buildElements(): void {
-        const elements = this.elements;
+    protected buildElements(): void {
+        // Looked up inside the root, so each instance on a page finds its own.
+        this.elements.label = this.__element?.querySelector<HTMLElement>('.__css_name____label') ?? null;
     }
 
     public setState(): void {
+        if (this.elements.label) {
+            this.elements.label.textContent = this.label;
+        }
     }
 
-    public initializeListeners(): void {
+    protected initializeListeners(): void {
     }
 }

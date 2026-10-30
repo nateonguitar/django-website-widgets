@@ -1,0 +1,122 @@
+// Styles every page shares. A page's or widget's own styles go in the .scss file beside it.
+
+// Every colour is a variable, so a theme is one set of values. A page or widget never writes a
+// colour itself; it uses one of these.
+:root {
+  color-scheme: light;
+  --background-color: #ffffff;
+  --text-color: #241f31;
+  --muted-text-color: #5e5c64;
+  --border-color: #deddda;
+  --input-background-color: #ffffff;
+  --input-border-color: #c0bfbc;
+  --accent-color: #1a5fb4;
+  // Text and icons on an accent-coloured fill, such as a button.
+  --on-accent-color: #ffffff;
+  --error-color: #c01c28;
+  --success-color: #26a269;
+  --backdrop-color: rgb(0 0 0 / 40%);
+}
+
+@mixin dark-colors {
+  // Native controls, scrollbars and the dialog backdrop follow it.
+  color-scheme: dark;
+  --background-color: #1e1e1e;
+  --text-color: #e8e6e3;
+  --muted-text-color: #a7a5a1;
+  --border-color: #3d3d3d;
+  --input-background-color: #2a2a2a;
+  --input-border-color: #5a5a5a;
+  --accent-color: #78aeed;
+  --on-accent-color: #0b1b2e;
+  --error-color: #ff7b7b;
+  --success-color: #8ff0a4;
+  --backdrop-color: rgb(0 0 0 / 60%);
+}
+
+// data-theme is on <html>, from AppPage's reading of the theme cookie.
+:root[data-theme='dark'] {
+  @include dark-colors;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root[data-theme='system'] {
+    @include dark-colors;
+  }
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  max-width: 64rem;
+  margin: 0 auto;
+  padding: 0 1rem 2rem;
+  background: var(--background-color);
+  color: var(--text-color);
+  font-family: system-ui, sans-serif;
+  line-height: 1.5;
+}
+
+a {
+  color: var(--accent-color);
+}
+
+label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-weight: 600;
+}
+
+input,
+select,
+button {
+  font: inherit;
+}
+
+input,
+select {
+  padding: 0.4rem 0.5rem;
+  border: 1px solid var(--input-border-color);
+  border-radius: 4px;
+  background: var(--input-background-color);
+  color: var(--text-color);
+  font-weight: normal;
+}
+
+button {
+  padding: 0.4rem 0.9rem;
+  border: 1px solid var(--accent-color);
+  border-radius: 4px;
+  background: var(--accent-color);
+  color: var(--on-accent-color);
+  cursor: pointer;
+
+  &:disabled {
+    opacity: 0.55;
+    cursor: default;
+  }
+}
+
+// A button that reads as a link: a row's Remove, the appbar's name.
+.text-button {
+  border-color: transparent;
+  background: transparent;
+  color: var(--accent-color);
+}
+
+[role='alert'] {
+  color: var(--error-color);
+}
+
+[hidden] {
+  display: none !important;
+}
+
+.app-page__refusal {
+  padding: 2rem 0;
+}

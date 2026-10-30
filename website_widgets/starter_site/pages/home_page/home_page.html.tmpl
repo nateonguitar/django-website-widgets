@@ -39,30 +39,22 @@
 
   <h2>Example apps</h2>
   <p>
-    Small runnable projects, each showing one part of the package
+    Runnable projects in the package's repository
     (<a href="https://github.com/nateonguitar/django-website-widgets/tree/main/examples">all of them</a>):
   </p>
   <ul>
     <li>
-      <a href="https://github.com/nateonguitar/django-website-widgets/tree/main/examples/slim/01_pages_and_widgets">Pages and widgets</a>:
-      child widgets, variant templates, and the async ORM in a page
+      <a href="https://github.com/nateonguitar/django-website-widgets/tree/main/examples/01_movie_manager">Movie manager</a>:
+      a whole site built this way, with sign-in, search, a cart and a Django Ninja API
     </li>
     <li>
-      <a href="https://github.com/nateonguitar/django-website-widgets/tree/main/examples/slim/02_requests_and_routing">Requests and routing</a>:
-      routing, 401, 403 and 404 pages, redirects, and a "load more" endpoint
-    </li>
-    <li>
-      <a href="https://github.com/nateonguitar/django-website-widgets/tree/main/examples/slim/03_widgets_in_plain_django">Widgets in plain Django</a>:
-      widgets in an ordinary view, HTML emails, and an admin page
-    </li>
-    <li>
-      <a href="https://github.com/nateonguitar/django-website-widgets/tree/main/examples/slim/04_project_tracker">Project tracker</a>:
-      a small working app with sign-in and JSON endpoints
+      <a href="https://github.com/nateonguitar/django-website-widgets/tree/main/examples/02_animal_shelter">Animal shelter</a>:
+      a tiny site with no build step, for a project without npm
     </li>
   </ul>
 </main>
 
 <script type="module">
   import { HomePageController } from '{% static "main.js" %}';
-  HomePageController.initializeController();
+  await HomePageController.initializeController('#home-page');
 </script>

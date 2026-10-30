@@ -44,21 +44,32 @@ version changes.
 
 ## Examples
 
-`examples/` holds small Django projects that show the library in use, grouped by what they need
-to run and numbered in reading order. `slim/` needs only Poetry: static CSS and JavaScript files,
-and each widget's behaviour inline. `examples/README.md` is the reader's index; keep it in step
-when one is added.
+`examples/` holds Django projects that show the library in use, numbered in reading order.
+`01_movie_manager` is the main one, built the way the package means a site to be: created by
+`ww_create_app`, with TypeScript, SCSS and webpack. `02_animal_shelter` is the tiny no-build one,
+needing only Poetry. A technique too narrow for either is a lesson in `website_widgets/docs/`,
+which ships, rather than another project. `examples/README.md` is the reader's index; keep it in
+step when one is added.
 
 - **Each is its own project:** its own `manage.py`, settings and `pyproject.toml`, so one folder
   copies out as the start of someone's site. Each depends on the package by relative path,
-  `django-website-widgets = {path = "../../..", develop = true}`, so it runs the code in this
+  `django-website-widgets = {path = "../..", develop = true}`, so it runs the code in this
   checkout, and a package change shows up in every example at once.
+- **The movie manager starts from the package's own commands.** `startproject`, `ww_create_app`,
+  then `ww_create_page` and `ww_create_widget` for each page and widget, committed exactly as
+  they came out before any hand work, so its history diffs what the package generates against
+  what a developer writes. Something every generated file needs corrected by hand is a bug in a
+  command, fixed here.
 - **They run on models and SQLite**, seeded by a data migration, so `migrate` alone gives a
   working site and every test starts from the same rows. `db.sqlite3` is git-ignored.
-- **Run one:** `cd examples/slim/01_pages_and_widgets`, `poetry install`,
-  `poetry run python manage.py migrate`, then `runserver` or `test`.
+- **Run one:** `cd examples/02_animal_shelter`, `poetry install`,
+  `poetry run python manage.py migrate`, then `runserver` or `test`. The movie manager also needs
+  `npm install` in its `website/` folder; its README says so.
 - **CI runs every example's tests**, finding each folder with a `manage.py`, so a new example needs
   no workflow edit. An example that a package change breaks fails the build like a package test.
+  An example with a `package.json` in its website app also gets `npm ci`, a type-check and a
+  production build, since its Python tests never compile its TypeScript or SCSS; commit its
+  `package-lock.json`, which `npm ci` installs from.
 - **They never ship.** `exclude` in `[tool.poetry]` keeps `examples/` out of the wheel and the
   source archive.
 

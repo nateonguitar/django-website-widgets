@@ -1,0 +1,16 @@
+{% load static %}
+<li id="rental-row-{{ data.rental.id }}"
+    class="rental-row"
+    data-rental-id="{{ data.rental.id }}">
+  <span class="rental-row__title">{{ data.rental.copy.movie.title }}</span>
+  <span class="rental-row__taken">taken {{ data.rental.taken_at|date:"D j M" }}</span>
+  <button type="button"
+          class="rental-row__return">Return it</button>
+  <span class="rental-row__message"
+        role="alert"></span>
+</li>
+
+<script type="module">
+  import { RentalRowController } from '{% static "main.js" %}';
+  await RentalRowController.initializeController('#rental-row-{{ data.rental.id }}');
+</script>

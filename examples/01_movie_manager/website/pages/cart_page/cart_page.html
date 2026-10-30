@@ -1,0 +1,30 @@
+{% load static %}
+<main id="cart-page"
+      class="cart-page">
+  <h1>Cart</h1>
+  <p class="cart-page__empty"
+     hidden>
+    Nothing in your cart. <a href="{% url 'website:FindMoviePage' %}">Find a movie</a>.
+  </p>
+  {# Filled by the controller from localStorage, which the server never sees. #}
+  <ul class="cart-page__items"></ul>
+  <div class="cart-page__checkout">
+    <button type="button"
+            class="cart-page__checkout-button">I'm taking these</button>
+    <loading-spinner class="cart-page__spinner"
+                     hidden></loading-spinner>
+  </div>
+  <p class="cart-page__message"
+     role="alert"
+     hidden></p>
+  <p class="cart-page__done"
+     hidden>
+    Recorded. Enjoy the movies, and bring them back from
+    <a href="{% url 'website:MyMoviesPage' %}">My movies</a> when you're done.
+  </p>
+</main>
+
+<script type="module">
+  import { CartPageController } from '{% static "main.js" %}';
+  await CartPageController.initializeController('#cart-page');
+</script>

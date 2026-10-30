@@ -1,0 +1,55 @@
+{% load static %}
+<main id="my-history-page"
+      class="my-history-page"
+      data-chart-labels="{{ data.chart_labels }}"
+      data-chart-counts="{{ data.chart_counts }}">
+  <h1>My history</h1>
+  <section class="my-history-page__chart-section">
+    <h2>Checkouts per day</h2>
+    <p class="my-history-page__chart-total">
+      {{ data.chart_total }} in the last {{ data.chart_days }} days
+    </p>
+    <div class="my-history-page__chart">
+      <loading-spinner class="my-history-page__chart-spinner"></loading-spinner>
+      <canvas class="my-history-page__canvas"
+              role="img"
+              aria-label="Checkouts per day for the last {{ data.chart_days }} days"></canvas>
+    </div>
+  </section>
+  {% if data.rentals %}
+    <table class="my-history-page__table">
+      <thead>
+        <tr>
+          <th scope="col">Movie</th>
+          <th scope="col">Taken</th>
+          <th scope="col">Returned</th>
+          <th scope="col">Kept for</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for rental in data.rentals %}
+          <tr{% if not rental.returned_at %} class="my-history-page__out"{% endif %}>
+            <td>{{ rental.copy.movie.title }}</td>
+            <td>{{ rental.taken_at|date:"D j M Y" }}</td>
+            {% if rental.returned_at %}
+              <td>{{ rental.returned_at|date:"D j M Y" }}</td>
+              <td>{{ rental.taken_at|timesince:rental.returned_at }}</td>
+            {% else %}
+              <td>Still have it, <a href="{% url 'website:MyMoviesPage' %}">return it</a></td>
+              <td>{{ rental.taken_at|timesince }} so far</td>
+            {% endif %}
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p>
+      You haven't taken any movies yet. <a href="{% url 'website:FindMoviePage' %}">Find one</a>.
+    </p>
+  {% endif %}
+</main>
+
+<script type="module">
+  import { MyHistoryPageController } from '{% static "main.js" %}';
+  await MyHistoryPageController.initializeController('#my-history-page');
+</script>

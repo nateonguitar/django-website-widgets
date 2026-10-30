@@ -17,6 +17,34 @@ class GeneratorTemplatesTestCase(SimpleTestCase):
                 with self.subTest(template=filename, opinion=opinion):
                     self.assertNotIn(opinion, content)
 
+    def test_controller_template__has_the_controller_shape__when_shipped(self):
+        with open(os.path.join(TEMPLATES_DIR, 'controller.ts.tmpl'), encoding='utf-8') as file:
+            controller_ts = file.read()
+
+        for expected in (
+            'class Elements {\n    label: HTMLElement | null = null;\n}',
+            'private elements = new Elements();',
+            'public static async initializeController(selector: string)',
+            'controller.focusElementSelector = selector;',
+            'protected buildElements(): void',
+            'this.elements.label = this.__element?.querySelector',
+            'this.__element?.dataset.label',
+            'this.elements.label.textContent = this.label;',
+            'protected initializeListeners(): void',
+        ):
+            with self.subTest(expected=expected):
+                self.assertIn(expected, controller_ts)
+        self.assertNotIn('super.', controller_ts)
+
+    def test_controller_html_templates__start_the_controller_on_their_root__when_shipped(self):
+        for filename in ('page__controller.html.tmpl', 'widget__controller.html.tmpl'):
+            with open(os.path.join(TEMPLATES_DIR, filename), encoding='utf-8') as file:
+                html = file.read()
+            with self.subTest(template=filename):
+                self.assertIn('id="__css_name__"', html)
+                self.assertIn('data-label="{{ data.label }}"', html)
+                self.assertIn("await __ClassName__Controller.initializeController('#__css_name__');", html)
+
     def test_starter_site__holds_no_nonce_or_gametabs_code__when_shipped(self):
         # The starter shows conventions, so it may fetch and keep state, but a CSP is the site's call.
         for path, content in StarterSite('website').files().items():

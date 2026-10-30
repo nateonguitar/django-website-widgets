@@ -2,6 +2,7 @@ import importlib
 import os
 import re
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import NamedTuple
 
 from django.apps import apps
@@ -238,6 +239,23 @@ class PageRoutes:
                 if filename != '__init__.py':
                     module_parts.append(filename.removesuffix('.py'))
                 importlib.import_module('.'.join(module_parts))
+
+    @staticmethod
+    def watch_pages_folder(sender, **kwargs):
+        """
+        Connected to Django's `autoreload_started`, so `runserver` restarts when a page module is
+        added under `pages/`. The reloader watches only modules already imported, and a new page
+        isn't imported until `discover()` runs again, so without this its route 404s until a
+        manual restart.
+        """
+        try:
+            app_config = apps.get_app_config(get_config().website_app_name)
+        except LookupError:
+            # Only the Python half is in use; check_website_app_is_installed() reports a missing app.
+            return
+        pages_folder = Path(app_config.path) / 'pages'
+        if pages_folder.is_dir():
+            sender.watch_dir(pages_folder, '**/*.py')
 
     @classmethod
     def get_ordered_routes(cls) -> list[PageRoute]:

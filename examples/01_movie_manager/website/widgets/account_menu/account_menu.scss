@@ -1,0 +1,47 @@
+.account-menu__button {
+  padding: 0.2rem 0.7rem;
+  border-color: var(--border-color);
+  border-radius: 999px;
+}
+
+.account-menu__dialog {
+  width: min(20rem, calc(100vw - 2rem));
+  padding: 1.25rem;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: var(--background-color);
+  color: var(--text-color);
+
+  &::backdrop {
+    background: var(--backdrop-color);
+  }
+
+  h2 {
+    margin: 0 0 1rem;
+    font-size: 1.1rem;
+  }
+}
+
+.account-menu__theme {
+  display: flex;
+  gap: 1rem;
+  margin: 0 0 1.25rem;
+  padding: 0;
+  border: 0;
+
+  legend {
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+  }
+
+  label {
+    flex-direction: row;
+    align-items: center;
+    font-weight: normal;
+  }
+}
+
+.account-menu__actions {
+  display: flex;
+  justify-content: space-between;
+}

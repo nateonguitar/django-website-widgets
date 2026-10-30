@@ -54,3 +54,21 @@ jobs:
       - run: poetry install --no-interaction
       - run: poetry run python manage.py migrate --noinput
       - run: poetry run python manage.py test
+      # An example with a build (a package.json in its website app) has TypeScript and SCSS that
+      # its Python tests never compile, so a type error or a broken stylesheet would pass them.
+      # The no-build examples skip these steps.
+      - uses: actions/setup-node@v4
+        if: hashFiles(format('{0}/*/package.json', matrix.example)) != ''
+        with:
+          node-version: '24'
+      - name: Type-check and build the frontend
+        if: hashFiles(format('{0}/*/package.json', matrix.example)) != ''
+        run: |
+          for package_json in */package.json; do
+            (
+              cd "$(dirname "$package_json")"
+              npm ci --no-audit --no-fund
+              npx tsc --noEmit -p .
+              npm run build:production
+            )
+          done

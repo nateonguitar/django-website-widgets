@@ -1,0 +1,42 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en"
+      data-theme="{{ page.theme }}">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+    <title>{{ page.title }}</title>
+    {# A plain static file beside webpack's output; the build only clears static/chunks/. #}
+    <link rel="icon"
+          type="image/svg+xml"
+          href="{% static 'favicon.svg' %}">
+    {# Every .scss file ts/main.ts imports, extracted by webpack into one stylesheet. #}
+    <link rel="stylesheet"
+          href="{% static 'bundled-styles.css' %}">
+  </head>
+  <body>
+    {# Fills AppUrls before any controller runs. #}
+    {{ children.app_urls }}
+
+    {# Data every page shares goes on AppState, once, here. #}
+    <script type="module">
+      import { AppState } from '{% static "main.js" %}';
+      AppState.siteName = '{{ page.site_name|escapejs }}';
+      AppState.csrfToken = '{{ page.csrf_token|escapejs }}';
+      {% if page.user.is_authenticated %}
+      AppState.user = {
+        id: {{ page.user.id }},
+        username: '{{ page.user.username|escapejs }}',
+      };
+      {% endif %}
+    </script>
+
+    {{ children.appbar }}
+
+    {{ page_content_html }}
+
+    {# The markup ConfirmDialogController.ask() copies, so any page can ask a question. #}
+    {{ children.confirm_dialog }}
+  </body>
+</html>

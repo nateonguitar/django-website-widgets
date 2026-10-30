@@ -1,0 +1,112 @@
+{% load static %}
+<main id="add-movie-page"
+      class="add-movie-page">
+  <h1>Add to inventory</h1>
+  <fieldset class="add-movie-page__kind">
+    <legend>Is this a new movie or another copy of one we have?</legend>
+    <label>
+      <input type="radio"
+             name="kind"
+             value="new"
+             checked>
+      A new movie
+    </label>
+    <label>
+      <input type="radio"
+             name="kind"
+             value="copy">
+      Another copy
+    </label>
+  </fieldset>
+
+  <form class="add-movie-page__new"
+        novalidate>
+    <label>
+      Title
+      <input name="title"
+             autocomplete="off">
+    </label>
+    <p class="add-movie-page__field-error"
+       data-field="title"></p>
+    <label>
+      Year
+      <input name="year"
+             type="number"
+             inputmode="numeric">
+    </label>
+    <p class="add-movie-page__field-error"
+       data-field="year"></p>
+    <label>
+      Category
+      <select name="genre">
+        <option value="">Pick one</option>
+        {% for value, label in data.genres %}
+          <option value="{{ value }}">{{ label }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <p class="add-movie-page__field-error"
+       data-field="genre"></p>
+    <label>
+      Rating
+      <select name="rating">
+        <option value="">Pick one</option>
+        {% for value, label in data.ratings %}
+          <option value="{{ value }}">{{ label }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <p class="add-movie-page__field-error"
+       data-field="rating"></p>
+    <label>
+      Copies
+      <input name="copies"
+             type="number"
+             min="1"
+             max="20"
+             value="1">
+    </label>
+    <p class="add-movie-page__field-error"
+       data-field="copies"></p>
+    <button type="submit">Add the movie</button>
+  </form>
+
+  <div class="add-movie-page__copy"
+       hidden>
+    <label>
+      Find the movie
+      <input class="add-movie-page__search"
+             type="search"
+             autocomplete="off">
+    </label>
+    {# The search endpoint's cards, made with purpose=choose, go here. #}
+    <div class="add-movie-page__search-results"></div>
+    <form class="add-movie-page__copies-form"
+          hidden>
+      <p>Adding copies of <strong class="add-movie-page__chosen-title"></strong>.</p>
+      <label>
+        Copies
+        <input class="add-movie-page__copies"
+               type="number"
+               min="1"
+               max="20"
+               value="1">
+      </label>
+      <button type="submit">Add the copies</button>
+    </form>
+  </div>
+
+  <p class="add-movie-page__message"
+     role="alert"
+     hidden></p>
+  <p class="add-movie-page__added"
+     role="status"
+     hidden></p>
+  <loading-spinner class="add-movie-page__spinner"
+                   hidden></loading-spinner>
+</main>
+
+<script type="module">
+  import { AddMoviePageController } from '{% static "main.js" %}';
+  await AddMoviePageController.initializeController('#add-movie-page');
+</script>

@@ -1,0 +1,17 @@
+<main id="home-page"
+      class="home-page">
+  <h1>New on the shelf</h1>
+  <p class="home-page__lead">
+    Everything that arrived in the last {{ data.new_for_days }} days.
+    Looking for something else? <a href="{% url 'website:FindMoviePage' %}">Find a movie</a>.
+  </p>
+  {% if children.cards %}
+    <div class="home-page__grid">
+      {% for card in children.cards %}
+        {{ card }}
+      {% endfor %}
+    </div>
+  {% else %}
+    <p>Nothing new this month.</p>
+  {% endif %}
+</main>

@@ -1,0 +1,57 @@
+{% load static %}
+<main id="find-movie-page"
+      class="find-movie-page">
+  <h1>Find a movie</h1>
+  {# A plain GET form whose field names are the URL's: without JavaScript, submitting it loads #}
+  {# /find?q=...&genre=...&rating=..., the same URL the controller writes as you search.      #}
+  <form class="find-movie-page__filters"
+        role="search"
+        method="get"
+        action="{% url 'website:FindMoviePage' %}">
+    <label class="find-movie-page__search">
+      Title
+      <input class="find-movie-page__query"
+             name="q"
+             type="search"
+             autocomplete="off"
+             placeholder="Die Hard"
+             value="{{ data.query }}">
+    </label>
+    <label>
+      Category
+      <select class="find-movie-page__genre"
+              name="genre">
+        <option value="">Any</option>
+        {% for value, label in data.genres %}
+          <option value="{{ value }}"{% if value == data.genre %} selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label>
+      Rating
+      <select class="find-movie-page__rating"
+              name="rating">
+        <option value="">Any</option>
+        {% for value, label in data.ratings %}
+          <option value="{{ value }}"{% if value == data.rating %} selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </label>
+  </form>
+  <p class="find-movie-page__error"
+     role="alert"
+     hidden></p>
+  {# Shown in place of the results while a search runs. #}
+  <div class="find-movie-page__loading"
+       hidden>
+    <loading-spinner></loading-spinner>
+  </div>
+  <div class="find-movie-page__results">
+    {{ children.results }}
+  </div>
+</main>
+
+<script type="module">
+  import { FindMoviePageController } from '{% static "main.js" %}';
+  await FindMoviePageController.initializeController('#find-movie-page');
+</script>

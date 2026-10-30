@@ -1,0 +1,6 @@
+{% load static %}
+<script type="module">
+  import { AppUrls } from '{% static "main.js" %}';
+{% for name, url in data.urls.items %}
+  AppUrls.{{ name }} = '{{ url|escapejs }}';{% endfor %}
+</script>

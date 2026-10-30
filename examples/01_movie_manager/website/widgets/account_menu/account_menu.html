@@ -1,0 +1,45 @@
+{% load static %}
+<div id="account-menu"
+     class="account-menu">
+  <button type="button"
+          class="account-menu__button text-button"
+          aria-haspopup="dialog">{{ page.user.username }}</button>
+
+  {# A native <dialog>: showModal() gives it focus trapping, Escape to close and a backdrop. #}
+  <dialog class="account-menu__dialog"
+          aria-labelledby="account-menu__heading">
+    <h2 id="account-menu__heading">{{ page.user.username }}</h2>
+    <fieldset class="account-menu__theme">
+      <legend>Theme</legend>
+      <label>
+        <input type="radio"
+               name="theme"
+               value="system">
+        System
+      </label>
+      <label>
+        <input type="radio"
+               name="theme"
+               value="light">
+        Light
+      </label>
+      <label>
+        <input type="radio"
+               name="theme"
+               value="dark">
+        Dark
+      </label>
+    </fieldset>
+    <div class="account-menu__actions">
+      <button type="button"
+              class="account-menu__sign-out">Sign out</button>
+      <button type="button"
+              class="account-menu__close text-button">Close</button>
+    </div>
+  </dialog>
+</div>
+
+<script type="module">
+  import { AccountMenuController } from '{% static "main.js" %}';
+  await AccountMenuController.initializeController('#account-menu');
+</script>

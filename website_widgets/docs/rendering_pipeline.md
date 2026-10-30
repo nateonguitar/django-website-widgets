@@ -115,6 +115,12 @@ every email shares, taking the email's own part as a child widget in its constru
 (`EmailDocument(subject='Welcome', content=WelcomeMessage(user=user)).render()`). Nothing about a
 widget's template limits it to a fragment.
 
+**Scripts in an inserted fragment run only if it's inserted the right way.** A widget whose
+template starts its controller from a `<script>` keeps doing so in `arender()`'s HTML, but a
+`<script>` set through `innerHTML` never runs. The frontend inserts the fragment with
+`element.replaceChildren(document.createRange().createContextualFragment(html))` (or
+`append()`), whose scripts do run.
+
 **A widget renders once.** Pass 3 replaces its children with their HTML, so a second render
 raises `RuntimeError`; construct a new instance instead.
 
@@ -208,7 +214,8 @@ synchronous ORM call there raises `SynchronousOnlyOperation`. So does a lazy que
 happens inside the same async pipeline. Fetch with the async ORM (`aget`, `async for`, and so on)
 in an `async def set_context()`, and hand templates evaluated data. A test harness that sets
 `DJANGO_ALLOW_ASYNC_UNSAFE` hides this. `render()` is the exception: called from sync code, it
-runs no event loop, so the sync ORM works in its widgets.
+runs no event loop, so the sync ORM works in its widgets. `loading_data.md` shows how to write
+the widgets so it never comes up.
 
 **What `request.user` holds is up to the project's middleware**, so whether a page can read it
 depends on that middleware, not on the package:

@@ -1,0 +1,29 @@
+<div id="animal-filter"
+     class="animal-filter">
+  <button type="button"
+          data-animal-type=""
+          aria-pressed="true">All</button>
+  {% for value, label in data.animal_types %}
+    <button type="button"
+            data-animal-type="{{ value }}"
+            aria-pressed="false">{{ label }}s</button>
+  {% endfor %}
+</div>
+
+{# Beside the markup it drives: no build, no bundle, just the browser. #}
+<script>
+  (() => {
+    const buttons = document.querySelectorAll('#animal-filter button');
+    for (const button of buttons) {
+      button.addEventListener('click', () => {
+        const animalType = button.dataset.animalType;
+        for (const other of buttons) {
+          other.setAttribute('aria-pressed', String(other === button));
+        }
+        for (const card of document.querySelectorAll('.animal-card')) {
+          card.hidden = animalType !== '' && card.dataset.animalType !== animalType;
+        }
+      });
+    }
+  })();
+</script>

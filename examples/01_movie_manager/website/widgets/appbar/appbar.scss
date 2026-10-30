@@ -1,0 +1,35 @@
+.appbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem 1.5rem;
+  padding: 0.75rem 0;
+  margin-bottom: 1rem;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.appbar__site-name {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: inherit;
+  text-decoration: none;
+}
+
+.appbar__links {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 1rem;
+}
+
+.appbar__cart-count {
+  display: inline-block;
+  min-width: 1.5rem;
+  padding: 0 0.4rem;
+  border-radius: 999px;
+  background: var(--accent-color);
+  color: var(--on-accent-color);
+  font-size: 0.85rem;
+  text-align: center;
+}

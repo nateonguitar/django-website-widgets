@@ -1,0 +1,17 @@
+{% load static %}
+<main id="my-movies-page"
+      class="my-movies-page">
+  <h1>My movies</h1>
+  {% if children.rows %}
+    <p>Back on the shelf? Return it here so the next person sees it's in.</p>
+    <ul class="my-movies-page__rows">
+      {% for row in children.rows %}
+        {{ row }}
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p>
+      You don't have any movies out. <a href="{% url 'website:FindMoviePage' %}">Find one</a>.
+    </p>
+  {% endif %}
+</main>

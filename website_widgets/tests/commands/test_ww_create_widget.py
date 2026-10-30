@@ -19,8 +19,53 @@ class WwCreateWidgetTestCase(ComponentTestCase):
             ['__init__.py', 'like_button.html', 'like_button.py', 'like_button.scss', 'like_button.ts'])
         self.assertIn('from .like_button import LikeButton', self.read(folder, '__init__.py'))
         self.assertIn('class LikeButton(Widget):', self.read(folder, 'like_button.py'))
-        self.assertIn('LikeButtonController.initializeController();', self.read(folder, 'like_button.html'))
-        self.assertIn('export class LikeButtonController extends Controller', self.read(folder, 'like_button.ts'))
+        html = self.read(folder, 'like_button.html')
+        self.assertIn('<div id="like-button"', html)
+        self.assertIn('data-label="{{ data.label }}"', html)
+        self.assertIn("await LikeButtonController.initializeController('#like-button');", html)
+        controller_ts = self.read(folder, 'like_button.ts')
+        self.assertIn('export class LikeButtonController extends Controller', controller_ts)
+        self.assertIn("querySelector<HTMLElement>('.like-button__label')", controller_ts)
+
+    def test_create_widget__writes_async_set_context__when_no_flag_or_setting(self):
+        self.create_widget('like_button', '--tscontroller=false', '--stylesheet=false')
+
+        widget_py = self.read(self.app_folder, 'widgets', 'like_button', 'like_button.py')
+        self.assertIn('    async def set_context(self):', widget_py)
+
+    def test_create_widget__writes_sync_set_context__when_sync_flag_given(self):
+        self.create_widget('like_button', '--tscontroller=false', '--stylesheet=false', '--sync')
+
+        widget_py = self.read(self.app_folder, 'widgets', 'like_button', 'like_button.py')
+        self.assertIn('    def set_context(self):', widget_py)
+        self.assertNotIn('async', widget_py)
+
+    def test_create_widget__writes_sync_set_context__when_setting_is_sync(self):
+        self.config.generate_component.widget_set_context = 'sync'
+
+        self.create_widget('like_button', '--tscontroller=false', '--stylesheet=false')
+
+        widget_py = self.read(self.app_folder, 'widgets', 'like_button', 'like_button.py')
+        self.assertNotIn('async', widget_py)
+
+    def test_create_widget__writes_async_set_context__when_async_flag_overrides_sync_setting(self):
+        self.config.generate_component.widget_set_context = 'sync'
+
+        self.create_widget('like_button', '--tscontroller=false', '--stylesheet=false', '--async')
+
+        widget_py = self.read(self.app_folder, 'widgets', 'like_button', 'like_button.py')
+        self.assertIn('    async def set_context(self):', widget_py)
+
+    def test_create_widget__fails__when_both_async_and_sync_given(self):
+        with self.assertRaises(CommandError):
+            self.create_widget('like_button', '--tscontroller=false', '--stylesheet=false', '--async', '--sync')
+
+    def test_create_widget__kebab_cases_root_from_last_part__when_name_is_nested(self):
+        self.create_widget('dialogs/login_dialog', '--tscontroller=false', '--stylesheet=false')
+
+        html = self.read(self.app_folder, 'widgets', 'dialogs', 'login_dialog', 'login_dialog.html')
+        self.assertIn('<div id="login-dialog"', html)
+        self.assertIn('<p>{{ data.label }}</p>', html)
 
     def test_create_widget__registers_stylesheet_and_controller_sorted__when_both_generated(self):
         self.create_widget('like_button', '--tscontroller=true', '--stylesheet=true')
@@ -62,7 +107,7 @@ class WwCreateWidgetTestCase(ComponentTestCase):
 
     def test_create_widget__uses_project_template__when_templates_dir_has_one(self):
         self.write('<script type="module" nonce="{{ page.nonce }}">__ClassName__</script>\n',
-                   self.templates_dir, 'component__controller.html.tmpl')
+                   self.templates_dir, 'widget__controller.html.tmpl')
 
         self.create_widget('like_button', '--tscontroller=true', '--stylesheet=false')
 

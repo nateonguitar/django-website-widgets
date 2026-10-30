@@ -61,6 +61,7 @@ class Command(BaseCommand):
         replacements = {
             '__ClassName__': name.class_name,
             '__module_name__': name.module_name,
+            '__css_name__': name.css_name,
             '__framework_path__': files.relative_import_path(framework_folder, page_folder),
             '__app_page_module__': page_base_class.module_path,
             '__AppPageClass__': page_base_class.class_name,
@@ -68,7 +69,7 @@ class Command(BaseCommand):
         os.makedirs(page_folder)
         files.write_from_template(page_folder, '__init__.py', '__init__.py.tmpl', replacements)
         files.write_from_template(page_folder, f'{name.module_name}.py', 'page.py.tmpl', replacements)
-        html_template = 'component__controller.html.tmpl' if generate_ts else 'component.html.tmpl'
+        html_template = 'page__controller.html.tmpl' if generate_ts else 'page.html.tmpl'
         files.write_from_template(page_folder, f'{name.module_name}.html', html_template, replacements)
 
         # main.ts imports each stylesheet so webpack bundles it, and exports each controller so a
@@ -86,6 +87,14 @@ class Command(BaseCommand):
                 app_folder,
                 '// {{ PAGE CONTROLLERS START }}',
                 f"export {{ {name.class_name}Controller }} from '{from_main_ts}/{name.module_name}';")
+
+        # A running runserver watches pages/ (PageRoutes.watch_pages_folder), but Django's
+        # StatReloader skips a file the first time it sees one, so a page written in one go never
+        # restarts it. pages/__init__.py has already been seen, so a new modification time on it,
+        # with its content unchanged, does.
+        pages_init = os.path.join(app_folder, 'pages', '__init__.py')
+        if os.path.isfile(pages_init):
+            os.utime(pages_init)
 
         self.stdout.write(self.style.SUCCESS(
             f'Created the page {name.class_name} in {FrameworkFolder.display_path(page_folder)}.'))

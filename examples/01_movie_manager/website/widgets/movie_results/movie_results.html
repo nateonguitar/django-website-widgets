@@ -1,0 +1,13 @@
+<div class="movie-results">
+  {% if not data.searched %}
+    <p class="movie-results__prompt">Search or pick a category.</p>
+  {% elif children.cards %}
+    <div class="movie-results__grid">
+      {% for card in children.cards %}
+        {{ card }}
+      {% endfor %}
+    </div>
+  {% else %}
+    <p class="movie-results__prompt">No movies match.</p>
+  {% endif %}
+</div>

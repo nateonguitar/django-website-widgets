@@ -16,6 +16,52 @@ class WwCreatePageTestCase(ComponentTestCase):
         self.assertIn('from website_widgets.web_page import WebPage', page_py)
         self.assertIn('class HomePage(WebPage):', page_py)
 
+    def test_create_page__writes_async_set_context_without_super__when_created(self):
+        self.create_page('home_page', '--tscontroller=false', '--stylesheet=false')
+
+        page_py = self.read(self.app_folder, 'pages', 'home_page', 'home_page.py')
+        self.assertIn('    async def set_context(self):', page_py)
+        self.assertNotIn('super()', page_py)
+
+    def test_create_page__writes_main_root_with_heading__when_no_controller(self):
+        self.create_page('home_page', '--tscontroller=false', '--stylesheet=false')
+
+        html = self.read(self.app_folder, 'pages', 'home_page', 'home_page.html')
+        self.assertIn('<main id="home-page"', html)
+        self.assertIn('<h1>{{ data.label }}</h1>', html)
+        self.assertNotIn('<script', html)
+
+    def test_create_page__starts_controller_on_main_root__when_controller_generated(self):
+        self.create_page('home_page', '--tscontroller=true', '--stylesheet=false')
+
+        html = self.read(self.app_folder, 'pages', 'home_page', 'home_page.html')
+        self.assertIn('<main id="home-page"', html)
+        self.assertIn("await HomePageController.initializeController('#home-page');", html)
+
+    def test_create_page__uses_project_page_template_only_for_pages__when_templates_dir_has_one(self):
+        self.write('<div class="app-page">{{ data.label }}</div>\n', self.templates_dir, 'page.html.tmpl')
+
+        self.create_page('home_page', '--tscontroller=false', '--stylesheet=false')
+        self.run_command('ww_create_widget', 'like_button', '--tscontroller=false', '--stylesheet=false')
+
+        self.assertEqual(
+            self.read(self.app_folder, 'pages', 'home_page', 'home_page.html'),
+            '<div class="app-page">{{ data.label }}</div>\n')
+        self.assertIn(
+            '<div id="like-button"',
+            self.read(self.app_folder, 'widgets', 'like_button', 'like_button.html'))
+
+    def test_create_page__touches_pages_init_leaving_its_content__when_created(self):
+        pages_init = os.path.join(self.app_folder, 'pages', '__init__.py')
+        os.makedirs(os.path.dirname(pages_init))
+        self.write('# the developer\'s\n', pages_init)
+        os.utime(pages_init, (0, 0))
+
+        self.create_page('home_page', '--tscontroller=false', '--stylesheet=false')
+
+        self.assertGreater(os.path.getmtime(pages_init), 0)
+        self.assertEqual(self.read(pages_init), '# the developer\'s\n')
+
     def test_create_page__registers_in_page_sections__when_both_generated(self):
         self.create_page('home_page', '--tscontroller=true', '--stylesheet=true')
 

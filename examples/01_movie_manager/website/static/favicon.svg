@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <!-- A strip of film: the frame, its sprocket holes, and a play triangle. -->
+  <rect x="2" y="4" width="28" height="24" rx="4" fill="#1a5fb4"/>
+  <g fill="#ffffff">
+    <rect x="5" y="7" width="3" height="3" rx="0.5"/>
+    <rect x="5" y="14.5" width="3" height="3" rx="0.5"/>
+    <rect x="5" y="22" width="3" height="3" rx="0.5"/>
+    <rect x="24" y="7" width="3" height="3" rx="0.5"/>
+    <rect x="24" y="14.5" width="3" height="3" rx="0.5"/>
+    <rect x="24" y="22" width="3" height="3" rx="0.5"/>
+    <path d="M13 10.5v11l9-5.5z"/>
+  </g>
+</svg>

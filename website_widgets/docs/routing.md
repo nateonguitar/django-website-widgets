@@ -69,6 +69,16 @@ Discovery runs when `urls.py` loads. **A page module that calls `reverse()` at i
 fails**, since the URLs it would reverse are still being built. Reverse inside `set_context()`
 or a method instead.
 
+**A page added while `runserver` is running is routed without a manual restart.** Django's
+autoreloader watches only modules already imported, and a new page module isn't imported until
+discovery runs again, so on its own the reloader would never notice it and the new route would
+404. The package connects `PageRoutes.watch_pages_folder()` to Django's `autoreload_started`
+signal, which adds every `.py` file under `pages/` to what the reloader watches. Django's default
+`StatReloader` skips a file the first time it sees one and reloads on its next change, so a page
+written by hand restarts the server on its second save. `ww_create_page`, which writes a page in
+one go, also gives `pages/__init__.py` a new modification time (its content unchanged), which
+the reloader has already seen, so the restart is immediate.
+
 ## Names and the namespace
 
 Decorated routes live in a namespace named after the website app, like Django Ninja's

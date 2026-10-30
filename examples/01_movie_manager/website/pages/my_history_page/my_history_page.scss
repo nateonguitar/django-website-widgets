@@ -1,0 +1,45 @@
+.my-history-page__chart-section {
+  margin-bottom: 2rem;
+
+  h2 {
+    margin: 0;
+    font-size: 1.1rem;
+  }
+}
+
+.my-history-page__chart-total {
+  margin: 0 0 0.5rem;
+  color: var(--muted-text-color);
+}
+
+.my-history-page__chart {
+  position: relative;
+  height: 16rem;
+}
+
+.my-history-page__chart-spinner {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+}
+
+.my-history-page__table {
+  width: 100%;
+  border-collapse: collapse;
+
+  th,
+  td {
+    padding: 0.5rem 0.75rem 0.5rem 0;
+    border-bottom: 1px solid var(--border-color);
+    text-align: left;
+  }
+
+  th {
+    color: var(--muted-text-color);
+    font-weight: 600;
+  }
+}
+
+.my-history-page__out td:first-child {
+  font-weight: 600;
+}

@@ -18,7 +18,6 @@
     <script type="module">
       import { AppState } from '{% static "main.js" %}';
       AppState.siteName = '{{ page.site_name|escapejs }}';
-      AppState.initializeApp();
     </script>
 
     {{ page_content_html }}

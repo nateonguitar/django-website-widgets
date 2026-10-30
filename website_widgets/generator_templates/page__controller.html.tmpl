@@ -1,0 +1,11 @@
+{% load static %}
+<main id="__css_name__"
+      class="__css_name__"
+      data-label="{{ data.label }}">
+    <h1 class="__css_name____label"></h1>
+</main>
+
+<script type="module">
+    import { __ClassName__Controller } from '{% static "main.js" %}';
+    await __ClassName__Controller.initializeController('#__css_name__');
+</script>

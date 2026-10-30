@@ -1,0 +1,21 @@
+[project]
+name = "website-widgets-example-movie-manager"
+version = "0.1.0"
+description = "django-website-widgets example: a family's shared movie shelf, built with TypeScript, SCSS and webpack"
+requires-python = ">=3.12"
+
+[tool.poetry]
+# A site to run, not a package to publish.
+package-mode = false
+
+[tool.poetry.dependencies]
+python = ">=3.12"
+django = ">=5.2"
+django-ninja = ">=1.4"
+# The package from this repository, so the example always runs its current code.
+django-website-widgets = {path = "../..", develop = true}
+
+[tool.poetry.group.dev.dependencies]
+# The tests find what they check with CSS selectors, the way a controller does, instead of
+# matching strings of HTML.
+beautifulsoup4 = ">=4.12"

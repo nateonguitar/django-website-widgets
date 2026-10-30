@@ -19,6 +19,8 @@ class ComponentName:
     path: str
     module_name: str
     class_name: str
+    # The root element's id and class, `like-button` for `like_button`.
+    css_name: str
 
     PART_RE = re.compile(r'^[a-z_][a-z0-9_]*$')
 
@@ -35,7 +37,8 @@ class ComponentName:
         return cls(
             path=path,
             module_name=component_name,
-            class_name=component_name.replace('_', ' ').title().replace(' ', ''))
+            class_name=component_name.replace('_', ' ').title().replace(' ', ''),
+            css_name=component_name.strip('_').replace('_', '-'))
 
 
 class ComponentFiles:
