@@ -67,6 +67,6 @@ class ARenderTestCase(WidgetTestCase):
     async def test_arender__test__renders_as_user__when_user_given(self):
         user = SimpleNamespace(is_authenticated=True, username='riley')
         widget = AsyncContextWidget()
-        widget.template_filename = self.write_template('{{ user.username }} {{ data.word }}')
+        widget.template_filename = self.write_template('{{ request.user.username }} {{ data.word }}')
 
         self.assertEqual(await widget.arender__test(user=user), 'riley async')

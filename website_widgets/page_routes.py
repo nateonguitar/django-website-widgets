@@ -5,9 +5,10 @@ from dataclasses import dataclass, field
 from typing import NamedTuple
 
 from django.apps import apps
+from django.conf import settings
 from django.core import checks
 from django.core.exceptions import ImproperlyConfigured
-from django.urls import URLPattern, path
+from django.urls import URLPattern, get_resolver, path
 from django.urls.converters import get_converters
 
 from website_widgets.config import get_config
@@ -217,7 +218,14 @@ class PageRoutes:
     @classmethod
     def discover(cls):
         """Imports every module under the website app's `pages/` folder, registering its pages."""
-        app_config = apps.get_app_config(get_config().website_app_name)
+        app_label = get_config().website_app_name
+        try:
+            app_config = apps.get_app_config(app_label)
+        except LookupError:
+            raise ImproperlyConfigured(
+                f"PageRoutes routes the pages of the website app '{app_label}', but no installed "
+                f"app has that label. Add '{app_label}' to INSTALLED_APPS, or set "
+                f"WEBSITE_WIDGETS.website_app_name to the website app's label.")
         pages_folder = os.path.join(app_config.path, 'pages')
         for folder, subfolders, filenames in os.walk(pages_folder):
             subfolders[:] = sorted(subfolder for subfolder in subfolders if subfolder != '__pycache__')
@@ -237,6 +245,61 @@ class PageRoutes:
         return sorted(
             cls._routes.values(),
             key=lambda page_route: (page_route.get_specificity_key(), page_route.route))
+
+    @staticmethod
+    def check_website_app_is_installed(
+        app_configs=None,
+        **kwargs
+    ) -> list[checks.Error]:
+        """
+        Fails when the project root holds the website app's folder, as `ww_create_app` writes
+        it, but the app isn't installed, so a skipped step fails here rather than as a 404. A
+        project without the folder may use only the Python half, so it passes.
+        """
+        app_label = get_config().website_app_name
+        try:
+            apps.get_app_config(app_label)
+            return []
+        except LookupError:
+            pass
+        base_dir = getattr(settings, 'BASE_DIR', None)
+        if base_dir is None:
+            return []
+        app_folder = os.path.join(str(base_dir), app_label)
+        if not os.path.isfile(os.path.join(app_folder, 'apps.py')):
+            return []
+        return [checks.Error(
+            f"The project root holds the website app, {app_label}/, but '{app_label}' isn't in "
+            f"INSTALLED_APPS, so none of its pages are routed.",
+            hint=f"Add '{app_label}' to INSTALLED_APPS in settings.py.",
+            id='website_widgets.E002')]
+
+    @staticmethod
+    def check_pages_are_routed(
+        app_configs=None,
+        **kwargs
+    ) -> list[checks.Error]:
+        """
+        Fails when the website app has pages with `@register_url` but no URL pattern includes
+        `PageRoutes.urls()`, so every one of them would 404.
+        """
+        try:
+            apps.get_app_config(get_config().website_app_name)
+        except LookupError:
+            return []
+        PageRoutes.discover()
+        page_count = len(PageRoutes._routes)
+        namespace = PageRoutes.get_namespace()
+        if page_count == 0 or namespace in get_resolver().namespace_dict:
+            return []
+        return [checks.Error(
+            f"No URL pattern includes PageRoutes.urls(), so the {page_count} page"
+            f"{'s' if page_count != 1 else ''} with @register_url in the '{namespace}' app "
+            f"aren't routed.",
+            hint=(
+                f"In urls.py, add path('', include('{namespace}.urls')) when {namespace}/urls.py "
+                f"includes PageRoutes.urls(), as ww_create_app's does, or path('', PageRoutes.urls())."),
+            id='website_widgets.E003')]
 
     @staticmethod
     def check_for_ties(

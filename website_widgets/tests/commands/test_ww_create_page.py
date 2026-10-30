@@ -43,6 +43,21 @@ class WwCreatePageTestCase(ComponentTestCase):
         with self.assertRaises(CommandError):
             self.create_page('home_page', '--tscontroller=false', '--stylesheet=false')
 
+    def test_create_page__fails_writing_nothing__when_a_part_of_the_name_cannot_be_a_module(self):
+        for name in ('Bad-Name', 'account/Settings', 'return', '../escape_page'):
+            with self.subTest(name=name):
+                with self.assertRaisesMessage(CommandError, "can't be a component name"):
+                    self.create_page(name, '--tscontroller=false', '--stylesheet=false')
+
+        self.assertFalse(os.path.exists(os.path.join(self.app_folder, 'pages')))
+        self.assertFalse(os.path.exists(os.path.join(self.app_folder, 'escape_page')))
+
+    def test_create_page__nests_the_page__when_name_has_a_folder(self):
+        self.create_page('account/settings_page', '--tscontroller=false', '--stylesheet=false')
+
+        page_py = self.read(self.app_folder, 'pages', 'account', 'settings_page', 'settings_page.py')
+        self.assertIn('class SettingsPage(WebPage):', page_py)
+
     def test_create_page__fails__when_folder_exists(self):
         os.makedirs(os.path.join(self.app_folder, 'pages', 'home_page'))
 

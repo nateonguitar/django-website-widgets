@@ -15,7 +15,7 @@ PACKAGE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
 class FileStatus(enum.Enum):
-    """What a run did to one of the package's files in the framework folder."""
+    """What a run did to one of the package's files in a managed folder."""
 
     ADDED = 'added'
     CHANGED = 'changed'
@@ -25,7 +25,7 @@ class FileStatus(enum.Enum):
 
 @dataclass(frozen=True)
 class FileChange:
-    """One file in the framework folder, by its path there, and what this run did to it."""
+    """One file in a managed folder, by its path there, and what this run did to it."""
 
     path: str
     status: FileStatus
@@ -33,18 +33,19 @@ class FileChange:
 
 class FrameworkFolder:
     """
-    A website app's `ts/website_widgets/`: the framework TypeScript and the package's docs, copied
-    in by `ww_create_app` and brought up to the installed version by `ww_upgrade`. Both commands
-    write it the same way, so a created app and an upgraded one hold identical copies.
+    A folder in the website app that the package manages: copied in by `ww_create_app` and
+    brought up to the installed version by `ww_upgrade`, both writing it the same way, so a
+    created app and an upgraded one hold identical copies. Each subclass names its folder, the
+    files it gets and the template of the README that explains it; `managed_folders()` lists
+    every one.
     """
 
-    RELATIVE_PATH = os.path.join('ts', 'website_widgets')
+    RELATIVE_PATH: str
+    README_TEMPLATE_PATH: str
     FILE_LIST_START = '<!-- website_widgets:files -->'
     FILE_LIST_END = '<!-- /website_widgets:files -->'
     FILE_LIST_LINE_RE = re.compile(r'^- `([^`]+)`$')
     VERSION_STAMP_RE = re.compile(r'Copied from django-website-widgets (\S+) by')
-    # Where AI coding assistants look for a project's instructions, relative to the project root.
-    ASSISTANT_FILES = ('CLAUDE.md', os.path.join('.claude', 'CLAUDE.md'), 'AGENTS.md')
 
     def __init__(
         self,
@@ -52,10 +53,16 @@ class FrameworkFolder:
         stdout: OutputWrapper,
         interactive: bool
     ):
+        self.app_folder = app_folder
         self.path = os.path.join(app_folder, self.RELATIVE_PATH)
         self.stdout = stdout
         self.interactive = interactive
         self.version = importlib.metadata.version('django-website-widgets')
+
+    @staticmethod
+    def managed_folders() -> list[type['FrameworkFolder']]:
+        """Every folder the package manages, in the order the commands write and list them."""
+        return [DocsFolder, TypeScriptFolder]
 
     @classmethod
     def read_version_stamp(cls, app_folder: str) -> str | None:
@@ -69,39 +76,37 @@ class FrameworkFolder:
     @staticmethod
     def check_version_stamp(app_configs=None, **kwargs) -> list[checks.Warning]:
         """
-        A system check: warns when the website app's copies are from another package version
-        than the installed one, as when a project upgrades the package and skips `ww_upgrade`.
-        Silent without the app or the folder, since a site may use only the Python half.
+        A system check: warns for each managed folder copied from another package version than
+        the installed one, as when a project upgrades the package and skips `ww_upgrade`. Silent
+        without the app or the folder, since a site may use only the Python half.
         """
         try:
             app_folder = apps.get_app_config(get_config().website_app_name).path
         except LookupError:
             return []
-        stamp = FrameworkFolder.read_version_stamp(app_folder)
         installed = importlib.metadata.version('django-website-widgets')
-        if stamp is None or stamp == installed:
-            return []
-        folder = FrameworkFolder.display_path(os.path.join(app_folder, FrameworkFolder.RELATIVE_PATH))
-        return [checks.Warning(
-            f'{folder}/ is from django-website-widgets {stamp}, but {installed} is installed, so '
-            f'its TypeScript and docs are out of step with the Python half.',
-            hint='Run `python manage.py ww_upgrade`, then commit the folder.',
-            id='website_widgets.W001')]
+        warnings = []
+        for folder_class in FrameworkFolder.managed_folders():
+            stamp = folder_class.read_version_stamp(app_folder)
+            if stamp is None or stamp == installed:
+                continue
+            folder = FrameworkFolder.display_path(os.path.join(app_folder, folder_class.RELATIVE_PATH))
+            warnings.append(checks.Warning(
+                f'{folder}/ is from django-website-widgets {stamp}, but {installed} is installed, '
+                f'so it is out of step with the Python half.',
+                hint='Run `python manage.py ww_upgrade`, then commit the folder.',
+                id='website_widgets.W001'))
+        return warnings
+
+    def source_files(self) -> dict[str, str]:
+        """Each file the folder gets from the package, by its path there, before the README."""
+        raise NotImplementedError
 
     def package_files(self) -> dict[str, str]:
         """Each file the folder gets, by its path there, the README last."""
-        files = {}
-        frontend_dir = os.path.join(PACKAGE_DIR, 'frontend')
-        for filename in sorted(os.listdir(frontend_dir)):
-            if filename.endswith('.ts'):
-                files[filename] = self._read(os.path.join(frontend_dir, filename))
-        files['AGENTS.md'] = self._read(os.path.join(PACKAGE_DIR, 'AGENTS.md'))
-        docs_dir = os.path.join(PACKAGE_DIR, 'docs')
-        for filename in sorted(os.listdir(docs_dir)):
-            if filename.endswith('.md'):
-                files[f'docs/{filename}'] = self._read(os.path.join(docs_dir, filename))
+        files = self.source_files()
         file_list = '\n'.join(f'- `{path}`' for path in [*files, 'README.md'])
-        readme = self._read(os.path.join(frontend_dir, 'README.md'))
+        readme = self._read(os.path.join(PACKAGE_DIR, self.README_TEMPLATE_PATH))
         files['README.md'] = readme \
             .replace('{version}', self.version) \
             .replace('{file_list}', file_list)
@@ -118,7 +123,8 @@ class FrameworkFolder:
         for path, content in files.items():
             file_path = os.path.join(self.path, path)
             existed = os.path.isfile(file_path)
-            if existed and self._read(file_path) == content:
+            # A checkout that converts line endings, as git's autocrlf does on Windows, is no change.
+            if existed and self._read(file_path).replace('\r\n', '\n') == content.replace('\r\n', '\n'):
                 file_changes.append(FileChange(path=path, status=FileStatus.UNCHANGED))
                 continue
             os.makedirs(os.path.dirname(file_path), exist_ok=True)
@@ -146,8 +152,14 @@ class FrameworkFolder:
             self.stdout.write(f'{shown_folder}/ is already up to date with django-website-widgets {self.version}.')
             return
         self.stdout.write(f'Updated {shown_folder}/ to django-website-widgets {self.version}:')
+        moved_to = self._other_folders_by_file()
         for file_change in changes:
-            suffix = ' (no longer shipped)' if file_change.status == FileStatus.REMOVED else ''
+            suffix = ''
+            filename = os.path.basename(file_change.path)
+            if file_change.status == FileStatus.REMOVED and filename in moved_to:
+                suffix = f' (moved to {moved_to[filename]}/)'
+            elif file_change.status == FileStatus.REMOVED:
+                suffix = ' (no longer shipped)'
             self.stdout.write(f'  {file_change.status.value:<10} {file_change.path}{suffix}')
         unchanged_count = len(file_changes) - len(changes)
         if unchanged_count:
@@ -155,57 +167,23 @@ class FrameworkFolder:
             self.stdout.write(f'  {unchanged_label:<10} {unchanged_count} file{"s" if unchanged_count != 1 else ""}')
         self.stdout.write(f'Commit {shown_folder}/ to keep the diff of what changed.')
 
-    def offer_docs_pointer(self, project_root: str):
-        """Offers a line pointing AI coding assistants at the copied `AGENTS.md`."""
-        target = os.path \
-            .relpath(os.path.join(self.path, 'AGENTS.md'), project_root) \
-            .replace(os.sep, '/')
-        line = f'- `{target}` — how django-website-widgets works; read before changing pages, widgets or controllers'
-        existing = [
-            name
-            for name in self.ASSISTANT_FILES
-            if os.path.isfile(os.path.join(project_root, name))
-        ]
-        if not existing:
-            self._offer_new_agents_md(project_root, target, line)
-            return
-        for name in existing:
-            file_path = os.path.join(project_root, name)
-            content = self._read(file_path)
-            name = name.replace(os.sep, '/')
-            if target in content:
+    def _other_folders_by_file(self) -> dict[str, str]:
+        """
+        Each file another managed folder ships, by file name, mapped to that folder as shown, so
+        a file that moved between folders isn't reported as dropped. By name, since a move can
+        also flatten a subfolder, as an older app's `docs/routing.md` lands as `routing.md`.
+        """
+        folders_by_file = {}
+        for folder_class in self.managed_folders():
+            if folder_class is type(self):
                 continue
-            if not self.interactive:
-                self.stdout.write(
-                    f'{name} has no pointer to {target}; rerun without --noinput to add one.')
-                continue
-            question = (
-                f'Add a line to {name} pointing AI coding assistants to the website_widgets docs '
-                f'({target}), so they follow its conventions? [y/N] ')
-            if self.ask(question):
-                separator = '' if not content or content.endswith('\n') else '\n'
-                with open(file_path, 'a', encoding='utf-8') as file:
-                    file.write(f'{separator}{line}\n')
-                self.stdout.write(f'Added the pointer to {name}.')
-
-    def _offer_new_agents_md(
-        self,
-        project_root: str,
-        target: str,
-        line: str
-    ):
-        if not self.interactive:
-            self.stdout.write(
-                f'No CLAUDE.md, .claude/CLAUDE.md or AGENTS.md in {self.display_path(project_root)}; '
-                f'rerun without --noinput to create an AGENTS.md pointing to {target}.')
-            return
-        question = (
-            f'There is no CLAUDE.md, .claude/CLAUDE.md or AGENTS.md here. Create AGENTS.md pointing '
-            f'AI coding assistants to the website_widgets docs ({target})? [y/N] ')
-        if self.ask(question):
-            with open(os.path.join(project_root, 'AGENTS.md'), 'w', encoding='utf-8') as file:
-                file.write(f'{line}\n')
-            self.stdout.write('Created AGENTS.md.')
+            other_folder = folder_class(
+                app_folder=self.app_folder,
+                stdout=self.stdout,
+                interactive=self.interactive)
+            for path in other_folder.source_files():
+                folders_by_file[os.path.basename(path)] = self.display_path(other_folder.path)
+        return folders_by_file
 
     def _previous_file_list(self) -> list[str]:
         """The files the last run wrote, from the list in the README it left."""
@@ -234,7 +212,19 @@ class FrameworkFolder:
 
     @staticmethod
     def ask(question: str) -> bool:
-        return input(question).strip().lower() in ('y', 'yes')
+        return FrameworkFolder.read_answer(question) in ('y', 'yes')
+
+    @staticmethod
+    def read_answer(question: str) -> str:
+        """
+        The answer, lowercased, or `''`, the question's default, when there is no input to read, as
+        when a script runs a command without `--noinput`.
+        """
+        try:
+            return input(question).strip().lower()
+        except EOFError:
+            print()
+            return ''
 
     @staticmethod
     def display_path(path: str) -> str:
@@ -245,3 +235,133 @@ class FrameworkFolder:
     def _read(path: str) -> str:
         with open(path, encoding='utf-8', newline='') as file:
             return file.read()
+
+
+class TypeScriptFolder(FrameworkFolder):
+    """The app's `ts/website_widgets/`: the framework TypeScript its controllers import."""
+
+    RELATIVE_PATH = os.path.join('ts', 'website_widgets')
+    README_TEMPLATE_PATH = os.path.join('frontend', 'README.md')
+
+    def source_files(self) -> dict[str, str]:
+        files = {}
+        frontend_dir = os.path.join(PACKAGE_DIR, 'frontend')
+        for filename in sorted(os.listdir(frontend_dir)):
+            if filename.endswith('.ts'):
+                files[filename] = self._read(os.path.join(frontend_dir, filename))
+        return files
+
+
+class DocsFolder(FrameworkFolder):
+    """
+    The app's `website_widgets_docs/`: the package's docs for the version installed, a flat copy
+    of its `docs/`, `AGENTS.md` included, which AI coding assistants are pointed at. The docs name
+    each other by bare filename, so they read the same in both places.
+    """
+
+    RELATIVE_PATH = 'website_widgets_docs'
+    README_TEMPLATE_PATH = 'docs_folder_README.md'
+    # Where AI coding assistants look for a project's instructions, relative to the project root.
+    ASSISTANT_FILES = ('CLAUDE.md', os.path.join('.claude', 'CLAUDE.md'), 'AGENTS.md')
+    # Where versions before 0.8.0 copied AGENTS.md, relative to the app, so a pointer one of them
+    # added is moved rather than left beside a second.
+    PREVIOUS_AGENTS_MD_PATH = os.path.join('ts', 'website_widgets', 'AGENTS.md')
+
+    def source_files(self) -> dict[str, str]:
+        files = {}
+        docs_dir = os.path.join(PACKAGE_DIR, 'docs')
+        for filename in sorted(os.listdir(docs_dir)):
+            if filename.endswith('.md'):
+                files[filename] = self._read(os.path.join(docs_dir, filename))
+        return files
+
+    def offer_docs_pointer(self, project_root: str):
+        """Offers a line pointing AI coding assistants at the copied `AGENTS.md`."""
+        target = os.path \
+            .relpath(os.path.join(self.path, 'AGENTS.md'), project_root) \
+            .replace(os.sep, '/')
+        previous_target = os.path \
+            .relpath(os.path.join(self.app_folder, self.PREVIOUS_AGENTS_MD_PATH), project_root) \
+            .replace(os.sep, '/')
+        line = f'- `{target}` — how django-website-widgets works; read before changing pages, widgets or controllers'
+        existing = []
+        real_paths = set()
+        for name in self.ASSISTANT_FILES:
+            file_path = os.path.join(project_root, name)
+            # A CLAUDE.md linked to AGENTS.md is one file, so it is asked about once.
+            real_path = os.path.realpath(file_path)
+            if os.path.isfile(file_path) and real_path not in real_paths:
+                real_paths.add(real_path)
+                existing.append(name)
+        if not existing:
+            self._offer_new_agents_md(project_root, target, line)
+            return
+        for name in existing:
+            file_path = os.path.join(project_root, name)
+            content = self._read(file_path)
+            name = name.replace(os.sep, '/')
+            if target in content:
+                continue
+            if previous_target in content:
+                self._offer_to_move_pointer(
+                    file_path=file_path,
+                    name=name,
+                    content=content,
+                    previous_target=previous_target,
+                    target=target)
+                continue
+            if not self.interactive:
+                self.stdout.write(
+                    f'{name} has no pointer to {target}; rerun without --noinput to add one.')
+                continue
+            question = (
+                f'Add a line to {name} pointing AI coding assistants to the website_widgets docs '
+                f'({target}), so they follow its conventions? [y/N] ')
+            if self.ask(question):
+                separator = '' if not content or content.endswith('\n') else '\n'
+                with open(file_path, 'a', encoding='utf-8') as file:
+                    file.write(f'{separator}{line}\n')
+                self.stdout.write(f'Added the pointer to {name}.')
+
+    def _offer_to_move_pointer(
+        self,
+        file_path: str,
+        name: str,
+        content: str,
+        previous_target: str,
+        target: str
+    ):
+        if not self.interactive:
+            self.stdout.write(
+                f'{name} points to {previous_target}, which moved to {target}; rerun without '
+                f'--noinput to update it.')
+            return
+        question = (
+            f'{name} points AI coding assistants to {previous_target}, which moved to {target}. '
+            f'Update it? [y/N] ')
+        if self.ask(question):
+            with open(file_path, 'w', encoding='utf-8', newline='') as file:
+                file.write(content.replace(previous_target, target))
+            self.stdout.write(f'Updated the pointer in {name}.')
+
+    def _offer_new_agents_md(
+        self,
+        project_root: str,
+        target: str,
+        line: str
+    ):
+        if not self.interactive:
+            shown_root = self.display_path(project_root)
+            # display_path() gives '.' for the current directory, which reads as a typo in a sentence.
+            where = 'the project root' if shown_root == '.' else f'the project root ({shown_root}/)'
+            self.stdout.write(
+                f'No CLAUDE.md, .claude/CLAUDE.md or AGENTS.md in {where}; '
+                f'rerun without --noinput to create an AGENTS.md pointing to {target}.')
+            return
+        question = (
+            f'There is no CLAUDE.md, .claude/CLAUDE.md or AGENTS.md here. Create AGENTS.md pointing '
+            f'AI coding assistants to the website_widgets docs ({target})? [y/N] ')
+        if self.ask(question):
+            with open(os.path.join(project_root, 'AGENTS.md'), 'w', encoding='utf-8') as file:
+                file.write(f'{line}\n')
+            self.stdout.write('Created AGENTS.md.')

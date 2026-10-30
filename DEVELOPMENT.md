@@ -95,51 +95,67 @@ django-website-widgets/
 ├── DEVELOPMENT.md              # This file
 ├── LICENSE
 └── website_widgets/            # The Python package, the only thing shipped (minus tests/)
-    ├── AGENTS.md               # The index of docs/ and the rules every change follows
-    ├── docs/                   # How each part works, and why
+    ├── docs/                   # How each part works, and why, indexed by docs/AGENTS.md
+    ├── docs_folder_README.md   # The README of a project's copy of docs/
     ├── frontend/               # The framework TypeScript and its README, which
     │                           # ww_create_app and ww_upgrade copy into a project
     ├── generator_templates/    # ww_create_page's and ww_create_widget's default templates (*.tmpl)
+    ├── starter_site/           # The site ww_create_app writes, its build files included (*.tmpl)
     ├── __init__.py             # Exports Widget, WebPage, WidgetContext, PageRoutes, register_url,
     │                           # reverse_template, NpmWatch, start_npm_watch
     ├── apps.py
     ├── config.py               # WebsiteWidgetsConfig, GenerateComponentConfig, get_config()
     ├── widget.py
     ├── web_page.py
-    ├── page_routes.py          # @register_url, route discovery, the overlapping-route check
+    ├── page_routes.py          # @register_url, route discovery, the routing system checks
     ├── url_templates.py        # reverse_template()
     ├── npm_watch.py            # start_npm_watch(), for manage.py
     ├── widget_context.py
     ├── tests/                  # One test class per file, not shipped; see "Tests" above
     └── management/
-        ├── framework_folder.py # FrameworkFolder: the copied ts/website_widgets/, and its
-        │                       # out-of-date system check
+        ├── framework_folder.py # FrameworkFolder and its two managed folders, DocsFolder
+        │                       # (<app>/website_widgets_docs/) and TypeScriptFolder
+        │                       # (<app>/ts/website_widgets/), and their out-of-date check
         ├── component_files.py  # ComponentFiles: the file work ww_create_page and ww_create_widget
         │                       # both call; each command's own handle() reads top to bottom
+        ├── starter_site.py     # StarterSite: fills starter_site/ in for an app
+        ├── build_files.py      # BuildFiles: ww_upgrade's handling of the build configs and package.json
+        ├── package_json_check.py  # PackageJsonCheck: package.json against the starter's, for
+        │                       # ww_upgrade and ww_doctor
         └── commands/           # ww_create_app, ww_upgrade, ww_create_page, ww_create_widget,
-                                # ww_show_routes
+                                # ww_show_routes, ww_doctor
 ```
 
 ## Docs
 
 **The docs live inside the Python package,** in `website_widgets/docs/`, so they ship in the wheel
-and a project's installed copy carries the docs for its version. `website_widgets/AGENTS.md`
+and a project's installed copy carries the docs for its version. `AGENTS.md`, beside them,
 indexes them, one line per doc, and `tests/test_agents_md.py` fails when a doc has no index line
 or an index line names a doc that doesn't exist. A new doc gets its line in the same change, and
 a README section that grows past an introduction moves into a doc with a link left behind. The
 README's links are absolute GitHub URLs, since PyPI shows the README but not the files beside it.
 
-**`ww_create_app` and `ww_upgrade` copy `AGENTS.md` and `docs/` into projects as they are,** so
-they're written for where they land: a TypeScript file by its name, a doc by its path beside
-`AGENTS.md`, and Python by its dotted name (`website_widgets.web_page`), never a repo path like
-`website_widgets/web_page.py`. `frontend/README.md` is the one template: `FrameworkFolder` fills
-in its `{version}` and `{file_list}`, and the out-of-date check reads the version back, so keep
-its "Copied from django-website-widgets {version} by" line.
+**`ww_create_app` and `ww_upgrade` copy `docs/` into projects as it is,** flat, into the app's
+`website_widgets_docs/`, so the docs are written for where they land: a TypeScript file by its
+name, a doc by its bare filename, and Python by its dotted name
+(`website_widgets.web_page`), never a repo path like `website_widgets/web_page.py`. Each managed
+folder's README is a template: `docs_folder_README.md` for the docs folder and
+`frontend/README.md` for the TypeScript one. `FrameworkFolder` fills in their `{version}` and
+`{file_list}`, and the out-of-date check reads the version back, so keep each one's "Copied from
+django-website-widgets {version} by" line.
 
 **`generator_templates/` holds no project opinions**: no logging, no nonce, no HTTP client.
 `tests/test_generator_templates.py` fails when one creeps in. They're named `*.tmpl`
 and kept out of a `templates/` folder, so neither Python tooling nor Django's template loader
 mistakes them for real files.
+
+**`starter_site/` is the site `ww_create_app` writes**, every file a `*.tmpl` for the same reason,
+at the path it lands at in the app. `StarterSite` fills `__app_label__`, `__AppConfigClass__` and
+`__npm_package_name__`. Unlike the generator templates it shows conventions (`AppState`, `AppUrls`,
+calling an endpoint), but never a nonce. `tests/commands/test_starter_site.py` creates it, installs
+it and serves it, so a broken starter fails the suite. Its TypeScript isn't type-checked here, since
+the package has no Node toolchain: after changing it, build a fresh one (`ww_create_app` in a
+scratch project, `npm install`, `npx tsc --noEmit -p .`, `npm run build`).
 
 **The framework TypeScript in `frontend/` is the source of truth.** Gametabs and every other
 project get it through `ww_create_app` and then `ww_upgrade`; a change is made here and reaches

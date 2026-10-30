@@ -31,8 +31,8 @@ class PageRoutesTestCase(SimpleTestCase):
         app_config = SimpleNamespace(
             name=self.package_name,
             path=package_folder)
-        mock_apps = self.enterContext(patch('website_widgets.page_routes.apps'))
-        mock_apps.get_app_config.return_value = app_config
+        self.mock_apps = self.enterContext(patch('website_widgets.page_routes.apps'))
+        self.mock_apps.get_app_config.return_value = app_config
         self.enterContext(patch.object(PageRoutes, '_routes', {}))
 
     def forget_fixture_modules(self):

@@ -1,0 +1,50 @@
+from django.http import HttpResponsePermanentRedirect, HttpResponseRedirect
+
+
+class UnauthorizedException(Exception):
+    """
+    Raised from a page's `set_context()` when the page needs a signed-in user and there is none.
+    `AppPage` answers 401 with `app_page__unauthorized.html`.
+    """
+
+    status_code = 401
+
+    def __init__(self, message: str = 'Sign in to see this page.'):
+        super().__init__(message)
+
+
+class ForbiddenException(Exception):
+    """
+    Raised when the signed-in user may not see the page. `AppPage` answers 403 with
+    `app_page__forbidden.html`.
+    """
+
+    status_code = 403
+
+    def __init__(self, message: str = "You don't have access to this page."):
+        super().__init__(message)
+
+
+class NotFoundException(Exception):
+    """
+    Raised when what the URL names doesn't exist, such as an id with no row. `AppPage` answers
+    404 with `app_page__not_found.html`, inside the site's own document, where Django's `Http404`
+    would show its plain 404 page.
+    """
+
+    status_code = 404
+
+    def __init__(self, message: str = "This page doesn't exist."):
+        super().__init__(message)
+
+
+class RedirectException(Exception):
+    """
+    Raised to send the browser somewhere else from inside `set_context()`, such as
+    `raise RedirectException(redirect('__app_label__:HomePage'))`. `AppPage` returns the response it
+    carries.
+    """
+
+    def __init__(self, redirect_response: HttpResponseRedirect | HttpResponsePermanentRedirect):
+        super().__init__(redirect_response.url)
+        self.redirect_response = redirect_response

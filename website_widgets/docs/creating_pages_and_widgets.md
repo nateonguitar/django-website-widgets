@@ -29,8 +29,11 @@ like_button.scss    empty                                            (--styleshe
 
 The class name is the module name in PascalCase. A name with folders, such as
 `dialogs/login_dialog`, nests the component, and every relative import is worked out from where
-it lands. Without `--tscontroller` or `--stylesheet`, the command asks. It stops without writing
-anything when the folder already exists.
+it lands. Each part of the name becomes a Python package or module, which route discovery
+imports, so each must be a lowercase identifier (`login_dialog`, not `LoginDialog`,
+`login-dialog` or `class`), and `..` can't climb out of `pages/` or `widgets/`. Without
+`--tscontroller` or `--stylesheet`, the command asks. It stops without writing anything when the
+name breaks that rule or the folder already exists.
 
 **`ts/main.ts` gets the new lines between its marker pairs**, each section kept sorted:
 `// {{ WIDGET STYLES START }}` / `END`, `PAGE STYLES`, `WIDGET CONTROLLERS` and
@@ -47,7 +50,8 @@ which line to add by hand.
   `app.ts` or `controller.ts` isn't there.
 - **A page base class, for a page.** A generated page subclasses the class at
   `GenerateComponentConfig.app_page_class`, which defaults to
-  `<website_app_name>.pages.app_page.AppPage`. When nothing is at that path, or it isn't a `WebPage`,
+  `<website_app_name>.pages.app_page.AppPage`, where `ww_create_app`'s starter site puts it
+  (`starter_site.md`). When nothing is at that path, or it isn't a `WebPage`,
   the command stops before writing anything, rather than writing a page that fails on import.
 
 ## A project's own templates

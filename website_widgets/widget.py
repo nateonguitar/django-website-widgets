@@ -37,12 +37,16 @@ class Widget:
         """
         The HttpRequest being rendered, assigned by the parent before `set_context()` runs.
 
-        Access the user via `self.request.user`. For custom user models with
-        additional fields or methods, type hint locally for IDE support:
+        What `request.user` holds is up to the project's middleware. Django's
+        `AuthenticationMiddleware` makes it lazy: its first read queries the database, which
+        raises `SynchronousOnlyOperation` inside a page's async pipeline, so with it a page loads
+        the user with `await self.request.auser()`. A middleware that sets an already loaded user
+        makes `request.user` safe to read. See `rendering_pipeline.md`. For a custom user model,
+        type hint locally for IDE support:
 
         ```python
         from api.models import User
-        request_user: User = self.request.user
+        request_user: User = await self.request.auser()
         request_user.custom_method()
         ```
         """
@@ -305,8 +309,10 @@ class Widget:
         context = {}
         # None when rendered without a request.
         context['request'] = self._request
-        # Also None without django.contrib.auth.
-        context['user'] = getattr(self._request, 'user', None)
+        # No `user` key: `request.user` is whatever the project's middleware set, and Django's
+        # default is a lazy object whose first read queries the database, which raises inside an
+        # async page. A page that wants the user puts it in `context.page` the way its middleware
+        # allows.
         context['page'] = self.context.page
         context['data'] = self.context.data
         context['children'] = self.context.children

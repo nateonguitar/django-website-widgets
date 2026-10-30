@@ -49,7 +49,7 @@ class WwCreateAppTestCase(SimpleTestCase):
 
         self.assertIn('apps.py', output)
         self.assertIn('ts/website_widgets/controller.ts', output)
-        self.assertIn('ts/website_widgets/docs/routing.md', output)
+        self.assertIn('  website_widgets_docs/routing.md', output)
         self.assertEqual(self.questions, ['Create these files? [y/N] '])
 
     def test_create_app__writes_nothing__when_answer_is_the_default(self):
@@ -83,8 +83,35 @@ class WwCreateAppTestCase(SimpleTestCase):
     def test_create_app__prints_next_steps__when_created(self):
         output = self.run_create_app('--noinput')
 
-        self.assertIn("Add 'website' to INSTALLED_APPS", output)
-        self.assertIn("path('', PageRoutes.urls())", output)
+        self.assertIn("add 'website' to INSTALLED_APPS", output)
+        self.assertIn("path('', include('website.urls'))", output)
+        self.assertIn('start_npm_watch()', output)
+        self.assertIn('npm install', output)
+        self.assertIn('Other helpful management commands:', output)
+        for command in ('ww_create_page', 'ww_create_widget', 'ww_show_routes', 'ww_doctor', 'ww_upgrade'):
+            self.assertIn(f'  {command}', output)
+
+    def test_create_app__writes_starter_site_with_app_label_filled_in__when_configured(self):
+        self.config = WebsiteWidgetsConfig(website_app_name='storefront')
+
+        with override_settings(WEBSITE_WIDGETS=self.config):
+            self.run_create_app('--noinput')
+
+        app_page = self.read('pages', 'app_page.py')
+        self.assertIn('from storefront.exceptions import', app_page)
+        self.assertIn("reverse_template('storefront:HomePage')", self.read('widgets', 'app_urls', 'app_urls.py'))
+        self.assertIn('"name": "storefront"', self.read('package.json'))
+        for path in ('webpack.config.js', 'tsconfig.json', 'ts/main.ts', 'ts/app-state.ts', 'ts/app-urls.ts', 'pages/home_page/home_page.ts', 'endpoints/greeting_endpoint.py', 'exceptions.py'):
+            with self.subTest(path=path):
+                self.assertNotIn('__app_label__', self.read(path))
+
+    def test_create_app__writes_no_template_files__when_created(self):
+        self.run_create_app('--noinput')
+
+        for folder, subfolders, filenames in os.walk(self.app_path()):
+            for filename in filenames:
+                with self.subTest(filename=filename):
+                    self.assertFalse(filename.endswith('.tmpl'))
 
     def test_create_app__fails__when_app_folder_exists(self):
         os.makedirs(self.app_path())

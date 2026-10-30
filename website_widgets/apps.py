@@ -11,5 +11,7 @@ class WebsiteWidgetsConfig(AppConfig):
         from website_widgets.management.framework_folder import FrameworkFolder
         from website_widgets.page_routes import PageRoutes
 
+        checks.register(PageRoutes.check_website_app_is_installed)
+        checks.register(PageRoutes.check_pages_are_routed, checks.Tags.urls)
         checks.register(PageRoutes.check_for_ties, checks.Tags.urls)
         checks.register(FrameworkFolder.check_version_stamp)

@@ -1,0 +1,66 @@
+import os
+
+from django.http import HttpRequest, HttpResponse
+from website_widgets import WebPage
+
+from __app_label__.exceptions import (
+    ForbiddenException,
+    NotFoundException,
+    RedirectException,
+    UnauthorizedException,
+)
+from __app_label__.widgets.app_urls import AppUrls
+
+
+class AppPage(WebPage):
+    """
+    The base class of every page in this app, and the class `ww_create_page` generates pages
+    from. It renders each page into `document_template.html`, adds the widgets every page's
+    document shows, and turns the exceptions in `exceptions.py` into a status code and a variant
+    template.
+    """
+
+    # Absolute, since a relative path would resolve beside each page's own module.
+    document_template_path = os.path.join(os.path.dirname(__file__), 'document_template.html')
+
+    SITE_NAME = 'My Site'
+    # A page sets its own, as a class attribute or in set_context().
+    page_title: str | None = None
+
+    async def handle_request(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
+        try:
+            # Calls the page's set_context(), whether it's a plain def or an async def.
+            await self._acall_set_context()
+        except UnauthorizedException as exception:
+            self.status_code = exception.status_code
+            self.template_filename = 'app_page__unauthorized.html'
+            self.page_title = 'Sign in'
+            # set_context() stopped partway, so nothing it set is kept.
+            self.context.data = {'message': str(exception)}
+            self.context.children = {}
+        except ForbiddenException as exception:
+            self.status_code = exception.status_code
+            self.template_filename = 'app_page__forbidden.html'
+            self.page_title = 'Forbidden'
+            self.context.data = {'message': str(exception)}
+            self.context.children = {}
+        except NotFoundException as exception:
+            self.status_code = exception.status_code
+            self.template_filename = 'app_page__not_found.html'
+            self.page_title = 'Not found'
+            self.context.data = {'message': str(exception)}
+            self.context.children = {}
+        except RedirectException as exception:
+            return exception.redirect_response
+
+        self.context.page['title'] = self.full_title()
+        # The document template hands it to AppState, for every controller.
+        self.context.page['site_name'] = self.SITE_NAME
+        # Rendered by the document template, so every page has them.
+        self.context.children['app_urls'] = AppUrls()
+        return await self.build_response()
+
+    def full_title(self) -> str:
+        if self.page_title is None:
+            return self.SITE_NAME
+        return f'{self.page_title} | {self.SITE_NAME}'

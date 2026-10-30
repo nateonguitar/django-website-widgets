@@ -1,10 +1,12 @@
+import keyword
 import os
+import re
 from dataclasses import dataclass
 
 from django.apps import apps
 from django.core.management.base import CommandError, OutputWrapper
 
-from website_widgets.management.framework_folder import FrameworkFolder
+from website_widgets.management.framework_folder import FrameworkFolder, TypeScriptFolder
 
 
 PACKAGE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -18,13 +20,21 @@ class ComponentName:
     module_name: str
     class_name: str
 
+    PART_RE = re.compile(r'^[a-z_][a-z0-9_]*$')
+
     @classmethod
     def parse(cls, name: str) -> 'ComponentName':
+        """Stops on a name with a part that can't be a Python module, since route discovery imports every one."""
         path = name.strip('/')
+        for part in path.split('/'):
+            if not cls.PART_RE.match(part) or keyword.iskeyword(part):
+                raise CommandError(
+                    f"'{name}' can't be a component name: each part of it, '{part}' here, must be "
+                    f"a lowercase Python identifier, such as home_page or account/settings_page.")
         component_name = os.path.basename(path)
         return cls(
             path=path,
-            module_name=component_name.lower().replace(' ', '_'),
+            module_name=component_name,
             class_name=component_name.replace('_', ' ').title().replace(' ', ''))
 
 
@@ -62,7 +72,7 @@ class ComponentFiles:
 
     def require_framework_files(self, app_folder: str):
         """Stops when the framework TypeScript a generated controller imports isn't there."""
-        framework_folder = os.path.join(app_folder, FrameworkFolder.RELATIVE_PATH)
+        framework_folder = os.path.join(app_folder, TypeScriptFolder.RELATIVE_PATH)
         missing = [
             filename for filename in self.FRAMEWORK_FILES
             if not os.path.isfile(os.path.join(framework_folder, filename))
@@ -81,7 +91,7 @@ class ComponentFiles:
         if flag is not None:
             return flag == 'true'
         while True:
-            answer = input(f'{question} [Y/n] ').strip().lower()
+            answer = FrameworkFolder.read_answer(f'{question} [Y/n] ')
             if answer in ('', 'y', 'yes'):
                 return True
             if answer in ('n', 'no'):

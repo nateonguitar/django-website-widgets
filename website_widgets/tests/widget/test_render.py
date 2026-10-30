@@ -76,9 +76,9 @@ class RenderTestCase(WidgetTestCase):
     def test_render__renders__when_no_request_given_and_widget_needs_none(self):
         widget = DefaultTemplateWidget()
         widget.template_filename = self.write_template(
-            '{{ request|default_if_none:"none" }} {{ user|default_if_none:"none" }}')
+            '{{ request|default_if_none:"none" }}')
 
-        self.assertEqual(widget.render(), 'none none')
+        self.assertEqual(widget.render(), 'none')
 
     def test_render__fails__when_no_request_given_and_widget_reads_request(self):
         widget = RequestReadingWidget()
@@ -106,13 +106,13 @@ class RenderTestCase(WidgetTestCase):
 
     def test_render__test__renders_as_anonymous__when_no_user_given(self):
         widget = DefaultTemplateWidget()
-        widget.template_filename = self.write_template('{{ user.is_authenticated }}')
+        widget.template_filename = self.write_template('{{ request.user.is_authenticated }}')
 
         self.assertEqual(widget.render__test(), 'False')
 
     def test_render__test__renders_as_user__when_user_given(self):
         user = SimpleNamespace(is_authenticated=True, username='riley')
         widget = DefaultTemplateWidget()
-        widget.template_filename = self.write_template('{{ user.username }}')
+        widget.template_filename = self.write_template('{{ request.user.username }}')
 
         self.assertEqual(widget.render__test(user=user), 'riley')

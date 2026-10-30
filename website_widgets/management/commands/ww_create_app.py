@@ -5,14 +5,17 @@ from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
 
 from website_widgets.config import get_config
-from website_widgets.management.framework_folder import FrameworkFolder
+from website_widgets.management.framework_folder import DocsFolder, FrameworkFolder
+from website_widgets.management.starter_site import StarterSite
 
 
 class Command(BaseCommand):
     help = (
-        "Creates the website app named by WEBSITE_WIDGETS.website_app_name ('website' by default), "
-        "with the framework's TypeScript and the package's docs in its ts/website_widgets/. Lists "
-        "the files and asks before writing. To upgrade an app that exists, run ww_upgrade.")
+        "Creates the website app named by WEBSITE_WIDGETS.website_app_name ('website' by default): "
+        "a working starter site, its build files, and the two folders the package manages: the "
+        "framework's TypeScript in ts/website_widgets/ and the package's docs in "
+        "website_widgets_docs/. Lists the files and asks before writing. To upgrade an app that "
+        "exists, run ww_upgrade.")
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -34,16 +37,20 @@ class Command(BaseCommand):
         self._refuse_existing_app(app_label, app_folder)
         self._show_app_name(app_label)
 
-        app_files = self._app_files(app_label)
-        framework_folder = FrameworkFolder(
-            app_folder=app_folder,
-            stdout=self.stdout,
-            interactive=self.interactive)
-        framework_paths = [
-            os.path.join(FrameworkFolder.RELATIVE_PATH, path)
-            for path in framework_folder.package_files()
+        app_files = StarterSite(app_label).files()
+        managed_folders = [
+            folder_class(
+                app_folder=app_folder,
+                stdout=self.stdout,
+                interactive=self.interactive)
+            for folder_class in FrameworkFolder.managed_folders()
         ]
-        self._list_files(app_folder, [*app_files, *framework_paths])
+        managed_paths = [
+            f"{managed_folder.RELATIVE_PATH.replace(os.sep, '/')}/{path}"
+            for managed_folder in managed_folders
+            for path in managed_folder.package_files()
+        ]
+        self._list_files(app_folder, [*app_files, *managed_paths])
         if self.interactive and not FrameworkFolder.ask('Create these files? [y/N] '):
             self.stdout.write('Nothing was created.')
             return
@@ -53,10 +60,15 @@ class Command(BaseCommand):
             os.makedirs(os.path.dirname(file_path), exist_ok=True)
             with open(file_path, 'w', encoding='utf-8') as file:
                 file.write(content)
-        framework_folder.write()
+        for managed_folder in managed_folders:
+            managed_folder.write()
         self.stdout.write(self.style.SUCCESS(f'Created {FrameworkFolder.display_path(app_folder)}/.'))
-        framework_folder.offer_docs_pointer(project_root)
-        self._show_next_steps(app_label)
+        docs_folder = DocsFolder(
+            app_folder=app_folder,
+            stdout=self.stdout,
+            interactive=self.interactive)
+        docs_folder.offer_docs_pointer(project_root)
+        self._show_next_steps(app_label, app_folder)
 
     @staticmethod
     def _refuse_existing_app(
@@ -96,35 +108,30 @@ class Command(BaseCommand):
         shown_folder = FrameworkFolder.display_path(app_folder)
         self.stdout.write(f'This creates {len(paths)} files in {shown_folder}/:')
         for path in paths:
-            self.stdout.write(f"  {path.replace(os.sep, '/')}")
+            self.stdout.write(f'  {path}')
 
-    @staticmethod
-    def _app_files(app_label: str) -> dict[str, str]:
-        """The app itself: its package, its `AppConfig`, and the folders the generators fill."""
-        config_class_name = ''.join(part.title() for part in app_label.split('_')) + 'Config'
-        apps_py = (
-            'from django.apps import AppConfig\n'
-            '\n'
-            '\n'
-            f'class {config_class_name}(AppConfig):\n'
-            "    default_auto_field = 'django.db.models.BigAutoField'\n"
-            f"    name = '{app_label}'\n")
-        return {
-            '__init__.py': '',
-            'apps.py': apps_py,
-            os.path.join('pages', '__init__.py'): '',
-            os.path.join('widgets', '__init__.py'): '',
-        }
-
-    def _show_next_steps(self, app_label: str):
+    def _show_next_steps(
+        self,
+        app_label: str,
+        app_folder: str
+    ):
+        shown_folder = FrameworkFolder.display_path(app_folder)
         self.stdout.write(
-            'Next steps:\n'
-            f"  1. Add '{app_label}' to INSTALLED_APPS in settings.py.\n"
-            '  2. Route its pages from urls.py, so every page with @register_url is found:\n'
-            '         from website_widgets import PageRoutes\n'
-            "         urlpatterns = [path('', PageRoutes.urls()), ...]\n"
-            f'  3. Give its pages a base class at {app_label}.pages.app_page.AppPage, a WebPage '
-            f'subclass with your document template, before `ww_create_page` (or point '
-            f'WEBSITE_WIDGETS.generate_component.app_page_class at yours).\n'
-            '  4. Add pages and widgets with `python manage.py ww_create_page <name>` and '
-            '`ww_create_widget <name>`.')
+            'Next steps, each a one-line change:\n'
+            f"  1. In settings.py, add '{app_label}' to INSTALLED_APPS, so its pages are found "
+            f"and its static files served.\n"
+            f"  2. In urls.py, add path('', include('{app_label}.urls')) to urlpatterns, importing "
+            f"include from django.urls beside path. Its urls.py routes every page with "
+            f"@register_url and the starter's JSON endpoint.\n"
+            '  3. In manage.py, call start_npm_watch() (from website_widgets) after '
+            'DJANGO_SETTINGS_MODULE is set, so runserver rebuilds the TypeScript and SCSS as '
+            'you edit them.\n'
+            f'  4. In {shown_folder}/, run npm install, for webpack and the rest of the build.\n'
+            '  5. Run python manage.py runserver and open the home page.\n'
+            'Other helpful management commands:\n'
+            '  ww_create_page <name>     write a new page\'s files and add it to ts/main.ts\n'
+            '  ww_create_widget <name>   write a new widget\'s files and add it to ts/main.ts\n'
+            '  ww_show_routes            list every page\'s URL, in the order Django tries them\n'
+            '  ww_doctor                 check the setup and print a fix for each problem\n'
+            f'  ww_upgrade                update {shown_folder}/website_widgets_docs/ and '
+            f'{shown_folder}/ts/website_widgets/ after upgrading the package')

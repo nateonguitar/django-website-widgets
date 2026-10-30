@@ -1,0 +1,14 @@
+import { LoadingSpinner } from "./web-components/loading-spinner";
+
+/**
+ * Data every page shares, set once by document_template.html, and the app's startup. Any
+ * controller imports it. Data only one element needs goes in data- attributes on that
+ * element instead.
+ */
+export class AppState {
+    static siteName = '';
+
+    static initializeApp(): void {
+        customElements.define(LoadingSpinner.htmlTag, LoadingSpinner);
+    }
+}

@@ -1,0 +1,16 @@
+// Applies inside <loading-spinner>'s shadow root, which imports the bundled stylesheet.
+.loading-spinner {
+  display: inline-block;
+  width: 1.25rem;
+  height: 1.25rem;
+  border: 3px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: loading-spinner-rotate 0.8s linear infinite;
+}
+
+@keyframes loading-spinner-rotate {
+  to {
+    transform: rotate(360deg);
+  }
+}

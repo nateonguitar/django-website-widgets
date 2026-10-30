@@ -84,3 +84,22 @@ class WwCreateWidgetTestCase(ComponentTestCase):
 
         with self.assertRaisesMessage(CommandError, 'already exists'):
             self.create_widget('like_button', '--tscontroller=false', '--stylesheet=false')
+
+    def test_create_widget__fails_writing_nothing__when_a_part_of_the_name_cannot_be_a_module(self):
+        for name in ('Like-Button', 'LikeButton', 'like button', 'class', '2fast', '../escape', 'dialogs//login'):
+            with self.subTest(name=name):
+                with self.assertRaisesMessage(CommandError, "can't be a component name"):
+                    self.create_widget(name, '--tscontroller=true', '--stylesheet=true')
+
+        self.assertFalse(os.path.exists(os.path.join(self.app_folder, 'widgets')))
+        self.assertEqual(sorted(os.listdir(self.app_folder)), ['package.json', 'ts', 'tsconfig.json', 'webpack.config.js', 'website_widgets_docs'])
+        self.assertEqual(self.read(self.app_folder, 'ts', 'main.ts'), MAIN_TS)
+
+    def test_create_widget__takes_the_default__when_there_is_no_input_to_read(self):
+        with patch('builtins.input', side_effect=EOFError):
+            self.create_widget('asked_card')
+
+        folder = os.path.join(self.app_folder, 'widgets', 'asked_card')
+        self.assertEqual(
+            sorted(os.listdir(folder)),
+            ['__init__.py', 'asked_card.html', 'asked_card.py', 'asked_card.scss', 'asked_card.ts'])

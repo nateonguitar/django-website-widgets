@@ -1,0 +1,20 @@
+from website_widgets import register_url
+
+from __app_label__.exceptions import ForbiddenException
+from __app_label__.pages.app_page import AppPage
+
+
+@register_url('forbidden-example')
+class ForbiddenExamplePage(AppPage):
+    """
+    Always refused, to show `AppPage` turning an exception into a status code and a variant
+    template. A real page raises after checking who is asking.
+    """
+
+    page_title = 'Never shown'
+
+    def set_context(self):
+        super().set_context()
+        raise ForbiddenException(
+            'ForbiddenExamplePage always raises ForbiddenException, so AppPage answers 403 '
+            'with app_page__forbidden.html.')

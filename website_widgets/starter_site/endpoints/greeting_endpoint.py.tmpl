@@ -1,0 +1,17 @@
+import asyncio
+
+from django.http import HttpRequest, JsonResponse
+from django.views import View
+
+
+class GreetingEndpoint(View):
+    """
+    A JSON endpoint the home page's controller calls, with a path parameter. A plain Django view:
+    django-website-widgets renders pages and widgets and has no opinion on endpoints, so one
+    written with Django REST Framework, Django Ninja or anything else is called the same way.
+    """
+
+    async def get(self, request: HttpRequest, name: str) -> JsonResponse:
+        # Slow enough to see the loading spinner. Delete it.
+        await asyncio.sleep(0.5)
+        return JsonResponse({'message': f'Hello, {name}!'})

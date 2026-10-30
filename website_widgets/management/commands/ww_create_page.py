@@ -6,7 +6,7 @@ from django.utils.module_loading import import_string
 
 from website_widgets.config import WebsiteWidgetsConfig, get_config
 from website_widgets.management.component_files import ComponentFiles, ComponentName
-from website_widgets.management.framework_folder import FrameworkFolder
+from website_widgets.management.framework_folder import FrameworkFolder, TypeScriptFolder
 from website_widgets.web_page import WebPage
 
 
@@ -57,7 +57,7 @@ class Command(BaseCommand):
         generate_ts = files.ask_yes_no(options['generate_ts'], 'Generate a TypeScript controller?')
         generate_styles = files.ask_yes_no(options['generate_styles'], 'Generate a stylesheet?')
 
-        framework_folder = os.path.join(app_folder, FrameworkFolder.RELATIVE_PATH)
+        framework_folder = os.path.join(app_folder, TypeScriptFolder.RELATIVE_PATH)
         replacements = {
             '__ClassName__': name.class_name,
             '__module_name__': name.module_name,

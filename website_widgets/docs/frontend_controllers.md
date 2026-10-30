@@ -4,7 +4,7 @@ The framework's TypeScript: `Controller`, the base class of every page and widge
 `App`, which starts controllers and holds the singleton registry, and `Completer`. Read this
 before writing a controller, or when two controllers need to talk to each other.
 
-Primary code, in `ts/website_widgets/` beside `AGENTS.md`:
+Primary code, in the app's `ts/website_widgets/`:
 - `controller.ts` — `Controller`
 - `app.ts` — `App`: `initializeController()`, `registerSingleton()`, `getSingleton()`
 - `completer.ts` — `Completer`

@@ -1,0 +1,68 @@
+{% load static %}
+<main id="home-page"
+      class="home-page"
+      data-default-name="{{ data.default_name }}">
+  <h1>It works</h1>
+  <p>
+    This is <code>HomePage</code>, in <code>pages/home_page/</code>. Its controller,
+    <code>home_page.ts</code>, fills the name in from a <code>data-</code> attribute,
+    calls <code>GreetingEndpoint</code> at the URL <code>AppUrls</code> holds, and
+    shows the answer with the site name from <code>AppState</code>.
+  </p>
+  <form id="home-page__greeting-form"
+        class="home-page__greeting-form">
+    <label>
+      Name
+      <input id="home-page__name-input"
+             type="text">
+    </label>
+    <button type="submit">Ask the server</button>
+    <loading-spinner id="home-page__spinner"
+                     hidden>
+    </loading-spinner>
+  </form>
+  <p id="home-page__greeting"></p>
+  <p>
+    <a href="{% url '__app_label__:ForbiddenExamplePage' %}">A page that is always refused</a>
+  </p>
+
+  <h2>Next steps</h2>
+  <ul>
+    <li>Add a page: <code>python manage.py ww_create_page about_page</code></li>
+    <li>Add a widget: <code>python manage.py ww_create_widget info_card</code></li>
+    <li>Check the setup: <code>python manage.py ww_doctor</code></li>
+    <li>
+      Read how it all works: <code>__app_label__/website_widgets_docs/AGENTS.md</code>, or the
+      <a href="https://github.com/nateonguitar/django-website-widgets#readme">README</a>
+    </li>
+  </ul>
+
+  <h2>Example apps</h2>
+  <p>
+    Small runnable projects, each showing one part of the package
+    (<a href="https://github.com/nateonguitar/django-website-widgets/tree/main/examples">all of them</a>):
+  </p>
+  <ul>
+    <li>
+      <a href="https://github.com/nateonguitar/django-website-widgets/tree/main/examples/slim/01_pages_and_widgets">Pages and widgets</a>:
+      child widgets, variant templates, and the async ORM in a page
+    </li>
+    <li>
+      <a href="https://github.com/nateonguitar/django-website-widgets/tree/main/examples/slim/02_requests_and_routing">Requests and routing</a>:
+      routing, 401, 403 and 404 pages, redirects, and a "load more" endpoint
+    </li>
+    <li>
+      <a href="https://github.com/nateonguitar/django-website-widgets/tree/main/examples/slim/03_widgets_in_plain_django">Widgets in plain Django</a>:
+      widgets in an ordinary view, HTML emails, and an admin page
+    </li>
+    <li>
+      <a href="https://github.com/nateonguitar/django-website-widgets/tree/main/examples/slim/04_project_tracker">Project tracker</a>:
+      a small working app with sign-in and JSON endpoints
+    </li>
+  </ul>
+</main>
+
+<script type="module">
+  import { HomePageController } from '{% static "main.js" %}';
+  HomePageController.initializeController();
+</script>

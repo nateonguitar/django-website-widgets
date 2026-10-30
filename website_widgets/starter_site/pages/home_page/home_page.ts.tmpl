@@ -1,0 +1,87 @@
+import { App } from "../../ts/website_widgets/app";
+import { Controller } from "../../ts/website_widgets/controller";
+import { AppState } from "../../ts/app-state";
+import { AppUrls } from "../../ts/app-urls";
+
+class Elements {
+    greetingForm: HTMLFormElement | null = null;
+    nameInput: HTMLInputElement | null = null;
+    spinner: HTMLElement | null = null;
+    greetingText: HTMLParagraphElement | null = null;
+}
+
+export class HomePageController extends Controller {
+    public focusElementSelector = '#home-page';
+    private elements = new Elements();
+    private loading = false;
+    private greeting = '';
+
+    public static async initializeController(): Promise<void> {
+        await App.initializeController({
+            controllerClass: HomePageController,
+        });
+    }
+
+    public async initState(): Promise<void> {
+        this.buildElements();
+        this.initializeListeners();
+        // Data for this element alone is a data- attribute on its root, the element
+        // focusElementSelector found.
+        if (this.elements.nameInput) {
+            this.elements.nameInput.value = this.__element?.dataset.defaultName ?? '';
+        }
+    }
+
+    protected buildElements(): void {
+        const elements = this.elements;
+        elements.greetingForm = this.getElementByIdOrWarn('home-page__greeting-form');
+        elements.nameInput = this.getElementByIdOrWarn('home-page__name-input');
+        elements.spinner = this.getElementByIdOrWarn('home-page__spinner');
+        elements.greetingText = this.getElementByIdOrWarn('home-page__greeting');
+    }
+
+    public setState(): void {
+        const elements = this.elements;
+        if (elements.spinner) {
+            elements.spinner.hidden = !this.loading;
+        }
+        if (elements.greetingText) {
+            elements.greetingText.textContent = this.greeting;
+        }
+    }
+
+    protected initializeListeners(): void {
+        this.elements.greetingForm?.addEventListener('submit', (event) => {
+            event.preventDefault();
+            this.fetchGreeting();
+        });
+    }
+
+    private async fetchGreeting(): Promise<void> {
+        const name = this.elements.nameInput?.value.trim() ?? '';
+        if (!name) {
+            this.greeting = 'Type a name first.';
+            this.setState();
+            return;
+        }
+        // The endpoint's URL arrives with a {name} placeholder for the controller to fill.
+        const url = AppUrls.endpoint_greeting.replace('{name}', encodeURIComponent(name));
+        this.loading = true;
+        this.setState();
+        try {
+            const response = await fetch(url);
+            if (response.ok) {
+                const body = await response.json();
+                // Data every page shares is on AppState, set by the document template.
+                this.greeting = `${AppState.siteName} says: ${body.message}`;
+            } else {
+                this.greeting = `The server answered ${response.status}.`;
+            }
+        } catch {
+            this.greeting = 'The request failed.';
+        } finally {
+            this.loading = false;
+            this.setState();
+        }
+    }
+}

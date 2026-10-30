@@ -20,13 +20,15 @@ lists them all. [Gametabs](https://gametabs.net) is a real site built on it.
 
 This README introduces the library. How each part works, and why, is in the docs that ship
 inside the package, indexed by
-[`website_widgets/AGENTS.md`](https://github.com/nateonguitar/django-website-widgets/blob/main/website_widgets/AGENTS.md):
+[`website_widgets/docs/AGENTS.md`](https://github.com/nateonguitar/django-website-widgets/blob/main/website_widgets/docs/AGENTS.md):
 
 - [`rendering_pipeline.md`](https://github.com/nateonguitar/django-website-widgets/blob/main/website_widgets/docs/rendering_pipeline.md): how a request becomes HTML, and rendering a widget outside a page
 - [`routing.md`](https://github.com/nateonguitar/django-website-widgets/blob/main/website_widgets/docs/routing.md): `@register_url`, route discovery and ordering
 - [`frontend_controllers.md`](https://github.com/nateonguitar/django-website-widgets/blob/main/website_widgets/docs/frontend_controllers.md): the TypeScript `Controller`, `App` and `Completer`
 - [`reverse_template.md`](https://github.com/nateonguitar/django-website-widgets/blob/main/website_widgets/docs/reverse_template.md): URL templates for the frontend
 - [`creating_and_upgrading_an_app.md`](https://github.com/nateonguitar/django-website-widgets/blob/main/website_widgets/docs/creating_and_upgrading_an_app.md): `ww_create_app` and `ww_upgrade`, and the framework's TypeScript and these docs copied into a project
+- [`starter_site.md`](https://github.com/nateonguitar/django-website-widgets/blob/main/website_widgets/docs/starter_site.md): the working site `ww_create_app` writes, and the conventions it shows
+- [`checking_the_setup.md`](https://github.com/nateonguitar/django-website-widgets/blob/main/website_widgets/docs/checking_the_setup.md): the system checks and `ww_doctor`
 - [`creating_pages_and_widgets.md`](https://github.com/nateonguitar/django-website-widgets/blob/main/website_widgets/docs/creating_pages_and_widgets.md): `ww_create_page` and `ww_create_widget`, and overriding their templates
 - [`npm_watch.md`](https://github.com/nateonguitar/django-website-widgets/blob/main/website_widgets/docs/npm_watch.md): starting `npm run watch` with `runserver`
 
@@ -222,7 +224,10 @@ Widgets:
 - Accept data parameters in `__init__()` and store them
 - Use `set_context()` to create child widgets (Widget objects or lists)
 - Store children in `self.context.children` - system renders them
-- Access `self.request` and `self.request.user` from `set_context()` onwards (not in `__init__()`)
+- Access `self.request` from `set_context()` onwards (not in `__init__()`). Whether a page can
+  read `self.request.user` depends on the project's middleware: with Django's
+  `AuthenticationMiddleware` it's lazy, and its first read queries the database, so load the
+  user with `await self.request.auser()` instead (`docs/rendering_pipeline.md`)
 - Can be sync or async - use `async def set_context(self):` only when awaiting. A page renders
   in an async view, so database access in a sync `set_context()` there raises
   `SynchronousOnlyOperation`; use the async ORM. A widget rendered with `render()` from sync code
@@ -463,7 +468,10 @@ Override `get_template_path()` when the choice needs more than an attribute.
 ```
 
 Templates are opened directly rather than through Django's template loader, so context processors
-do not run. The context holds only `request`, `user`, `page`, `data` and `children`. See
+do not run. The context holds only `request`, `page`, `data` and `children`. There's no `user`:
+what `request.user` holds depends on the project's middleware, and with Django's default, reading
+it inside an async page queries the database where Django forbids it. A page puts the user in
+`context.page` itself, the way its middleware allows. See
 [`docs/rendering_pipeline.md`](https://github.com/nateonguitar/django-website-widgets/blob/main/website_widgets/docs/rendering_pipeline.md)
 for the full render order.
 
@@ -531,23 +539,48 @@ Without `_debug_label`, widgets display only their class name (e.g., `InfoCard`)
 
 Every command is prefixed `ww_`.
 
-Create the website app, named by `WEBSITE_WIDGETS.website_app_name` (`website` by default), with
-the framework's TypeScript (`App`, `Controller`, `Completer`) and the package's docs in its
-`ts/website_widgets/`. It lists every file and asks before writing:
+Create the website app, named by `WEBSITE_WIDGETS.website_app_name` (`website` by default). It
+lists every file and asks before writing:
 ```bash
 python manage.py ww_create_app
 ```
+The app holds a working starter site: a page whose TypeScript controller calls a JSON endpoint,
+a page that is always refused, the document template, `AppState` and `AppUrls`, a web component,
+and the webpack build. It also holds two folders the package manages: the framework's
+TypeScript (`App`, `Controller`, `Completer`) in `ts/website_widgets/`, and the package's docs
+in `website_widgets_docs/`. It prints the next steps,
+each a one-line change: the app in `INSTALLED_APPS`, its URLs in `urls.py`, `start_npm_watch()`
+in `manage.py`, and `npm install`. See
+[`docs/starter_site.md`](https://github.com/nateonguitar/django-website-widgets/blob/main/website_widgets/docs/starter_site.md).
 
-After every upgrade of the package, bring that folder up to the installed version (and run it
-once on a website app that never ran `ww_create_app`):
+**The starter site's files are yours, the build files included.** `webpack.config.js` and
+`tsconfig.json` are a starting point to change: a site with distinct sections, for instance,
+builds one entry point per section (`main_website.js`, `main_reports.js`), so no page loads
+another section's code. **The package is REST-library agnostic:** the starter endpoint is a plain
+Django view, and one written with Django REST Framework, Django Ninja or anything else is called
+from a controller the same way.
+
+After every upgrade of the package, bring the app up to the installed version (and run it once
+on a website app that never ran `ww_create_app`):
 ```bash
 python manage.py ww_upgrade
 ```
-It overwrites only the files the package ships, deletes ones it no longer ships, and leaves
-anything else in the folder alone. Commit the folder, so an upgrade shows up as a diff. A system
-check warns when the folder is from another version than the installed package. Both commands
-offer to point your `CLAUDE.md`, `.claude/CLAUDE.md` or `AGENTS.md` at the copied docs. See
+It overwrites only the files the package ships in its two folders, `ts/website_widgets/` and
+`website_widgets_docs/`, deletes ones it no longer ships, and leaves anything else in them alone.
+Commit both, so an upgrade shows up as a diff. It asks before replacing a `webpack.config.js` or `tsconfig.json` that
+differs from the starter's, never edits `package.json` (it prints the `npm install` command for
+anything the build needs), and never touches the other starter files. Both commands offer to
+point your `CLAUDE.md`, `.claude/CLAUDE.md` or `AGENTS.md` at the copied docs. See
 [`docs/creating_and_upgrading_an_app.md`](https://github.com/nateonguitar/django-website-widgets/blob/main/website_widgets/docs/creating_and_upgrading_an_app.md).
+
+When something doesn't work, check the setup: the package's system checks, then Node, npm,
+`package.json`, `node_modules` and a built bundle, each failing line with its fix:
+```bash
+python manage.py ww_doctor
+```
+System checks also fail at `runserver` when the app is missing from `INSTALLED_APPS` or its
+pages aren't in `urls.py`, and warn when either managed folder is from another version. See
+[`docs/checking_the_setup.md`](https://github.com/nateonguitar/django-website-widgets/blob/main/website_widgets/docs/checking_the_setup.md).
 
 Create a page or widget, with an optional TypeScript controller and stylesheet registered in
 `ts/main.ts` (each asks when a flag is left out):
@@ -555,7 +588,7 @@ Create a page or widget, with an optional TypeScript controller and stylesheet r
 python manage.py ww_create_widget like_button --tscontroller=true --stylesheet=true
 python manage.py ww_create_page profile_page --tscontroller=false --stylesheet=false
 ```
-They need the framework folder, and for a page, the base class at
+They need the framework TypeScript in `ts/website_widgets/`, and for a page, the base class at
 `GenerateComponentConfig.app_page_class`. A project overrides any of their templates with its
 own, in `templates_dir`. See
 [`docs/creating_pages_and_widgets.md`](https://github.com/nateonguitar/django-website-widgets/blob/main/website_widgets/docs/creating_pages_and_widgets.md).

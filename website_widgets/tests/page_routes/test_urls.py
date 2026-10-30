@@ -1,5 +1,6 @@
 from unittest.mock import patch
 
+from django.core.exceptions import ImproperlyConfigured
 from django.urls import path
 
 from website_widgets import PageRoutes, register_url
@@ -16,6 +17,12 @@ class UrlsTestCase(PageRoutesTestCase):
         urls = PageRoutes.urls()
 
         self.assertEqual((urls.app_name, urls.namespace), ('storefront', 'storefront'))
+
+    def test_urls__fails_naming_the_label_and_installed_apps__when_website_app_is_not_installed(self):
+        self.mock_apps.get_app_config.side_effect = LookupError
+
+        with self.assertRaisesMessage(ImproperlyConfigured, "Add 'website' to INSTALLED_APPS"):
+            PageRoutes.urls()
 
     def test_urls__is_accepted_by_path__when_included(self):
         @register_url('forum/<int:post_id>', name='forum_post')

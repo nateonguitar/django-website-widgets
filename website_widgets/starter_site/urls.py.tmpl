@@ -1,0 +1,14 @@
+from django.urls import path
+
+from website_widgets import PageRoutes
+
+from __app_label__.endpoints.greeting_endpoint import GreetingEndpoint
+
+
+# Included from the project's urls.py: path('', include('__app_label__.urls')).
+urlpatterns = [
+    # Every page with @register_url under pages/, reversed as '__app_label__:<name>'.
+    path('', PageRoutes.urls()),
+    # Endpoints are ordinary Django views, routed the ordinary way.
+    path('api/greeting/<str:name>', GreetingEndpoint.as_view(), name='greeting_endpoint'),
+]

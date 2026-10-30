@@ -1,0 +1,27 @@
+from django.templatetags.static import static
+
+from website_widgets import Widget, reverse_template
+
+
+class AppUrls(Widget):
+    """
+    Hands the frontend its URLs. The template assigns each one to the TypeScript `AppUrls` in
+    `ts/app-urls.ts`, so a controller reads `AppUrls.endpoint_greeting` rather than writing a
+    path. A new URL is a line here and its declaration there.
+    """
+
+    def set_context(self):
+        # Only URLs the frontend can't build itself, so they come from the Python side, never a
+        # hand-built path: pages and endpoints from reverse_template(), which leaves a route's
+        # parameters as placeholders such as {name} for the frontend to fill, and static files
+        # from static().
+        self.context.data['urls'] = {
+            # Web components import the bundled stylesheet into their shadow roots. It must be
+            # static()'s URL, the same one the document's <link> uses: a versioning static
+            # storage (ManifestStaticFilesStorage) gives a rebuilt stylesheet a new URL there,
+            # while a hand-written '/static/bundled-styles.css' never changes and browsers keep
+            # serving their stale copy.
+            'static_bundled_styles': static('bundled-styles.css'),
+            'page_home': reverse_template('__app_label__:HomePage'),
+            'endpoint_greeting': reverse_template('greeting_endpoint'),
+        }

@@ -1,0 +1,13 @@
+from website_widgets import register_url
+
+from __app_label__.pages.app_page import AppPage
+
+
+@register_url('')
+class HomePage(AppPage):
+    page_title = 'Home'
+
+    def set_context(self):
+        super().set_context()
+        # Only this page's root element needs it, so it goes in a data- attribute there.
+        self.context.data['default_name'] = 'world'

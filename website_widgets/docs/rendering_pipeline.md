@@ -91,7 +91,7 @@ more" button), or in a test. The widget is constructed, adjusted if needed (a va
 |---|---|---|
 | `widget.render(request=None)` | a synchronous tree walk, no event loop | sync code: a Django view, an admin hook, an email |
 | `await widget.arender(request=None)` | the async pass 1 a page uses | async code: an endpoint returning HTML |
-| `widget.render__test(user=None)` / `await widget.arender__test(user=None)` | the same, against a mock `GET /`, `user` or `AnonymousUser` | tests only |
+| `widget.render__test(user=None)` / `await widget.arender__test(user=None)` | the same, against a mock `GET /` whose `request.user` is `user` or `AnonymousUser` | tests only |
 
 Each runs the widget's own `set_context()`, then passes 1 and 3 above, then the widget's
 template. There is no debug tree and no document template.
@@ -104,7 +104,7 @@ the async ORM gotcha below applies to it and not to `render()`.
 
 **Without a request, nothing is mocked.** `self.request` raises, so a widget that needs a request
 fails loudly and production code can't end up with a fake one by omission. Templates see
-`request` and `user` as `None`. Only the `__test` methods build a mock request.
+`request` as `None`. Only the `__test` methods build a mock request.
 
 This is the line between a widget and a page: a widget renders a fragment, and only a page wraps
 one in a whole HTML document, since the document belongs to the response the page returns.
@@ -150,19 +150,18 @@ attribute on `WebPage`, defaulting to `200`; assign it before `build_response()`
 `_render_template()` opens the template file with `open()`, builds a `Template` from the string, and
 renders it against a bare `Context`. Three consequences, all easy to get wrong:
 
-**No template context processors run.** The context is exactly five keys, assembled in
+**No template context processors run.** The context is exactly four keys, assembled in
 `_context_dict()`:
 
 | Key | Value |
 |---|---|
 | `request` | the request, or `None` when `render()`/`arender()` was given none |
-| `user` | `request.user`, or `None` without a request or without `django.contrib.auth` |
 | `page` | `self.context.page`, shared by reference down the whole tree |
 | `data` | `self.context.data`, this widget only |
 | `children` | `self.context.children`, this widget only |
 
-Anything a project expects from a context processor (`csrf_token`, `MEDIA_URL`, `debug`, settings
-exposed globally) **is not there** and resolves to empty with no error. `{% load %}`, custom tags
+Anything a project expects from a context processor (`user`, `csrf_token`, `MEDIA_URL`, `debug`,
+settings exposed globally) **is not there** and resolves to empty with no error. `{% load %}`, custom tags
 and filters, `{% url %}` and `{% static %}` all work normally; only the automatic context is
 absent. The document template additionally receives `page_content_html`, through
 `_render_template()`'s `extra_context` argument; application code puts values in
@@ -210,6 +209,36 @@ happens inside the same async pipeline. Fetch with the async ORM (`aget`, `async
 in an `async def set_context()`, and hand templates evaluated data. A test harness that sets
 `DJANGO_ALLOW_ASYNC_UNSAFE` hides this. `render()` is the exception: called from sync code, it
 runs no event loop, so the sync ORM works in its widgets.
+
+**What `request.user` holds is up to the project's middleware**, so whether a page can read it
+depends on that middleware, not on the package:
+
+- **Django's `AuthenticationMiddleware`**, which `startproject` installs, sets it to a lazy object
+  that loads the user from the session on its first read. Read in a page, in Python or as
+  `{{ request.user }}`, that first read queries the database inside the async pipeline and
+  raises `SynchronousOnlyOperation`, for a visitor with a session cookie only, which hides it in
+  tests. Whether the middleware runs sync or async doesn't change this: it stores the lazy object
+  either way, and the query runs wherever the object is first read. The middleware also sets
+  `request.auser()`, the async way to load the same user.
+- **A middleware that sets `request.user` to a user it has already loaded** leaves nothing lazy,
+  so reading it in a page is safe. A sync middleware does its database work in the worker thread
+  Django adapts it to, where the sync ORM is allowed. So does one that only reads a lazy
+  `request.user`, which loads it there. In such a project `request.auser()`, if Django's
+  middleware is installed too, still reads the session, so it can return a different user than
+  `request.user`.
+
+The package can't know which a project has, so the context has no `user` key. A page that wants
+the user puts it in `context.page` once, the way its middleware allows, and every widget reads
+`page.user`. With Django's middleware:
+
+```python
+class AppPage(WebPage):
+    async def handle_request(self, request, *args, **kwargs):
+        self.context.page['user'] = await request.auser()
+        return await super().handle_request(request, *args, **kwargs)
+```
+
+With a middleware that sets a loaded user, `self.context.page['user'] = request.user` instead.
 
 **`context.children` changes type mid-pipeline.** Code that runs after `_render_children_to_html()`,
 such as a `build_response()` override doing work after `await super().build_response()`, sees
