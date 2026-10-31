@@ -1,10 +1,21 @@
 # Django Website Widgets
 
-A reusable Django app for building component-based web interfaces with widgets and pages.
+A reusable Django app for building component-based web interfaces with widgets and pages, with
+npm, SCSS and TypeScript set up for you: each page and widget keeps its template, stylesheet and
+TypeScript controller in one folder, and webpack bundles them.
 
 A widget can also render on its own into the Django you already have: an ordinary view and
 template, an email, the admin. So a site can adopt widgets one piece at a time, with no `WebPage`
 and no build step.
+
+## Quick start
+
+1. Create a Django project with `django-admin startproject`, or use one you already have.
+2. `pip install django-website-widgets`, and add `'website_widgets'` to `INSTALLED_APPS`.
+3. `python manage.py ww_create_app` writes a working site into a new `website` app, with its npm,
+   SCSS and TypeScript setup, and prints the next steps.
+4. Make your first page and widget with `python manage.py ww_create_page` and
+   `python manage.py ww_create_widget`.
 
 ## Examples
 
@@ -58,7 +69,9 @@ Or with Poetry:
 poetry add django-website-widgets
 ```
 
-## Quick Start
+## Pages and widgets by hand
+
+What `ww_create_app` and the commands write for you, done by hand, with no build step:
 
 1. Add to `INSTALLED_APPS` in `settings.py`:
 
