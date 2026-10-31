@@ -32,7 +32,8 @@ class ComponentTestCase(SimpleTestCase):
     """
     A temp website app that `ww_upgrade` has populated, with a main.ts holding the four marker
     pairs and an empty `templates_dir`, for `ww_create_page` and `ww_create_widget`. The app is
-    importable as `website` and route discovery reads it, with an empty route registry.
+    importable as `website` and route discovery reads it, with an empty route registry. A question
+    a test doesn't answer takes its default, as when a script gives no input.
     """
 
     def setUp(self):
@@ -47,6 +48,8 @@ class ComponentTestCase(SimpleTestCase):
         sys.path.insert(0, self.project_root)
         self.addCleanup(sys.path.remove, self.project_root)
         self.addCleanup(self.forget_website_modules)
+        self.enterContext(patch('builtins.input', side_effect=EOFError))
+        self.enterContext(patch('builtins.print'))
         self.enterContext(patch.object(PageRoutes, '_routes', {}))
 
         app_config = SimpleNamespace(

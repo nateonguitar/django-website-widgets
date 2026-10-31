@@ -1,0 +1,10 @@
+from website_widgets import Widget
+
+
+class __ClassName__(Widget):
+    def __init__(self, *, key):
+        super().__init__()
+        self.context.data['key'] = key
+
+    async def set_context(self):
+        self.context.data['label'] = '__ClassName__'

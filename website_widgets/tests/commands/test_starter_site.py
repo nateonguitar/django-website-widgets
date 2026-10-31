@@ -115,6 +115,7 @@ class StarterSiteTestCase(SimpleTestCase):
             'info_card',
             '--tscontroller=true',
             '--stylesheet=true',
+            '--repeating=false',
             stdout=io.StringIO())
 
         main_ts = self.read('ts', 'main.ts')

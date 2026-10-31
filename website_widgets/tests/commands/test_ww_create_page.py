@@ -49,7 +49,7 @@ class WwCreatePageTestCase(ComponentTestCase):
         self.assertIn("await App.initController(new HomePageController(), '#home-page');", html)
 
     def test_create_page__uses_project_page_template_only_for_pages__when_templates_dir_has_one(self):
-        self.write('<div class="app-page">{{ data.label }}</div>\n', self.templates_dir, 'page.html.tmpl')
+        self.write('<div class="app-page">{{ data.label }}</div>\n', self.templates_dir, 'page__nocontroller.html.tmpl')
 
         self.create_page('home_page', '--tscontroller=false', '--stylesheet=false')
         self.run_command('ww_create_widget', 'like_button', '--tscontroller=false', '--stylesheet=false')
@@ -58,7 +58,7 @@ class WwCreatePageTestCase(ComponentTestCase):
             self.read(self.app_folder, 'pages', 'home_page', 'home_page.html'),
             '<div class="app-page">{{ data.label }}</div>\n')
         self.assertIn(
-            '<div id="like-button"',
+            '<div class="like-button"',
             self.read(self.app_folder, 'widgets', 'like_button', 'like_button.html'))
 
     def test_create_page__touches_pages_init_leaving_its_content__when_created(self):

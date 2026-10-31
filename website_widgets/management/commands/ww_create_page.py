@@ -92,7 +92,7 @@ class Command(BaseCommand):
         else:
             page_py_note += ", not routed: the project's page.py.tmpl has no @register_url('__route__')"
         written_files.append(WrittenFile(f'{name.module_name}.py', page_py_note))
-        html_template = 'page__controller.html.tmpl' if generate_ts else 'page.html.tmpl'
+        html_template = 'page__controller.html.tmpl' if generate_ts else 'page__nocontroller.html.tmpl'
         files.write_from_template(page_folder, f'{name.module_name}.html', html_template, replacements)
         written_files.append(WrittenFile(f'{name.module_name}.html', f'root #{name.css_name}'))
 

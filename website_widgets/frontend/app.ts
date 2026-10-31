@@ -21,15 +21,16 @@ export class App {
      * and `afterFirstSetState()`.
      *
      * Called from the `<script>` in the template that renders the controller's root, so the
-     * selector sits beside the id it names. A widget shown several times passes each root's own
-     * id. A controller with no element, such as one that only watches the window, passes none and
+     * selector sits beside the root it names. A widget shown several times passes a selector for
+     * each root's own key, such as `.movie-card[data-key="12"]`. A controller with no
+     * element, such as one that only watches the window, passes none and
      * gets no DOM binding; it still gets the lifecycle and, when its class says so, the singleton
      * registry.
      *
      * ```
      * <script type="module">
      *     import { App, MovieCardController } from '{% static "main.js" %}';
-     *     await App.initController(new MovieCardController(), '#movie-card-12');
+     *     await App.initController(new MovieCardController(), '.movie-card[data-key="12"]');
      * </script>
      * ```
      *

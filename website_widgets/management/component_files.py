@@ -111,14 +111,18 @@ class ComponentFiles:
     def ask_yes_no(
         self,
         flag: str | None,
-        question: str
+        question: str,
+        default: bool = True
     ) -> bool:
-        """The `--tscontroller`/`--stylesheet` value when given, otherwise the answer, yes by default."""
+        """The flag's `true`/`false` when given, otherwise the answer, a blank one taking the default."""
         if flag is not None:
             return flag == 'true'
+        choices = '[Y/n]' if default else '[y/N]'
         while True:
-            answer = FrameworkFolder.read_answer(f'{question} [Y/n] ')
-            if answer in ('', 'y', 'yes'):
+            answer = FrameworkFolder.read_answer(f'{question} {choices} ')
+            if answer == '':
+                return default
+            if answer in ('y', 'yes'):
                 return True
             if answer in ('n', 'no'):
                 return False

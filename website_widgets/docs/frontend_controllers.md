@@ -34,9 +34,13 @@ selector of the widget's root element:
 </script>
 ```
 
-**The template is the one place a selector is chosen,** a few lines from the id it names, so the
-two can't drift apart unseen. A widget shown several times on a page passes each root's own id
-(`'#my-widget-{{ data.movie.id }}'`) and gets one controller per root; nothing in `App` is kept per
+**The template is the one place a selector is chosen,** a few lines from the root it names, so
+the two can't drift apart unseen. A widget shown once has an id on its root and passes
+`'#my-widget'`. A widget shown several times on a page takes a keyword-only `key` in its
+constructor (`MovieCard(movie=movie, key=movie.id)`), keeps one class on every root, puts the key
+in `data-key`, and passes a selector for it: `'.movie-card[data-key="{{ data.key }}"]'`, as
+`ww_create_widget --repeating=true` writes it. Ids stay free for what they are for: labels, ARIA
+references, anchors. Each root gets one controller; nothing in `App` is kept per
 class except singletons, so each instance is independent. A controller with no element, such as
 one that only watches the window, is started with no selector, `App.initController(new
 ThemeController())`, and gets no DOM binding: `__element` stays `null`, while the lifecycle and

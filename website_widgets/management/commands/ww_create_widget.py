@@ -26,6 +26,15 @@ class Command(BaseCommand):
             choices=['true', 'false'],
             dest='generate_styles',
             help='Generate a stylesheet. Asks when not given.')
+        parser.add_argument(
+            '--repeating',
+            choices=['true', 'false'],
+            dest='repeating',
+            help=(
+                'Shown more than once on a page: the class takes key=, which the root carries in '
+                'data-key, so each instance\'s selector finds its own root. Asks when not given '
+                'and there is a controller. A widget without one has only a class on its root, '
+                'which repeats as it is, so the flag changes nothing.'))
         set_context = parser.add_mutually_exclusive_group()
         set_context.add_argument(
             '--async',
@@ -60,6 +69,12 @@ class Command(BaseCommand):
             raise CommandError(f'{FrameworkFolder.display_path(widget_folder)} already exists.')
         generate_ts = files.ask_yes_no(options['generate_ts'], 'Generate a TypeScript controller?')
         generate_styles = files.ask_yes_no(options['generate_styles'], 'Generate a stylesheet?')
+        # Without a controller nothing selects the root, so a class alone serves one instance or many.
+        repeating = generate_ts and files.ask_yes_no(
+            options['repeating'],
+            'Shown more than once on a page?',
+            default=False)
+        instances = 'repeating' if repeating else 'single'
 
         framework_folder = os.path.join(app_folder, TypeScriptFolder.RELATIVE_PATH)
         replacements = {
@@ -73,14 +88,25 @@ class Command(BaseCommand):
         written_files = []
         files.write_from_template(widget_folder, '__init__.py', '__init__.py.tmpl', replacements)
         written_files.append(WrittenFile('__init__.py'))
-        files.write_from_template(widget_folder, f'{name.module_name}.py', f'widget__{set_context}.py.tmpl', replacements)
+        files.write_from_template(
+            widget_folder,
+            f'{name.module_name}.py',
+            f'widget__{set_context}__{instances}.py.tmpl',
+            replacements)
         set_context_definition = 'async def set_context()' if set_context == 'async' else 'def set_context()'
+        class_description = f'{name.class_name}(key=...)' if repeating else name.class_name
         written_files.append(WrittenFile(
             f'{name.module_name}.py',
-            f'class {name.class_name}, with {set_context_definition}'))
-        html_template = 'widget__controller.html.tmpl' if generate_ts else 'widget.html.tmpl'
+            f'class {class_description}, with {set_context_definition}'))
+        html_template = f'widget__controller__{instances}.html.tmpl' if generate_ts else 'widget__nocontroller.html.tmpl'
         files.write_from_template(widget_folder, f'{name.module_name}.html', html_template, replacements)
-        written_files.append(WrittenFile(f'{name.module_name}.html', f'root #{name.css_name}'))
+        if repeating:
+            root_selector = f'.{name.css_name}[data-key=<key>]'
+        elif generate_ts:
+            root_selector = f'#{name.css_name}'
+        else:
+            root_selector = f'.{name.css_name}'
+        written_files.append(WrittenFile(f'{name.module_name}.html', f'root {root_selector}'))
 
         # main.ts imports each stylesheet so webpack bundles it, and exports each controller so a
         # template can import it from the bundle.
