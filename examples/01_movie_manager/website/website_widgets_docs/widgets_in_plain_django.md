@@ -85,3 +85,58 @@ class EventsAdminToolView(TemplateView):
 `content` block, so the widget is styled by the admin's own stylesheet. `self.admin_view()` keeps
 the page behind the admin's login. The same widget renders from a `ModelAdmin`'s
 `@admin.display` method, which returns its `render()` output for a change page's read-only field.
+
+## A widget as a form field
+
+A widget can be a working form field, in a Django form and so in the admin, through a small
+`forms.Widget` subclass whose `render()` returns the widget's:
+
+```python
+class RatingSelect(forms.Select):
+    def render(self, name, value, attrs=None, renderer=None):
+        attrs = attrs or {}
+        picker = RatingPicker(name=name, value=value or '', select_id=attrs.get('id'))
+        return picker.render()
+```
+
+The widget's template writes an input with the field's `name`, so Django's own
+`value_from_datadict()` still reads what's submitted, and passing the form's `id` on keeps
+`<label for>` pointing at it. A `ModelForm`'s `Meta.widgets = {'rating': RatingSelect()}` puts it
+in the admin through `ModelAdmin.form`, and the site's own pages can place the same widget as a
+child.
+
+**Its controller runs in the admin as on the site.** The widget's own
+`<script type="module">` imports `App` and its controller from `{% static "main.js" %}`, so the
+admin page loads the bundle with no `Media` or template change; importing it starts nothing
+else. Three things differ there:
+
+- **The bundle has to be built and served** wherever the admin is. Rendering the field's
+  current state on the server (the chosen option, its description) keeps the field correct and
+  submittable even where it isn't, with only the live behavior missing.
+- **The site's stylesheet isn't loaded, and shouldn't be,** since its rules would restyle the
+  whole admin. The widget's markup leans on the admin's own form styles, plus inline styles for
+  anything of its own.
+- **Nothing fills the site's state classes,** such as the starter's `AppUrls` and `AppState`,
+  which only the site's document template sets. A controller meant for the admin reads only its
+  own root's `data-` attributes.
+
+**A widget only the admin uses can be vanilla JavaScript in its own template** instead, the way
+the admin's own widgets are, so it works with no build at all. A classic `<script>` (not a
+module) finds its own root with `document.currentScript.previousElementSibling`, so several on
+one page each find theirs with no id. Keep that for small, self-contained behavior; a widget the
+site uses too, or anything bigger, is a `Controller` in the bundle.
+
+**Worked example:** the movie manager example's `MovieAdmin.where_each_copy_is`
+([`api/admin/movie_admin.py`](https://github.com/nateonguitar/django-website-widgets/blob/main/examples/01_movie_manager/api/admin/movie_admin.py))
+renders the movie page's own `CopyTable` widget into the change page that way. The page and the
+admin each load the copies their own way, the page with the async ORM and the admin with the sync
+one, and hand them to the widget's constructor, so one template serves both. Its `RatingPicker`
+([`website/widgets/rating_picker/`](https://github.com/nateonguitar/django-website-widgets/tree/main/examples/01_movie_manager/website/widgets/rating_picker))
+is the form-field case: the Movie admin's rating field through `RatingSelect`, and the
+add-to-inventory page's, with one `RatingPickerController` showing what each rating means in both.
+Its `ReturnRentalField`
+([`api/admin/widgets/return_rental_field/`](https://github.com/nateonguitar/django-website-widgets/tree/main/examples/01_movie_manager/api/admin/widgets/return_rental_field))
+is the admin-only case: the Rental admin's "Returned" field, with a Return button whose vanilla
+JavaScript calls the site's own return endpoint, sending the CSRF token the change form already
+carries, since the cookie is HttpOnly. It nests the site's own `Timestamp` widget for its dates,
+so composition works across the line too: an admin-only widget's children can be the site's.

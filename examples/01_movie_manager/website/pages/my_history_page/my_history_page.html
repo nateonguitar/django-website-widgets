@@ -16,7 +16,7 @@
               aria-label="Checkouts per day for the last {{ data.chart_days }} days"></canvas>
     </div>
   </section>
-  {% if data.rentals %}
+  {% if children.rows %}
     <table class="my-history-page__table">
       <thead>
         <tr>
@@ -27,18 +27,8 @@
         </tr>
       </thead>
       <tbody>
-        {% for rental in data.rentals %}
-          <tr{% if not rental.returned_at %} class="my-history-page__out"{% endif %}>
-            <td>{{ rental.copy.movie.title }}</td>
-            <td>{{ rental.taken_at|date:"D j M Y" }}</td>
-            {% if rental.returned_at %}
-              <td>{{ rental.returned_at|date:"D j M Y" }}</td>
-              <td>{{ rental.taken_at|timesince:rental.returned_at }}</td>
-            {% else %}
-              <td>Still have it, <a href="{% url 'website:MyMoviesPage' %}">return it</a></td>
-              <td>{{ rental.taken_at|timesince }} so far</td>
-            {% endif %}
-          </tr>
+        {% for row in children.rows %}
+          {{ row }}
         {% endfor %}
       </tbody>
     </table>

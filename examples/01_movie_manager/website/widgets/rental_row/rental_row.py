@@ -1,6 +1,7 @@
 from website_widgets import Widget
 
 from api.models import Rental
+from website.widgets.timestamp import Timestamp
 
 
 class RentalRow(Widget):
@@ -13,3 +14,4 @@ class RentalRow(Widget):
 
     async def set_context(self):
         self.context.data['rental'] = self.rental
+        self.context.children['taken'] = Timestamp(value=self.rental.taken_at)

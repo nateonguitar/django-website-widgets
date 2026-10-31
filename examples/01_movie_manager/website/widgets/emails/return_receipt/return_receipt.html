@@ -1,0 +1,9 @@
+<h1 style="margin: 0 0 16px; font-size: 20px;">Thanks for bringing it back, {{ data.username }}</h1>
+<p style="margin: 0 0 8px;">
+  {{ data.rental.copy.movie.title }} ({{ data.rental.copy.movie.year }}) is back on the shelf,
+  after {{ data.rental.taken_at|timesince:data.rental.returned_at }}.
+</p>
+<p style="margin: 0;">
+  Looking for the next one?
+  <a href="{{ page.site_url }}{% url 'website:HomePage' %}" style="color: #1a5fb4;">See what's new</a>.
+</p>

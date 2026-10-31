@@ -1,0 +1,15 @@
+{# No id or controller: the page and the admin can each show one, and nothing on it is clicked. #}
+<table class="copy-table">
+  <thead>
+    <tr>
+      <th scope="col">Copy</th>
+      <th scope="col">Arrived</th>
+      <th scope="col">Where it is</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for row in children.rows %}
+      {{ row }}
+    {% endfor %}
+  </tbody>
+</table>

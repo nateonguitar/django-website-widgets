@@ -1,0 +1,5 @@
+<tr>
+  <td>{{ data.rental.copy.movie.title }}</td>
+  <td>{% if data.is_viewers %}You{% else %}{{ data.rental.user.username }}{% endif %}</td>
+  <td>{{ children.out_for }}</td>
+</tr>

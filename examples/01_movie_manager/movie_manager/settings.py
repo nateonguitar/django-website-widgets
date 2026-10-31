@@ -131,8 +131,14 @@ CSRF_COOKIE_HTTPONLY = True
 # Email
 # https://docs.djangoproject.com/en/6.1/topics/email/#topic-email-configuration
 
+# Printed to runserver's console rather than sent, so the checkout receipt can be read there.
 MAILERS = {
     'default': {
         'BACKEND': 'django.core.mail.backends.console.EmailBackend',
     },
 }
+DEFAULT_FROM_EMAIL = 'Movie Manager <shelf@example.com>'
+
+# Where an email's links point. An email has no request to take a host from, so its links are
+# this plus a path.
+SITE_URL = 'http://localhost:8000'

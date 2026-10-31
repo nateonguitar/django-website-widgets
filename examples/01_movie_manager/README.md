@@ -36,7 +36,8 @@ grew what this site needs.
 | --- | --- |
 | The models: `Movie`, one `Copy` per disc, a `Rental` per time someone takes one | `api/models.py` |
 | The API, one endpoint per file, its request and response schemas above it, every status in `response={...}` and returned as `Status(code, schema)`; documented at `/api/docs` | `api/endpoints/` |
-| The admin, at `/admin/`: copies on the shelf, a "still out" filter, a "mark returned" action | `api/admin.py` |
+| The admin, at `/admin/`, a file per model: copies on the shelf, a "still out" filter, a "mark returned" action, the movie page's `CopyTable` widget on each movie, the site's `RatingPicker` as the rating field, and a Return button on each rental still out | `api/admin/` |
+| Emails, built from widgets and printed to `runserver`'s console rather than sent | `website/emails/`, `website/widgets/emails/` |
 | Every page's base: the user and CSRF token in `context.page`, the 401/403/404 variants | `website/pages/app_page.py` |
 | Data every page shares, handed to the frontend once | `website/pages/document_template.html`, `website/ts/app-state.ts` |
 | URLs for the frontend, never written into TypeScript | `website/widgets/app_urls/`, `website/ts/app-urls.ts` |
@@ -108,3 +109,34 @@ grew what this site needs.
   with two people at once.
 - **A card that doesn't know its page** (`purpose='choose'` on the add-to-inventory page)
   dispatches a bubbling `movie-chosen` event, and the page listens for it.
+- **Emails are widgets too.** Checking out sends a receipt, and returning a movie sends another,
+  each printed to `runserver`'s console. Each email is a class (`website/emails/`) holding its
+  subject, a plain-text body and its HTML: its own content widget inside `EmailDocument`, which
+  places the `EmailFooter` every email shares. They're rendered with `render()`, sync and with no
+  request, so every link is `SITE_URL` plus a path.
+- **One widget, on the site and in the admin.** `CopyTable` is the movie page's table of copies,
+  and the Movie admin's change page shows the same widget, rendered with `render()` into a
+  read-only field. Each loads the copies its own way (the page with the async ORM, the admin with
+  the sync one) and passes them in.
+- **A widget as a working form field.** `RatingPicker` (`website/widgets/rating_picker/`) is a
+  rating `<select>` that says what the chosen rating means. The add-to-inventory page places it
+  as a child, and the Movie admin uses it as the rating field through `RatingSelect`, a
+  `forms.Select` whose `render()` returns the widget's. One `RatingPickerController` runs in
+  both: the widget's `<script>` imports it from the bundle, which loads in the admin like
+  anywhere else. The site's stylesheet doesn't, so the picker's own look is inline styles.
+- **A small widget for consistency.** `Timestamp` (`website/widgets/timestamp/`) is how every
+  date is written: a `<time>` with the moment in `datetime`, the exact time on hover, and the
+  text as a date, "4 days ago" or "4 days". A template filter can't write markup, so it's a
+  widget, and every table that shows dates nests one per row: Who has what, My history and the
+  copy table each build a row widget per rental or copy (`WhoHasWhatRow`, `HistoryRow`,
+  `CopyTableRow`) whose children are its `Timestamp`s, and My movies' `RentalRow` nests one too.
+  My history's few hundred rows are a few hundred small renders; a much longer list would
+  paginate.
+- **A widget only the admin uses, in vanilla JavaScript.** `ReturnRentalField`
+  (`api/admin/widgets/return_rental_field/`) is the Rental admin's "Returned" field: how long
+  ago the copy came back, or how long it's been out and a Return button. Both times are the
+  site's own `Timestamp`, nested in this admin-only widget. The button's script, a few lines in the
+  widget's own template rather than a controller in the bundle, calls the same return endpoint
+  My movies does, which lets staff return anyone's copy and emails the receipt to whoever had it.
+  `returned_at` is never a form input there, so saving a form opened before the click can't undo
+  it.

@@ -10,6 +10,7 @@ from ninja.security import django_auth
 from api.endpoints.error_responses import MessageErrorResponseDto
 from api.endpoints.rentals import rentals_router
 from api.models import Copy, Rental, User
+from website.emails.checkout_receipt_email import CheckoutReceiptEmail
 
 
 class CheckoutRequestDto(Schema):
@@ -58,6 +59,7 @@ async def checkout(
             message="Someone took the last copy of something in your cart. Nothing was recorded.",
             unavailable_movie_ids=outcome.unavailable_movie_ids)
         return Status(status_code=409, value=conflict)
+    await _send_receipt(request.auth, outcome.rental_ids)
     taken = CheckoutResponseDto(rental_ids=outcome.rental_ids)
     return Status(status_code=200, value=taken)
 
@@ -91,3 +93,14 @@ def _take_a_copy_of_each(user: User, movie_ids: list[int]) -> CheckoutOutcome:
             transaction.set_rollback(True)
             outcome.rental_ids = []
     return outcome
+
+
+# Building and sending an email is sync (render() refuses async widgets), so it runs in Django's
+# sync thread. A public site would hand this to a task queue, so a slow mail server never holds
+# up the checkout.
+@sync_to_async
+def _send_receipt(user: User, rental_ids: list[int]) -> None:
+    if not user.email:
+        return
+    rentals = Rental.objects.filter(id__in=rental_ids).select_related('copy__movie').order_by('copy__movie__title')
+    CheckoutReceiptEmail(user=user, rentals=list(rentals)).send()

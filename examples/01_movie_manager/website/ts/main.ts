@@ -22,6 +22,7 @@ customElements.define(LoadingSpinner.htmlTag, LoadingSpinner);
 import '../widgets/account_menu/account_menu.scss';
 import '../widgets/appbar/appbar.scss';
 import '../widgets/confirm_dialog/confirm_dialog.scss';
+import '../widgets/copy_table/copy_table.scss';
 import '../widgets/movie_card/movie_card.scss';
 import '../widgets/movie_results/movie_results.scss';
 import '../widgets/rental_row/rental_row.scss';
@@ -46,6 +47,7 @@ export { AccountMenuController } from '../widgets/account_menu/account_menu';
 export { AppbarController } from '../widgets/appbar/appbar';
 export { ConfirmDialogController } from '../widgets/confirm_dialog/confirm_dialog';
 export { MovieCardController } from '../widgets/movie_card/movie_card';
+export { RatingPickerController } from '../widgets/rating_picker/rating_picker';
 export { RentalRowController } from '../widgets/rental_row/rental_row';
 // {{ WIDGET CONTROLLERS END }}
 

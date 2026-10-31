@@ -44,6 +44,11 @@ Each email's content is its own widget (`EventReminder(event=event)`, a digest's
 widgets), so one email's markup never lives inside another's template. The document is then
 `EmailDocument(subject=..., site_url=..., content=EventReminder(event=event)).render()`.
 
+**What every email shares is a widget the document places,** never markup repeated in each
+email's content. A company-style footer, the same links and the same "why you got this" line in
+every email, is an `EmailFooter` widget that `EmailDocument.set_context()` adds as a child
+beside the content; changing it changes every email at once.
+
 ## What an email needs that a page doesn't
 
 - **`def set_context()` throughout.** Emails are sent from sync code (a management command, a
@@ -68,3 +73,13 @@ message.send()
 
 A class per email (`EventReminderEmail`, with its subject, plain-text body and content widget)
 keeps each email's three parts together; a shared base class can build the document and send it.
+
+## Worked example
+
+The movie manager example sends two emails built this way, a checkout receipt and a return
+receipt, both ending in one `EmailFooter`:
+[`examples/01_movie_manager/website/widgets/emails/`](https://github.com/nateonguitar/django-website-widgets/tree/main/examples/01_movie_manager/website/widgets/emails)
+holds the widgets and
+[`website/emails/`](https://github.com/nateonguitar/django-website-widgets/tree/main/examples/01_movie_manager/website/emails)
+the email classes. Its API endpoints are async, so each sends through `sync_to_async`, and its
+settings print emails to the console instead of sending them.

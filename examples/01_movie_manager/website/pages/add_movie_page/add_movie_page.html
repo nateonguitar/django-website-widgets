@@ -49,12 +49,8 @@
        data-field="genre"></p>
     <label>
       Rating
-      <select name="rating">
-        <option value="">Pick one</option>
-        {% for value, label in data.ratings %}
-          <option value="{{ value }}">{{ label }}</option>
-        {% endfor %}
-      </select>
+      {# The same picker the Movie admin shows. #}
+      {{ children.rating }}
     </label>
     <p class="add-movie-page__field-error"
        data-field="rating"></p>

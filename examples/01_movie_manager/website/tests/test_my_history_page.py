@@ -44,7 +44,7 @@ class MyHistoryPageTestCase(TestCase):
         response = self.client.get('/my-history')
 
         soup = BeautifulSoup(response.content, 'html.parser')
-        still_out = soup.select('.my-history-page__table tr.my-history-page__out')
+        still_out = soup.select('.my-history-page__table tr.history-row--out')
         self.assertEqual(len(still_out), 1)
         self.assertEqual(still_out[0].select_one('td').get_text(strip=True), 'Die Hard')
         self.assertEqual(still_out[0].select_one('a').get_text(strip=True), 'return it')

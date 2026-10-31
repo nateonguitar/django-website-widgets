@@ -1,0 +1,17 @@
+// The site's look. In the admin the bundle isn't loaded, so the admin's own table styles apply.
+.copy-table {
+  width: 100%;
+  border-collapse: collapse;
+
+  th,
+  td {
+    padding: 0.5rem 0.75rem 0.5rem 0;
+    border-bottom: 1px solid var(--border-color);
+    text-align: left;
+  }
+
+  th {
+    color: var(--muted-text-color);
+    font-weight: 600;
+  }
+}

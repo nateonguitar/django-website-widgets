@@ -136,6 +136,8 @@ def seed(apps, schema_editor):
         is_superuser = username == SUPERUSER
         users[username] = User.objects.create(
             username=username,
+            # example.com is reserved for examples, so nothing is ever delivered there.
+            email=f'{username}@example.com',
             password=hashed_password,
             is_staff=is_superuser,
             is_superuser=is_superuser)

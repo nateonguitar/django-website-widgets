@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>{{ data.subject }}</title>
+  </head>
+  {# Inline styles and literal colours only: most mail apps drop <style> blocks, linked #}
+  {# stylesheets and CSS variables. #}
+  <body style="margin: 0; padding: 24px 12px; background: #f6f5f4; color: #241f31; font-family: Arial, sans-serif;">
+    <div style="max-width: 32rem; margin: 0 auto; padding: 24px; background: #ffffff; border: 1px solid #deddda;">
+      {{ children.content }}
+    </div>
+    {{ children.footer }}
+  </body>
+</html>

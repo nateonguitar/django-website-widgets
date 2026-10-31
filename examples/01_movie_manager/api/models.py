@@ -27,6 +27,18 @@ class MovieRating(models.TextChoices):
     R = 'R', 'R'
     NC17 = 'NC17', 'NC-17'
 
+    @property
+    def description(self) -> str:
+        """What the rating roughly means, which RatingPicker shows beside the choice."""
+        descriptions = {
+            'G': 'General audiences: fine for all ages.',
+            'PG': 'Parental guidance suggested: some material may not suit young children.',
+            'PG13': 'Parents strongly cautioned: some material may not suit children under 13.',
+            'R': 'Restricted: under 17 only with a parent or guardian.',
+            'NC17': 'Adults only: no one 17 or under.',
+        }
+        return descriptions[self.value]
+
 
 class MovieQuerySet(models.QuerySet):
     def with_availability(self) -> 'MovieQuerySet':

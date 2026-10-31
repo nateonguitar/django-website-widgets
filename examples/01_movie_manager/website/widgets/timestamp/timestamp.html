@@ -1,0 +1,2 @@
+<time datetime="{{ data.value|date:'c' }}"
+      title="{{ data.value|date:'D j M Y, H:i' }}">{% if data.style == 'ago' %}{{ data.value|timesince }} ago{% elif data.style == 'duration' %}{{ data.value|timesince }}{% else %}{{ data.value|date:'D j M Y' }}{% endif %}</time>

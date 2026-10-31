@@ -6,20 +6,3 @@
 .movie-page h2 {
   font-size: 1.1rem;
 }
-
-.movie-page__copies {
-  width: 100%;
-  border-collapse: collapse;
-
-  th,
-  td {
-    padding: 0.5rem 0.75rem 0.5rem 0;
-    border-bottom: 1px solid var(--border-color);
-    text-align: left;
-  }
-
-  th {
-    color: var(--muted-text-color);
-    font-weight: 600;
-  }
-}

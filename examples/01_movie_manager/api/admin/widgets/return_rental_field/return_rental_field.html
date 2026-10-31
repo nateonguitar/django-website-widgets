@@ -1,0 +1,46 @@
+{% if data.rental.returned_at %}
+  {{ children.returned }}
+{% else %}
+  <div class="return-rental-field"
+       data-url="{{ data.return_url }}">
+    <span class="return-rental-field__status">Out with {{ data.rental.user.username }} for {{ children.out_for }}.</span>
+    {# type="button", or a click would submit the change form around it. #}
+    {# .button is the admin's own button style. #}
+    <button type="button"
+            class="button return-rental-field__button">Return</button>
+  </div>
+  {% comment %}
+  A classic script, not a module, so document.currentScript is the script itself and its
+  previous sibling is this field's root, with no id to keep unique.
+  {% endcomment %}
+  <script>
+    (function () {
+      const root = document.currentScript.previousElementSibling;
+      const button = root.querySelector('.return-rental-field__button');
+      const status = root.querySelector('.return-rental-field__status');
+      // The CSRF cookie is HttpOnly, but the admin's change form carries the token.
+      const csrfToken = root.closest('form').querySelector('[name="csrfmiddlewaretoken"]').value;
+
+      button.addEventListener('click', async function () {
+        button.disabled = true;
+        try {
+          const response = await fetch(root.dataset.url, {
+            method: 'POST',
+            headers: { 'X-CSRFToken': csrfToken },
+          });
+          if (response.ok) {
+            // The form has no returned-at input to overwrite this when it's saved.
+            status.textContent = 'Returned just now.';
+            button.remove();
+            return;
+          }
+          const body = await response.json().catch(function () { return {}; });
+          status.textContent = body.message || 'That didn\'t work (the server answered ' + response.status + ').';
+        } catch (error) {
+          status.textContent = 'Couldn\'t reach the server. Try again.';
+        }
+        button.disabled = false;
+      });
+    })();
+  </script>
+{% endif %}

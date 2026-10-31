@@ -25,6 +25,16 @@ class SignedInPagesTestCase(TestCase):
             with self.subTest(path=path):
                 self.assertEqual(self.client.get(path).status_code, 200)
 
+    def test_add_movie_page__picks_the_rating_with_the_rating_picker__when_signed_in(self):
+        self.client.force_login(User.objects.get(username='alex'))
+
+        response = self.client.get('/add-movie')
+
+        soup = BeautifulSoup(response.content, 'html.parser')
+        picker = soup.select_one('.add-movie-page__new .rating-picker')
+        self.assertEqual(picker.select_one('select')['name'], 'rating')
+        self.assertIsNone(picker.select_one('option[selected]'))
+
     def test_my_movies_page__lists_only_your_open_rentals__when_signed_in(self):
         self.client.force_login(User.objects.get(username='jordan'))
 

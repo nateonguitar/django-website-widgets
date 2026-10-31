@@ -8,6 +8,7 @@ from website_widgets import register_url
 from api.models import Rental
 from website.exceptions import UnauthorizedException
 from website.pages.app_page import AppPage
+from website.widgets.history_row import HistoryRow
 
 
 @register_url('my-history')
@@ -34,7 +35,9 @@ class MyHistoryPage(AppPage):
             .order_by('-taken_at')
         )
         rentals = [rental async for rental in rentals]
-        self.context.data['rentals'] = rentals
+        # A widget per row, each nesting the Timestamps its dates are written with. A few hundred
+        # rows is a few hundred small renders; a page listing thousands would paginate.
+        self.context.children['rows'] = [HistoryRow(rental=rental) for rental in rentals]
 
         # Every day in the range, including the ones with nothing taken, so the chart's gaps
         # are real days.

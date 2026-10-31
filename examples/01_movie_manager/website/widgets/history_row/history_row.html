@@ -1,0 +1,14 @@
+<tr class="history-row{% if not data.rental.returned_at %} history-row--out{% endif %}">
+  {% if data.rental.returned_at %}
+    <td>{{ data.rental.copy.movie.title }}</td>
+    <td>{{ children.taken }}</td>
+    <td>{{ children.returned }}</td>
+    {# Between two moments, not a moment, so a plain filter rather than a Timestamp. #}
+    <td>{{ data.rental.taken_at|timesince:data.rental.returned_at }}</td>
+  {% else %}
+    <td><strong>{{ data.rental.copy.movie.title }}</strong></td>
+    <td>{{ children.taken }}</td>
+    <td>Still have it, <a href="{% url 'website:MyMoviesPage' %}">return it</a></td>
+    <td>{{ children.out_for }} so far</td>
+  {% endif %}
+</tr>

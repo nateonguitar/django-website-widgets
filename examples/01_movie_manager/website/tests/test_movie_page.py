@@ -11,7 +11,7 @@ class MoviePageTestCase(TestCase):
     def copy_statuses(self, response) -> list[str]:
         """The "Where it is" cell of each copy, its whitespace collapsed."""
         soup = BeautifulSoup(response.content, 'html.parser')
-        cells = soup.select('.movie-page__copies tbody td:nth-of-type(3)')
+        cells = soup.select('#movie-page .copy-table tbody td:nth-of-type(3)')
         return [' '.join(cell.get_text().split()) for cell in cells]
 
     def test_movie_page__shows_the_movie_and_each_copy__when_it_exists(self):

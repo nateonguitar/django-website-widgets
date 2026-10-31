@@ -1,0 +1,13 @@
+<h1 style="margin: 0 0 16px; font-size: 20px;">Enjoy the movies, {{ data.username }}</h1>
+<p style="margin: 0 0 8px;">You took home:</p>
+<ul style="margin: 0 0 16px; padding-left: 20px;">
+  {% for rental in data.rentals %}
+    <li>{{ rental.copy.movie.title }} ({{ rental.copy.movie.year }})</li>
+  {% endfor %}
+</ul>
+<p style="margin: 0;">
+  {# page.site_url, which EmailDocument set, makes the link absolute: {% url %} alone gives a #}
+  {# path, which goes nowhere in a mail app. #}
+  When they're back on the shelf, return them from
+  <a href="{{ page.site_url }}{% url 'website:MyMoviesPage' %}" style="color: #1a5fb4;">My movies</a>.
+</p>

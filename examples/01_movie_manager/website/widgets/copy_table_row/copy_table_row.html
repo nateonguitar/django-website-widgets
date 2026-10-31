@@ -1,0 +1,14 @@
+<tr>
+  <td>{{ data.number }}</td>
+  <td>{{ children.arrived }}</td>
+  <td>
+    {% if not data.rental %}
+      On the shelf
+    {% elif data.show_who %}
+      Out with {% if data.is_viewers %}you{% else %}{{ data.rental.user.username }}{% endif %}
+      for {{ children.out_for }}
+    {% else %}
+      Out
+    {% endif %}
+  </td>
+</tr>

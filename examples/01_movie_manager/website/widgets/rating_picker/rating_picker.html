@@ -1,0 +1,23 @@
+{% load static %}
+<div id="{{ data.root_id }}"
+     class="rating-picker">
+  <select class="rating-picker__select"
+          name="{{ data.name }}"{% if data.select_id %} id="{{ data.select_id }}"{% endif %}>
+    <option value=""
+            data-description="">Pick one</option>
+    {% for rating in data.ratings %}
+      <option value="{{ rating.value }}"
+              data-description="{{ rating.description }}"{% if rating.value == data.value %} selected{% endif %}>{{ rating.label }}</option>
+    {% endfor %}
+  </select>
+  {# Inline styles: the admin doesn't load the site's stylesheet, and shouldn't. #}
+  <p class="rating-picker__description"
+     aria-live="polite"
+     style="margin: 0.25rem 0 0; font-size: 0.9em; opacity: 0.75;">{{ data.description }}</p>
+</div>
+
+{# The same in the admin: this imports the bundle there too. #}
+<script type="module">
+  import { App, RatingPickerController } from '{% static "main.js" %}';
+  await App.initController(new RatingPickerController(), '#{{ data.root_id }}');
+</script>

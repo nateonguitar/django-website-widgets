@@ -1,7 +1,7 @@
 <main id="who-has-what-page"
       class="who-has-what-page">
   <h1>Who has what</h1>
-  {% if data.rentals %}
+  {% if children.rows %}
     <table class="who-has-what-page__table">
       <thead>
         <tr>
@@ -11,12 +11,8 @@
         </tr>
       </thead>
       <tbody>
-        {% for rental in data.rentals %}
-          <tr>
-            <td>{{ rental.copy.movie.title }}</td>
-            <td>{% if rental.user_id == page.user.id %}You{% else %}{{ rental.user.username }}{% endif %}</td>
-            <td title="Since {{ rental.taken_at|date:'D j M Y' }}">{{ rental.taken_at|timesince }}</td>
-          </tr>
+        {% for row in children.rows %}
+          {{ row }}
         {% endfor %}
       </tbody>
     </table>
