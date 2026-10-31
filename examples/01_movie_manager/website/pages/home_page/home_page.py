@@ -39,8 +39,13 @@ class HomePage(AppPage):
                 what = '1 new copy'
             else:
                 what = f"{arrival['new_copies']} new copies"
-            # depth=1: "2 weeks ago", not "2 weeks, 4 days ago".
-            note = f"{what}, {timesince(arrival['arrived_at'], depth=1)} ago"
+            # depth=1: "2 weeks ago", not "2 weeks, 4 days ago". timesince counts whole minutes,
+            # so under one it says "0 minutes".
+            if timezone.now() - arrival['arrived_at'] < timedelta(minutes=1):
+                when = 'just now'
+            else:
+                when = f"{timesince(arrival['arrived_at'], depth=1)} ago"
+            note = f'{what}, {when}'
             cards.append(MovieCard(movie=movie, note=note))
         self.context.data['new_for_days'] = self.NEW_FOR_DAYS
         self.context.children['cards'] = cards

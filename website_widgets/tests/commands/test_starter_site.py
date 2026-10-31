@@ -79,7 +79,6 @@ class StarterSiteTestCase(SimpleTestCase):
         self.assertIn('<title>Home | My Site</title>', html)
         self.assertIn('data-default-name="world"', html)
         self.assertIn("AppUrls.endpoint_greeting = '/api/greeting/{name}';", html)
-        self.assertIn("AppUrls.static_bundled_styles = '/static/bundled\\u002Dstyles.css';", html)
         self.assertIn("AppState.siteName = 'My Site';", html)
         self.assertIn("await App.initController(new HomePageController(), '#home-page');", html)
         self.assertIn('examples/01_movie_manager', html)

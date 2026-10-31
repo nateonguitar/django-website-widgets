@@ -45,6 +45,14 @@ class HomePageTestCase(TestCase):
 
         self.assertTrue(notes['Die Hard'].startswith('2 new copies'))
 
+    def test_home_page__says_just_now__when_a_movie_arrived_under_a_minute_ago(self):
+        moana = Movie.objects.create(title='Moana', year=2016, genre='animation', rating='PG')
+        Copy.objects.create(movie=moana)
+
+        notes = self.notes_by_title()
+
+        self.assertEqual(notes['Moana'], 'New to the shelf, just now')
+
     def test_home_page__says_nothing_is_new__when_nothing_arrived_this_month(self):
         Copy.objects.update(added_at=timezone.now() - timedelta(days=60))
 

@@ -36,3 +36,12 @@ class TimestampTestCase(TestCase):
 
         self.assertEqual(ago.get_text(), '4\xa0days ago')
         self.assertEqual(duration.get_text(), '4\xa0days')
+
+    def test_timestamp__says_just_now__when_the_moment_is_under_a_minute_ago(self):
+        moment = django_timezone.now() - timedelta(seconds=10)
+
+        ago = self.render(Timestamp(value=moment, style=TimestampStyle.AGO))
+        duration = self.render(Timestamp(value=moment, style=TimestampStyle.DURATION))
+
+        self.assertEqual(ago.get_text(), 'just now')
+        self.assertEqual(duration.get_text(), 'less than a minute')

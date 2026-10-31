@@ -1,6 +1,7 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 from enum import StrEnum
 
+from django.utils import timezone
 from website_widgets import Widget
 
 
@@ -29,3 +30,5 @@ class Timestamp(Widget):
     def set_context(self):
         self.context.data['value'] = self.value
         self.context.data['style'] = self.style.value
+        # timesince counts whole minutes, so under one it says "0 minutes".
+        self.context.data['under_a_minute'] = timezone.now() - self.value < timedelta(minutes=1)

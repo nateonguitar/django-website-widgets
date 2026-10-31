@@ -92,11 +92,15 @@ assigns each URL the frontend needs to the TypeScript `AppUrls` class: pages and
 for the controller to fill, and static files from `static()`. A new URL is one line in the
 widget's dict and one declaration in `app-urls.ts`. See `reverse_template.md`.
 
-`static_bundled_styles` is the reason a static file's URL goes through `AppUrls` too.
-`<loading-spinner>` is a web component, and a shadow root doesn't see the page's stylesheets, so
-it imports the bundled stylesheet itself, `@import url("${AppUrls.static_bundled_styles}")`. A
-versioning static storage gives a rebuilt stylesheet a new URL through `static()`; a path written
-into TypeScript never changes, and browsers keep serving their stale copy.
+**A static file the frontend needs goes through `AppUrls` too,** from `static()`: a versioning
+static storage gives a rebuilt file a new URL there, while a path written into TypeScript never
+changes, and browsers keep serving their stale copy.
+
+**`<loading-spinner>` is a web component with no shadow root.** It puts a plain `<div>` inside
+itself, styled by the page's own stylesheet. A shadow root would hide that stylesheet, and the
+element would have to load it itself from a URL in `AppUrls`, which isn't filled yet when
+`main.ts` defines the element: the first `<script>` on a page imports the bundle before its own
+lines run.
 
 ## The endpoint
 

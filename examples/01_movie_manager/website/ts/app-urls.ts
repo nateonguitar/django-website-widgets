@@ -4,7 +4,6 @@
  * placeholders, such as `{rental_id}`, for the controller to fill.
  */
 export class AppUrls {
-    static static_bundled_styles: string;
     static endpoint_sign_in: string;
     static endpoint_sign_out: string;
     static endpoint_search_movies: string;

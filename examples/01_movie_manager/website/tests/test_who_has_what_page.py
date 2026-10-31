@@ -44,7 +44,7 @@ class WhoHasWhatPageTestCase(TestCase):
 
         rows = self.table_rows()
 
-        self.assertIn(['Toy Story', 'You', '0\xa0minutes'], rows)
+        self.assertIn(['Toy Story', 'You', 'less than a minute'], rows)
 
     def test_who_has_what_page__leaves_out_returned_movies__when_one_was_brought_back(self):
         Rental.objects.update(returned_at=timezone.now())

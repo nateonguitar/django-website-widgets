@@ -57,8 +57,8 @@ module.exports = {
     ],
   },
   plugins: [
-    // Every stylesheet main.ts imports, as one file: the document template
-    // links it, and web components import it into their shadow roots.
+    // Every stylesheet main.ts imports, as one file, which the document
+    // template links.
     new MiniCssExtractPlugin({
       filename: 'bundled-styles.css',
     }),

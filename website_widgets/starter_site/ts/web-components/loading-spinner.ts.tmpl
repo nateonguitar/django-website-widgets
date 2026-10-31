@@ -1,26 +1,20 @@
-import { AppUrls } from "../app-urls";
-
 /**
- * `<loading-spinner>`, styled by loading-spinner.scss. A shadow root doesn't see the page's
- * stylesheets, so it imports the bundled stylesheet itself, from the URL AppUrls holds.
+ * `<loading-spinner>`, styled by loading-spinner.scss through the page's own stylesheet. No
+ * shadow root: inside one, the page's stylesheet wouldn't apply, and the element would have to
+ * load it itself from a URL, before the page has necessarily handed that URL over.
  */
 export class LoadingSpinner extends HTMLElement {
     static htmlTag: 'loading-spinner' = 'loading-spinner';
 
-    constructor() {
-        super();
-        this.attachShadow({ mode: 'open' });
-    }
-
     connectedCallback(): void {
-        this.shadowRoot!.innerHTML = `
-            <style>
-                @import url("${AppUrls.static_bundled_styles}");
-            </style>
-            <div class="loading-spinner"
-                 role="status"
-                 aria-label="Loading">
-            </div>
-        `;
+        // Once, since moving the element in the page connects it again.
+        if (this.childElementCount > 0) {
+            return;
+        }
+        const spinner = document.createElement('div');
+        spinner.className = 'loading-spinner';
+        spinner.setAttribute('role', 'status');
+        spinner.setAttribute('aria-label', 'Loading');
+        this.append(spinner);
     }
 }

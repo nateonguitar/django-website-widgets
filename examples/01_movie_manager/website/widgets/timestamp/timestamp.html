@@ -1,2 +1,2 @@
 <time datetime="{{ data.value|date:'c' }}"
-      title="{{ data.value|date:'D j M Y, H:i' }}">{% if data.style == 'ago' %}{{ data.value|timesince }} ago{% elif data.style == 'duration' %}{{ data.value|timesince }}{% else %}{{ data.value|date:'D j M Y' }}{% endif %}</time>
+      title="{{ data.value|date:'D j M Y, H:i' }}">{% if data.style == 'ago' %}{% if data.under_a_minute %}just now{% else %}{{ data.value|timesince }} ago{% endif %}{% elif data.style == 'duration' %}{% if data.under_a_minute %}less than a minute{% else %}{{ data.value|timesince }}{% endif %}{% else %}{{ data.value|date:'D j M Y' }}{% endif %}</time>
