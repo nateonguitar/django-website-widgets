@@ -44,5 +44,5 @@ class MovieResults(Widget):
         # query inside the async pipeline.
         found = [movie async for movie in movies[:self.LIMIT]]
         self.context.children['cards'] = [
-            MovieCard(movie=movie, purpose=self.purpose) for movie in found
+            MovieCard(movie=movie, purpose=self.purpose, key=movie.id) for movie in found
         ]

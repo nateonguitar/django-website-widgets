@@ -56,8 +56,11 @@ grew what this site needs.
   `createContextualFragment()` rather than `innerHTML`, so each card's `<script>` runs and starts
   its controller. The endpoint waits half a second (`SEARCH_DELAY_SECONDS`) before answering, so
   the spinner that takes the results' place while a search runs is visible on a local machine.
-- **A widget repeated on a page** (`MovieCard`, `RentalRow`) gives each root an id from its row,
-  `movie-card-{{ data.movie.id }}`, and its controller looks its elements up inside that root.
+- **A widget repeated on a page** (`MovieCard`, `RentalRow`) takes a keyword-only `key`, as
+  `ww_create_widget --repeating=true` writes it, and each caller passes the row's id,
+  `MovieCard(movie=movie, key=movie.id)`. The root carries it in `data-key`, which its selector
+  finds it by, `.movie-card[data-key="{{ data.key }}"]`, beside the `data-movie-id` its
+  controller reads. The controller looks its elements up inside that root.
 - **The cart is in `localStorage`** (`website/ts/cart.ts`), one per user, so it survives reloads
   and two people on one computer don't share it. Checkout is one transaction: either every movie
   is recorded as taken, or the endpoint answers 409 naming what ran out and nothing is recorded,
@@ -73,7 +76,7 @@ grew what this site needs.
   reads) other controllers reach with `AppbarController.instance()`, which waits on its
   `Completer`, to update the cart count.
 - **Every controller is started by its template's `<script>`**,
-  `await App.initController(new MovieCardController(), '#movie-card-{{ data.movie.id }}')`, so
+  `await App.initController(new MovieCardController(), '.movie-card[data-key="{{ data.key }}"]')`, so
   the selector sits beside the root it names and no controller has a static starter of its own.
 - **One service per API router** (`website/ts/api/`): `AuthApiService`, `MovieApiService` and
   `RentalApiService`, each a singleton reached through `.instance`, with a method per endpoint.

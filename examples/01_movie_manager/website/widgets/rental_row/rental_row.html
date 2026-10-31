@@ -1,6 +1,6 @@
 {% load static %}
-<li id="rental-row-{{ data.rental.id }}"
-    class="rental-row"
+<li class="rental-row"
+    data-key="{{ data.key }}"
     data-rental-id="{{ data.rental.id }}">
   <span class="rental-row__title">{{ data.rental.copy.movie.title }}</span>
   <span class="rental-row__taken">taken {{ children.taken }}</span>
@@ -12,5 +12,5 @@
 
 <script type="module">
   import { App, RentalRowController } from '{% static "main.js" %}';
-  await App.initController(new RentalRowController(), '#rental-row-{{ data.rental.id }}');
+  await App.initController(new RentalRowController(), '.rental-row[data-key="{{ data.key }}"]');
 </script>

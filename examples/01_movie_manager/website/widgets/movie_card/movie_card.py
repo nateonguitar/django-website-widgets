@@ -14,9 +14,13 @@ class MovieCard(Widget):
         self,
         movie: Movie,
         purpose: str = 'cart',
-        note: str | None = None
+        note: str | None = None,
+        *,
+        key: int
     ):
         super().__init__()
+        # Tells this card's root from the others' on the page, for its controller's selector.
+        self.context.data['key'] = key
         # From Movie.objects.with_availability(), for total_copies and available_copies.
         self.movie = movie
         self.purpose = purpose

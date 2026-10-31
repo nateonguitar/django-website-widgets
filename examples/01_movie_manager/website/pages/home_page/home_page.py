@@ -46,6 +46,6 @@ class HomePage(AppPage):
             else:
                 when = f"{timesince(arrival['arrived_at'], depth=1)} ago"
             note = f'{what}, {when}'
-            cards.append(MovieCard(movie=movie, note=note))
+            cards.append(MovieCard(movie=movie, note=note, key=movie.id))
         self.context.data['new_for_days'] = self.NEW_FOR_DAYS
         self.context.children['cards'] = cards

@@ -1,7 +1,6 @@
 {% load static %}
-{# Several cards share a page, so each root's id carries the movie's. #}
-<article id="movie-card-{{ data.movie.id }}"
-         class="movie-card"
+<article class="movie-card"
+         data-key="{{ data.key }}"
          data-movie-id="{{ data.movie.id }}"
          data-title="{{ data.movie.title }}"
          data-available="{{ data.movie.available_copies }}"
@@ -31,5 +30,5 @@
 
 <script type="module">
   import { App, MovieCardController } from '{% static "main.js" %}';
-  await App.initController(new MovieCardController(), '#movie-card-{{ data.movie.id }}');
+  await App.initController(new MovieCardController(), '.movie-card[data-key="{{ data.key }}"]');
 </script>

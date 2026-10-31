@@ -20,7 +20,7 @@ class MoviePageTestCase(TestCase):
         self.assertEqual(response.status_code, 200)
         soup = BeautifulSoup(response.content, 'html.parser')
         self.assertEqual(soup.title.get_text(), 'Die Hard | Movie Manager')
-        self.assertIsNotNone(soup.select_one(f'.movie-page__card #movie-card-{self.die_hard.id}'))
+        self.assertIsNotNone(soup.select_one(f'.movie-page__card .movie-card[data-key="{self.die_hard.id}"]'))
         self.assertEqual(len(self.copy_statuses(response)), 3)
 
     def test_movie_page__says_who_has_a_copy__when_signed_in(self):

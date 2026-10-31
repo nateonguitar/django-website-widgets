@@ -37,7 +37,7 @@ class MoviePage(AppPage):
         )
         copies = [copy async for copy in copies]
         user = self.context.page['user']
-        self.context.children['card'] = MovieCard(movie=movie)
+        self.context.children['card'] = MovieCard(movie=movie, key=movie.id)
         # Names are for the family, so only someone signed in sees who has a copy.
         self.context.children['copies'] = CopyTable(
             copies=copies,

@@ -22,4 +22,4 @@ class MyMoviesPage(AppPage):
             .filter(user=user, returned_at__isnull=True)
             .select_related('copy__movie')
         )
-        self.context.children['rows'] = [RentalRow(rental=rental) async for rental in rentals]
+        self.context.children['rows'] = [RentalRow(rental=rental, key=rental.id) async for rental in rentals]
