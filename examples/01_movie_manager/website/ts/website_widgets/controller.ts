@@ -38,16 +38,4 @@ export class Controller {
         }
         return element as T;
     }
-
-    /**
-     * @deprecated Look the element up once into the controller's elements and bind on it,
-     * `this.elements.saveButton?.addEventListener('click', handler)`. This looks the element
-     * up a second time, and warns for an element the template renders conditionally.
-     */
-    bindClick({ elementId, handler }: { elementId: string; handler: EventListener }): void {
-        const element = this.getElementByIdOrWarn(elementId);
-        if (element) {
-            element.addEventListener("click", handler);
-        }
-    }
 }

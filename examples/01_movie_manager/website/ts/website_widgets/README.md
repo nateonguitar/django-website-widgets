@@ -1,6 +1,6 @@
 # website_widgets frontend framework
 
-Copied from django-website-widgets 0.10.2 by `python manage.py ww_upgrade` or `ww_create_app`.
+Copied from django-website-widgets 0.11.0 by `python manage.py ww_upgrade` or `ww_create_app`.
 
 **This folder is managed by the package: don't edit the files it wrote here** (listed below).
 They're the framework TypeScript your controllers import, and running `ww_upgrade` after an

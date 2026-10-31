@@ -81,8 +81,9 @@ in an event handler is lost or contradicted by the next `setState()`.
 
 **Which element lookup.** `getElementByIdOrWarn()` claims an element is always on the page, and
 logs a warning when it isn't. Use `document.getElementById()` for one the template renders only
-sometimes, where `null` is expected, so the warning keeps meaning something. `bindClick()` is
-deprecated: it looks the element up a second time; bind on the element already found.
+sometimes, where `null` is expected, so the warning keeps meaning something. Bind a listener on
+the element already found, `this.elements.saveButton?.addEventListener('click', handler)`,
+rather than looking it up again.
 
 ## Singletons and readiness
 
