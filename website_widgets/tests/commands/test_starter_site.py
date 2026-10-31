@@ -104,8 +104,18 @@ class StarterSiteTestCase(SimpleTestCase):
         self.assertEqual(PageRoutes.check_for_ties(), [])
 
     def test_starter_site__takes_generated_page_and_widget__when_commands_run(self):
-        for command, name in (('ww_create_page', 'about_page'), ('ww_create_widget', 'info_card')):
-            call_command(command, name, '--tscontroller', 'true', '--stylesheet', 'true', stdout=io.StringIO())
+        call_command(
+            'ww_create_page',
+            'about_page',
+            '--tscontroller=true',
+            '--stylesheet=true',
+            stdout=io.StringIO())
+        call_command(
+            'ww_create_widget',
+            'info_card',
+            '--tscontroller=true',
+            '--stylesheet=true',
+            stdout=io.StringIO())
 
         main_ts = self.read('ts', 'main.ts')
         self.assertIn("export { AboutPageController } from '../pages/about_page/about_page';", main_ts)
@@ -114,6 +124,25 @@ class StarterSiteTestCase(SimpleTestCase):
         about_page_module = importlib.import_module(f'{self.app_label}.pages.about_page.about_page')
         app_page_module = importlib.import_module(f'{self.app_label}.pages.app_page')
         self.assertTrue(issubclass(about_page_module.AboutPage, app_page_module.AppPage))
+
+    def test_starter_site__serves_generated_page_at_route_made_from_its_name__when_created(self):
+        call_command(
+            'ww_create_page',
+            'about_page',
+            '--tscontroller=false',
+            '--stylesheet=false',
+            stdout=io.StringIO())
+        # The urlconf in setUp read the routes before the page existed.
+        self.forget_app_modules()
+        PageRoutes._routes.clear()
+        urlconf = ModuleType('starter_site_test_urlconf_with_about')
+        urlconf.urlpatterns = [path('', include(f'{self.app_label}.urls'))]
+        self.enterContext(override_settings(ROOT_URLCONF=urlconf))
+
+        response = self.client.get('/about')
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('<h1>AboutPage</h1>', response.content.decode())
 
     def test_starter_site__upgrade_overwrites_framework_and_leaves_starter_files__when_both_were_edited(self):
         self.write('// edited\n', 'ts', 'website_widgets', 'controller.ts')

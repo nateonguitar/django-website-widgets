@@ -607,10 +607,11 @@ pages aren't in `urls.py`, and warn when either managed folder is from another v
 [`docs/checking_the_setup.md`](https://github.com/nateonguitar/django-website-widgets/blob/main/website_widgets/docs/checking_the_setup.md).
 
 Create a page or widget, with an optional TypeScript controller and stylesheet registered in
-`ts/main.ts` (each asks when a flag is left out):
+`ts/main.ts` (each asks when a flag is left out). A page is routed with `@register_url`, at a
+route made from its name unless `--route` gives one:
 ```bash
 python manage.py ww_create_widget like_button --tscontroller=true --stylesheet=true
-python manage.py ww_create_page profile_page --tscontroller=false --stylesheet=false
+python manage.py ww_create_page profile_page --tscontroller=false --stylesheet=false --route=profile
 ```
 They need the framework TypeScript in `ts/website_widgets/`, and for a page, the base class at
 `GenerateComponentConfig.app_page_class`. A project overrides any of their templates with its

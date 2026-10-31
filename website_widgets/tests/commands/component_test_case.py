@@ -1,5 +1,6 @@
 import io
 import os
+import sys
 import tempfile
 from types import SimpleNamespace
 from unittest.mock import patch
@@ -7,6 +8,7 @@ from unittest.mock import patch
 from django.core.management import call_command
 from django.test import SimpleTestCase
 
+from website_widgets import PageRoutes
 from website_widgets.config import GenerateComponentConfig, WebsiteWidgetsConfig
 
 
@@ -29,7 +31,8 @@ import '../widgets/zebra/zebra.scss';
 class ComponentTestCase(SimpleTestCase):
     """
     A temp website app that `ww_upgrade` has populated, with a main.ts holding the four marker
-    pairs and an empty `templates_dir`, for `ww_create_page` and `ww_create_widget`.
+    pairs and an empty `templates_dir`, for `ww_create_page` and `ww_create_widget`. The app is
+    importable as `website` and route discovery reads it, with an empty route registry.
     """
 
     def setUp(self):
@@ -41,10 +44,16 @@ class ComponentTestCase(SimpleTestCase):
         os.makedirs(os.path.join(self.app_folder, 'ts'))
         os.makedirs(self.templates_dir)
         self.write(MAIN_TS, self.app_folder, 'ts', 'main.ts')
+        sys.path.insert(0, self.project_root)
+        self.addCleanup(sys.path.remove, self.project_root)
+        self.addCleanup(self.forget_website_modules)
+        self.enterContext(patch.object(PageRoutes, '_routes', {}))
 
-        app_config = SimpleNamespace(path=self.app_folder)
-        for module in ('commands.ww_upgrade', 'component_files'):
-            mock_apps = self.enterContext(patch(f'website_widgets.management.{module}.apps'))
+        app_config = SimpleNamespace(
+            name='website',
+            path=self.app_folder)
+        for module in ('management.commands.ww_upgrade', 'management.component_files', 'page_routes'):
+            mock_apps = self.enterContext(patch(f'website_widgets.{module}.apps'))
             mock_apps.get_app_config.return_value = app_config
         self.config = WebsiteWidgetsConfig(
             generate_component=GenerateComponentConfig(
@@ -61,6 +70,12 @@ class ComponentTestCase(SimpleTestCase):
             '--project-root',
             self.project_root,
             stdout=io.StringIO())
+
+    @staticmethod
+    def forget_website_modules():
+        for module_name in list(sys.modules):
+            if module_name == 'website' or module_name.startswith('website.'):
+                del sys.modules[module_name]
 
     def run_command(self, command: str, *args: str) -> str:
         output = io.StringIO()

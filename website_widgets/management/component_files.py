@@ -40,6 +40,24 @@ class ComponentName:
             class_name=component_name.replace('_', ' ').title().replace(' ', ''),
             css_name=component_name.strip('_').replace('_', '-'))
 
+    def get_default_route(self) -> str:
+        """
+        The route `ww_create_page` offers: the path in kebab case, with a trailing `_page` dropped,
+        so `manage_auth_tokens_page` routes to `manage-auth-tokens` and `account/settings_page`
+        to `account/settings`.
+        """
+        parts = self.path.split('/')
+        parts[-1] = parts[-1].removesuffix('_page')
+        return '/'.join(part.replace('_', '-') for part in parts)
+
+
+@dataclass(frozen=True)
+class WrittenFile:
+    """A file a command wrote, and what its line in the command's summary says about it."""
+
+    filename: str
+    note: str = ''
+
 
 class ComponentFiles:
     """
@@ -73,6 +91,11 @@ class ComponentFiles:
                 f"INSTALLED_APPS, or set WEBSITE_WIDGETS.website_app_name to its label. To create "
                 f"one, run `python manage.py ww_create_app`.")
 
+    @staticmethod
+    def website_app_module(app_label: str) -> str:
+        """The website app's module, which its label need not match."""
+        return apps.get_app_config(app_label).name
+
     def require_framework_files(self, app_folder: str):
         """Stops when the framework TypeScript a generated controller imports isn't there."""
         framework_folder = os.path.join(app_folder, TypeScriptFolder.RELATIVE_PATH)
@@ -101,6 +124,14 @@ class ComponentFiles:
                 return False
             self.stdout.write("Answer 'y' or 'n'.")
 
+    def template_has(
+        self,
+        template_name: str,
+        text: str
+    ) -> bool:
+        """Whether the template that will be used, the project's or the package's, holds the text."""
+        return text in self._read(self._template_path(template_name))
+
     def write_from_template(
         self,
         folder: str,
@@ -119,13 +150,16 @@ class ComponentFiles:
         app_folder: str,
         start_marker: str,
         line_to_add: str
-    ):
-        """Adds the line between a marker pair in `ts/main.ts`, keeping the section sorted."""
+    ) -> bool:
+        """
+        Adds the line between a marker pair in `ts/main.ts`, keeping the section sorted. False,
+        having said which line to add by hand, when there is no `main.ts` or no marker pair.
+        """
         main_ts_path = os.path.join(app_folder, 'ts', 'main.ts')
         shown_path = FrameworkFolder.display_path(main_ts_path)
         if not os.path.isfile(main_ts_path):
             self.stderr.write(f'No {shown_path} to add `{line_to_add}` to.')
-            return
+            return False
         lines = self._read(main_ts_path).splitlines(keepends=True)
         end_marker = start_marker.replace('START', 'END')
         start_index = next((i for i, line in enumerate(lines) if start_marker in line), None)
@@ -135,15 +169,26 @@ class ComponentFiles:
         if start_index is None or end_index is None:
             self.stderr.write(
                 f'{shown_path} has no `{start_marker}` ... `{end_marker}` pair; add `{line_to_add}` by hand.')
-            return
+            return False
         section = [line for line in lines[start_index + 1:end_index] if line.strip()]
         if line_to_add in (line.strip() for line in section):
-            return
+            return True
         section.append(f'{line_to_add}\n')
         section.sort()
         updated_lines = lines[:start_index + 1] + section + lines[end_index:]
         with open(main_ts_path, 'w', encoding='utf-8') as file:
             file.writelines(updated_lines)
+        return True
+
+    @staticmethod
+    def format_file_list(written_files: list[WrittenFile]) -> str:
+        """One indented line per file, its note lined up after the longest name."""
+        name_width = max(len(written_file.filename) for written_file in written_files)
+        lines = [
+            f'  {written_file.filename.ljust(name_width)}   {written_file.note}'.rstrip()
+            for written_file in written_files
+        ]
+        return '\n'.join(lines)
 
     @staticmethod
     def relative_import_path(

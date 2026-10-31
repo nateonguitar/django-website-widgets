@@ -36,7 +36,8 @@ class ForumPostPage(AppPage): ...
 class ForumCreatePostPage(AppPage): ...
 ```
 
-`urls.py` then includes every decorated page in one line, the way the admin is included:
+`ww_create_page` writes a page's first `@register_url`, from its `page.py.tmpl`
+(`creating_pages_and_widgets.md`). `urls.py` then includes every decorated page in one line, the way the admin is included:
 
 ```python
 from website_widgets import PageRoutes

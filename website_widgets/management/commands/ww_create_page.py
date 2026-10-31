@@ -1,12 +1,16 @@
 import os
 from dataclasses import dataclass
 
+from django.core.exceptions import ImproperlyConfigured
 from django.core.management.base import BaseCommand, CommandError
+from django.urls import get_resolver
 from django.utils.module_loading import import_string
+from django.utils.regex_helper import normalize
 
 from website_widgets.config import WebsiteWidgetsConfig, get_config
-from website_widgets.management.component_files import ComponentFiles, ComponentName
+from website_widgets.management.component_files import ComponentFiles, ComponentName, WrittenFile
 from website_widgets.management.framework_folder import FrameworkFolder, TypeScriptFolder
+from website_widgets.page_routes import PageRoute, PageRoutes
 from website_widgets.web_page import WebPage
 
 
@@ -20,9 +24,9 @@ class PageBaseClass:
 
 class Command(BaseCommand):
     help = (
-        "Creates a page in the website app's pages/: a subclass of the app's page base class, its "
-        "template, and optionally a TypeScript controller and a stylesheet, registered in "
-        "ts/main.ts.")
+        "Creates a page in the website app's pages/: a subclass of the app's page base class, "
+        "routed with @register_url, its template, and optionally a TypeScript controller and a "
+        "stylesheet, registered in ts/main.ts.")
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -38,6 +42,11 @@ class Command(BaseCommand):
             choices=['true', 'false'],
             dest='generate_styles',
             help='Generate a stylesheet. Asks when not given.')
+        parser.add_argument(
+            '--route',
+            help=(
+                'The route page.py.tmpl\'s @register_url gets, such as "account/settings", or "" '
+                'for the site root. Defaults to one made from the name.'))
 
     def handle(self, *args, **options):
         config = get_config()
@@ -56,6 +65,11 @@ class Command(BaseCommand):
             raise CommandError(f'{FrameworkFolder.display_path(page_folder)} already exists.')
         generate_ts = files.ask_yes_no(options['generate_ts'], 'Generate a TypeScript controller?')
         generate_styles = files.ask_yes_no(options['generate_styles'], 'Generate a stylesheet?')
+        route = options['route'] if options['route'] is not None else name.get_default_route()
+        # A project's page.py.tmpl without the placeholder writes pages it routes some other way.
+        routed = files.template_has('page.py.tmpl', '__route__')
+        if routed:
+            self._check_route_is_free(route, name)
 
         framework_folder = os.path.join(app_folder, TypeScriptFolder.RELATIVE_PATH)
         replacements = {
@@ -65,28 +79,42 @@ class Command(BaseCommand):
             '__framework_path__': files.relative_import_path(framework_folder, page_folder),
             '__app_page_module__': page_base_class.module_path,
             '__AppPageClass__': page_base_class.class_name,
+            '__route__': route,
         }
         os.makedirs(page_folder)
+        written_files = []
         files.write_from_template(page_folder, '__init__.py', '__init__.py.tmpl', replacements)
+        written_files.append(WrittenFile('__init__.py'))
         files.write_from_template(page_folder, f'{name.module_name}.py', 'page.py.tmpl', replacements)
+        page_py_note = f'class {name.class_name}({page_base_class.class_name})'
+        if routed:
+            page_py_note += f', {self._describe_route(route, name)}'
+        else:
+            page_py_note += ", not routed: the project's page.py.tmpl has no @register_url('__route__')"
+        written_files.append(WrittenFile(f'{name.module_name}.py', page_py_note))
         html_template = 'page__controller.html.tmpl' if generate_ts else 'page.html.tmpl'
         files.write_from_template(page_folder, f'{name.module_name}.html', html_template, replacements)
+        written_files.append(WrittenFile(f'{name.module_name}.html', f'root #{name.css_name}'))
 
         # main.ts imports each stylesheet so webpack bundles it, and exports each controller so a
         # template can import it from the bundle.
         from_main_ts = files.relative_import_path(page_folder, os.path.join(app_folder, 'ts'))
-        if generate_styles:
-            files.write_from_template(page_folder, f'{name.module_name}.scss', 'component.scss.tmpl', replacements)
-            files.add_to_main_ts(
-                app_folder,
-                '// {{ PAGE STYLES START }}',
-                f"import '{from_main_ts}/{name.module_name}.scss';")
         if generate_ts:
             files.write_from_template(page_folder, f'{name.module_name}.ts', 'controller.ts.tmpl', replacements)
-            files.add_to_main_ts(
+            exported = files.add_to_main_ts(
                 app_folder,
                 '// {{ PAGE CONTROLLERS START }}',
                 f"export {{ {name.class_name}Controller }} from '{from_main_ts}/{name.module_name}';")
+            written_files.append(WrittenFile(
+                f'{name.module_name}.ts',
+                f'{name.class_name}Controller, exported from ts/main.ts' if exported else f'{name.class_name}Controller'))
+        if generate_styles:
+            files.write_from_template(page_folder, f'{name.module_name}.scss', 'component.scss.tmpl', replacements)
+            imported = files.add_to_main_ts(
+                app_folder,
+                '// {{ PAGE STYLES START }}',
+                f"import '{from_main_ts}/{name.module_name}.scss';")
+            written_files.append(WrittenFile(f'{name.module_name}.scss', 'imported in ts/main.ts' if imported else ''))
 
         # A running runserver watches pages/ (PageRoutes.watch_pages_folder), but Django's
         # StatReloader skips a file the first time it sees one, so a page written in one go never
@@ -97,9 +125,69 @@ class Command(BaseCommand):
             os.utime(pages_init)
 
         self.stdout.write(self.style.SUCCESS(
-            f'Created the page {name.class_name} in {FrameworkFolder.display_path(page_folder)}.'))
+            f'Created the page {name.class_name} in {FrameworkFolder.display_path(page_folder)}/:'))
+        self.stdout.write(files.format_file_list(written_files))
+        if not routed:
+            page_module = '.'.join([files.website_app_module(config.website_app_name), 'pages', *name.path.split('/')])
+            self.stdout.write(
+                f"To serve it, add @register_url('{route}') above its class, or route it in urls.py:\n"
+                f"  from {page_module} import {name.class_name}\n"
+                f"  path('{route}', {name.class_name}.as_view(), name='{name.class_name}'),")
         if generate_ts or generate_styles:
             self.stdout.write('Run `npm run watch` (or `runserver`, with start_npm_watch()) to rebuild the bundle.')
+
+    @staticmethod
+    def _describe_route(
+        route: str,
+        name: ComponentName
+    ) -> str:
+        """
+        The URL the route serves and the name it reverses by. The URLconf loaded before the page
+        existed, so the URL is the prefix the website app's routes are included at, plus the route.
+        """
+        namespace = PageRoutes.get_namespace()
+        view_name = f'{namespace}:{name.class_name}'
+        included = get_resolver().namespace_dict.get(namespace)
+        if included is None:
+            return f"routed to '{route}' once urls.py includes PageRoutes.urls(), reversed as {view_name}"
+        # The prefix is held as a regex, the way reverse() reads it.
+        prefix_format, prefix_parameters = normalize(included[0])[0]
+        if prefix_parameters:
+            return f"routed to '{route}' after the website app's prefix, reversed as {view_name}"
+        return f'routed to /{prefix_format}{route}, reversed as {view_name}'
+
+    def _check_route_is_free(
+        self,
+        route: str,
+        name: ComponentName
+    ):
+        """
+        Stops on a name another page already registers, which would fail every import of the
+        pages. Warns on a route that ties with another page's, which `check_for_ties()` reports,
+        rather than stopping, since the developer may be about to change the other route.
+        """
+        PageRoutes.discover()
+        new_route = PageRoute(
+            route=route,
+            name=name.class_name,
+            page_class=WebPage)
+        try:
+            # Raises on a converter Django doesn't have, which would otherwise fail on import.
+            new_route.get_sample_kwargs()
+        except ImproperlyConfigured as error:
+            raise CommandError(str(error))
+        new_route_key = new_route.get_specificity_key()
+        for page_route in PageRoutes.get_ordered_routes():
+            if page_route.name == new_route.name:
+                raise CommandError(
+                    f"A route is already named '{page_route.name}', on "
+                    f"{page_route.page_class.__module__}.{page_route.page_class.__qualname__}, and "
+                    f"@register_url names a route after its class. Choose another page name.")
+            if page_route.get_specificity_key() == new_route_key and new_route.can_match_same_url_as(page_route):
+                self.stdout.write(self.style.WARNING(
+                    f"'{page_route.route}' ({page_route.page_class.__qualname__}) can match the "
+                    f"same URLs as '{route}', and neither is more specific, so the "
+                    f"website_widgets.E001 check fails until one of them changes."))
 
     @staticmethod
     def _page_base_class(config: WebsiteWidgetsConfig) -> PageBaseClass:

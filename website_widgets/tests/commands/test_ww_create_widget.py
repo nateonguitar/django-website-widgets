@@ -148,3 +148,25 @@ class WwCreateWidgetTestCase(ComponentTestCase):
         self.assertEqual(
             sorted(os.listdir(folder)),
             ['__init__.py', 'asked_card.html', 'asked_card.py', 'asked_card.scss', 'asked_card.ts'])
+
+    def test_create_widget__lists_each_file_with_what_it_holds__when_created(self):
+        output = self.create_widget('dialogs/login_dialog', '--tscontroller=true', '--stylesheet=true', '--sync')
+
+        widget_folder = os.path.join(self.app_folder, 'widgets', 'dialogs', 'login_dialog')
+        self.assertIn(
+            f'Created the widget LoginDialog in {widget_folder}/:\n'
+            '  __init__.py\n'
+            '  login_dialog.py     class LoginDialog, with def set_context()\n'
+            '  login_dialog.html   root #login-dialog\n'
+            '  login_dialog.ts     LoginDialogController, exported from ts/main.ts\n'
+            '  login_dialog.scss   imported in ts/main.ts\n',
+            output)
+
+    def test_create_widget__lists_files_without_main_ts_notes__when_main_ts_is_missing(self):
+        os.remove(os.path.join(self.app_folder, 'ts', 'main.ts'))
+
+        output = self.create_widget('like_button', '--tscontroller=true', '--stylesheet=true')
+
+        self.assertIn('  like_button.ts     LikeButtonController\n', output)
+        self.assertIn('  like_button.scss\n', output)
+        self.assertNotIn('ts/main.ts\n', output.split('Created the widget')[1])

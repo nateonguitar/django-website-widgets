@@ -2,8 +2,8 @@
 
 `python manage.py ww_create_page <name>` and `python manage.py ww_create_widget <name>` write a new
 component's files into the website app and register its controller and stylesheet in
-`ts/main.ts`. Read this before adding a component by hand, or before changing what the commands
-write for a project.
+`ts/main.ts`; `ww_create_page` also routes the page. Read this before adding a component by hand,
+or before changing what the commands write for a project.
 
 Primary code:
 - `website_widgets.management.commands.ww_create_page` and `website_widgets.management.commands.ww_create_widget` — the commands
@@ -33,7 +33,24 @@ it lands. Each part of the name becomes a Python package or module, which route 
 imports, so each must be a lowercase identifier (`login_dialog`, not `LoginDialog`,
 `login-dialog` or `class`), and `..` can't climb out of `pages/` or `widgets/`. Without
 `--tscontroller` or `--stylesheet`, the command asks. It stops without writing anything when the
-name breaks that rule or the folder already exists.
+name breaks that rule or the folder already exists. It ends by listing the files it wrote, each
+with what it holds: the class, the root's id, whether `main.ts` took the controller and the
+stylesheet, and for a page its URL and the name it reverses by.
+
+**A page is routed by its template.** The package's `page.py.tmpl` starts the class with
+`@register_url('__route__')`, named after the class (`routing.md`), and the command fills in a
+route made from the name: the path in kebab case with a trailing `_page` dropped, so `login_page`
+routes to `login`, `manage_auth_tokens_page` to `manage-auth-tokens` and `account/settings_page`
+to `account/settings`. `--route=<route>` gives another, and `--route=` is the site root. A
+project that routes its pages some other way leaves the decorator out of its own `page.py.tmpl`
+(below), and its pages are written without one; the command then says the page isn't routed and
+prints the `@register_url` to add, or the import and `path()` for `urls.py`.
+
+When the template has `__route__`, the command stops before writing anything on a route naming a
+converter Django doesn't have, and on a page whose class name another page's route already uses
+as its name, since two routes with one name fail every import of the pages. A route that ties
+with another page's, matching the same URLs with neither more specific, is written with a
+warning, since the `website_widgets.E001` check then fails until one of them changes.
 
 **The root element's id and class are the module name in kebab case** (`like-button`), and a
 page's root is a `<main>` holding an `<h1>`. The generated `<script>` starts the controller on
@@ -86,7 +103,7 @@ without wrapping every widget in it:
 | Template | Writes |
 | --- | --- |
 | `__init__.py.tmpl` | `__init__.py` |
-| `page.py.tmpl` | a page's class |
+| `page.py.tmpl` | a page's class, with its `@register_url` |
 | `widget__async.py.tmpl`, `widget__sync.py.tmpl` | a widget's class, with `async def` or `def set_context()` |
 | `page.html.tmpl`, `widget.html.tmpl` | the template, with no controller |
 | `page__controller.html.tmpl`, `widget__controller.html.tmpl` | the template, starting the controller |
@@ -113,5 +130,6 @@ something in an HTML template and `${...}` in TypeScript:
 | `__css_name__` | `like-button`, the root element's id and class |
 | `__framework_path__` | the relative import path to `ts/website_widgets`, such as `../../ts/website_widgets` |
 | `__app_page_module__`, `__AppPageClass__` | the two halves of `app_page_class`, in `page.py.tmpl` |
+| `__route__` | the page's route, in `page.py.tmpl`'s `@register_url('__route__')` |
 
 Copy the package's template to start an override, so it keeps the placeholders the command fills.

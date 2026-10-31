@@ -3,7 +3,7 @@ import os
 from django.core.management.base import BaseCommand, CommandError
 
 from website_widgets.config import get_config
-from website_widgets.management.component_files import ComponentFiles, ComponentName
+from website_widgets.management.component_files import ComponentFiles, ComponentName, WrittenFile
 from website_widgets.management.framework_folder import FrameworkFolder, TypeScriptFolder
 
 
@@ -70,28 +70,40 @@ class Command(BaseCommand):
         }
         set_context = options['set_context'] or config.generate_component.widget_set_context
         os.makedirs(widget_folder)
+        written_files = []
         files.write_from_template(widget_folder, '__init__.py', '__init__.py.tmpl', replacements)
+        written_files.append(WrittenFile('__init__.py'))
         files.write_from_template(widget_folder, f'{name.module_name}.py', f'widget__{set_context}.py.tmpl', replacements)
+        set_context_definition = 'async def set_context()' if set_context == 'async' else 'def set_context()'
+        written_files.append(WrittenFile(
+            f'{name.module_name}.py',
+            f'class {name.class_name}, with {set_context_definition}'))
         html_template = 'widget__controller.html.tmpl' if generate_ts else 'widget.html.tmpl'
         files.write_from_template(widget_folder, f'{name.module_name}.html', html_template, replacements)
+        written_files.append(WrittenFile(f'{name.module_name}.html', f'root #{name.css_name}'))
 
         # main.ts imports each stylesheet so webpack bundles it, and exports each controller so a
         # template can import it from the bundle.
         from_main_ts = files.relative_import_path(widget_folder, os.path.join(app_folder, 'ts'))
-        if generate_styles:
-            files.write_from_template(widget_folder, f'{name.module_name}.scss', 'component.scss.tmpl', replacements)
-            files.add_to_main_ts(
-                app_folder,
-                '// {{ WIDGET STYLES START }}',
-                f"import '{from_main_ts}/{name.module_name}.scss';")
         if generate_ts:
             files.write_from_template(widget_folder, f'{name.module_name}.ts', 'controller.ts.tmpl', replacements)
-            files.add_to_main_ts(
+            exported = files.add_to_main_ts(
                 app_folder,
                 '// {{ WIDGET CONTROLLERS START }}',
                 f"export {{ {name.class_name}Controller }} from '{from_main_ts}/{name.module_name}';")
+            written_files.append(WrittenFile(
+                f'{name.module_name}.ts',
+                f'{name.class_name}Controller, exported from ts/main.ts' if exported else f'{name.class_name}Controller'))
+        if generate_styles:
+            files.write_from_template(widget_folder, f'{name.module_name}.scss', 'component.scss.tmpl', replacements)
+            imported = files.add_to_main_ts(
+                app_folder,
+                '// {{ WIDGET STYLES START }}',
+                f"import '{from_main_ts}/{name.module_name}.scss';")
+            written_files.append(WrittenFile(f'{name.module_name}.scss', 'imported in ts/main.ts' if imported else ''))
 
         self.stdout.write(self.style.SUCCESS(
-            f'Created the widget {name.class_name} in {FrameworkFolder.display_path(widget_folder)}.'))
+            f'Created the widget {name.class_name} in {FrameworkFolder.display_path(widget_folder)}/:'))
+        self.stdout.write(files.format_file_list(written_files))
         if generate_ts or generate_styles:
             self.stdout.write('Run `npm run watch` (or `runserver`, with start_npm_watch()) to rebuild the bundle.')
