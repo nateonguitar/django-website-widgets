@@ -1,4 +1,3 @@
-import { App } from "../../ts/website_widgets/app";
 import { Controller } from "../../ts/website_widgets/controller";
 import { AuthApiService } from "../../ts/api/auth-api-service";
 import { Cart } from "../../ts/cart";
@@ -20,12 +19,6 @@ export class AccountMenuController extends Controller {
     private elements = new Elements();
     private theme: ThemeChoice = 'system';
     private signingOut = false;
-
-    public static async initializeController(selector: string): Promise<void> {
-        const controller = new AccountMenuController();
-        controller.focusElementSelector = selector;
-        await App.initializeController({ controller: controller });
-    }
 
     public async initState(): Promise<void> {
         this.buildElements();

@@ -14,7 +14,7 @@ user or feature flags, in your own classes rather than on `App`.
 
 | File | Holds |
 | --- | --- |
-| `app.ts` | `App`: `initializeController()` and the singleton registry |
+| `app.ts` | `App`: `initController()` and the singleton registry |
 | `controller.ts` | `Controller`, the base class every page and widget controller extends |
 | `completer.ts` | `Completer`, a promise resolved from outside, used to signal readiness |
 

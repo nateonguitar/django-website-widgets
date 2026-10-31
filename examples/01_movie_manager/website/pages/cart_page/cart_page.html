@@ -25,6 +25,6 @@
 </main>
 
 <script type="module">
-  import { CartPageController } from '{% static "main.js" %}';
-  await CartPageController.initializeController('#cart-page');
+  import { App, CartPageController } from '{% static "main.js" %}';
+  await App.initController(new CartPageController(), '#cart-page');
 </script>

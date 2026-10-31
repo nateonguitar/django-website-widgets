@@ -1,6 +1,6 @@
 # website_widgets frontend framework
 
-Copied from django-website-widgets 0.9.0 by `python manage.py ww_upgrade` or `ww_create_app`.
+Copied from django-website-widgets 0.10.0 by `python manage.py ww_upgrade` or `ww_create_app`.
 
 **This folder is managed by the package: don't edit the files it wrote here** (listed below).
 They're the framework TypeScript your controllers import, and running `ww_upgrade` after an
@@ -14,7 +14,7 @@ user or feature flags, in your own classes rather than on `App`.
 
 | File | Holds |
 | --- | --- |
-| `app.ts` | `App`: `initializeController()` and the singleton registry |
+| `app.ts` | `App`: `initController()` and the singleton registry |
 | `controller.ts` | `Controller`, the base class every page and widget controller extends |
 | `completer.ts` | `Completer`, a promise resolved from outside, used to signal readiness |
 

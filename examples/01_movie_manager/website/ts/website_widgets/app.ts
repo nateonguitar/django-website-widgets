@@ -16,33 +16,28 @@ export class App {
     }
 
     /**
-     * Starts a controller the caller has constructed: binds it to the element matching its
-     * `focusElementSelector`, runs `initState()`, optionally registers it as a singleton, then runs
-     * `setState()` and `afterFirstSetState()`.
+     * Starts a controller: binds it to the element `selector` matches, runs `initState()`,
+     * registers it when its class says `static readonly singleton = true`, then runs `setState()`
+     * and `afterFirstSetState()`.
      *
-     * The selector is set on the controller before it's passed in, either by the caller (a widget
-     * shown several times, each root with its own id) or as a default on the class. A controller
-     * with no element, such as one that only watches the window, leaves it `null`.
+     * Called from the `<script>` in the template that renders the controller's root, so the
+     * selector sits beside the id it names. A widget shown several times passes each root's own
+     * id. A controller with no element, such as one that only watches the window, passes none and
+     * gets no DOM binding; it still gets the lifecycle and, when its class says so, the singleton
+     * registry.
      *
-     * @param options.controller - The controller to start.
-     * @param options.registerAsSingleton - Registers the controller for `App.getSingleton()`.
+     * ```
+     * <script type="module">
+     *     import { App, MovieCardController } from '{% static "main.js" %}';
+     *     await App.initController(new MovieCardController(), '#movie-card-12');
+     * </script>
+     * ```
+     *
      * @returns The controller, started.
-     *
-     * ```
-     * const controller = new MovieCardController();
-     * controller.focusElementSelector = '#movie-card-12';
-     * await App.initializeController({ controller: controller });
-     * ```
      */
-    static async initializeController<T extends Controller>({
-        controller,
-        registerAsSingleton = false,
-    }: {
-        controller: T;
-        registerAsSingleton?: boolean;
-    }): Promise<T> {
-        if (controller.focusElementSelector !== null) {
-            const element = document.querySelector<HTMLElement>(controller.focusElementSelector);
+    static async initController<T extends Controller>(controller: T, selector: string | null = null): Promise<T> {
+        if (selector !== null) {
+            const element = document.querySelector<HTMLElement>(selector);
             if (element) {
                 (element as any).__controller = controller;
                 controller.__element = element;
@@ -58,14 +53,12 @@ export class App {
                 // Otherwise the controller runs with no element, every lookup inside it finds
                 // nothing, and the page just doesn't respond. Usually the template's root id and
                 // the selector have drifted apart.
-                console.warn(
-                    `${controller.constructor.name}: nothing matches its focusElementSelector, `
-                    + `${controller.focusElementSelector}`);
+                console.warn(`${controller.constructor.name}: nothing matches the selector ${selector}`);
             }
         }
 
         await controller.initState();
-        if (registerAsSingleton) {
+        if ((controller.constructor as typeof Controller).singleton) {
             App.registerSingleton<T>(controller);
         }
         controller.setState();

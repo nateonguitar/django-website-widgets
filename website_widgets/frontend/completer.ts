@@ -35,10 +35,6 @@ export class AdminToolbarController extends Controller {
   private loadingElement: HTMLElement | null = null;
   private toolbarElement: HTMLElement | null = null;
 
-  static initializeController(): void {
-    App.initializeController({ controller: new AdminToolbarController() });
-  }
-
   public async initState(): Promise<void> {
     this.loadingElement = this.getElementByIdOrWarn("admin-toolbar-loading");
     this.toolbarElement = this.getElementByIdOrWarn("admin-toolbar");

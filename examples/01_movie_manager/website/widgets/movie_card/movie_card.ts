@@ -1,4 +1,3 @@
-import { App } from "../../ts/website_widgets/app";
 import { Controller } from "../../ts/website_widgets/controller";
 import { Cart } from "../../ts/cart";
 import { AppbarController } from "../appbar/appbar";
@@ -25,12 +24,6 @@ export class MovieCardController extends Controller {
     private available = 0;
     private purpose = 'cart';
     private inCart = false;
-
-    public static async initializeController(selector: string): Promise<void> {
-        const controller = new MovieCardController();
-        controller.focusElementSelector = selector;
-        await App.initializeController({ controller: controller });
-    }
 
     public async initState(): Promise<void> {
         this.buildElements();

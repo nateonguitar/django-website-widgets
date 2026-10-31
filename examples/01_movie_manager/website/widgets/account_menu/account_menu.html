@@ -40,6 +40,6 @@
 </div>
 
 <script type="module">
-  import { AccountMenuController } from '{% static "main.js" %}';
-  await AccountMenuController.initializeController('#account-menu');
+  import { App, AccountMenuController } from '{% static "main.js" %}';
+  await App.initController(new AccountMenuController(), '#account-menu');
 </script>

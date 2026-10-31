@@ -1,4 +1,3 @@
-import { App } from "../../ts/website_widgets/app";
 import { Controller } from "../../ts/website_widgets/controller";
 import { ApiError } from "../../ts/api/api-service";
 import { RentalApiService } from "../../ts/api/rental-api-service";
@@ -24,12 +23,6 @@ export class CartPageController extends Controller {
     private done = false;
     // Movies the server said ran out, from a 409, marked until they're removed.
     private unavailableMovieIds = new Set<number>();
-
-    public static async initializeController(selector: string): Promise<void> {
-        const controller = new CartPageController();
-        controller.focusElementSelector = selector;
-        await App.initializeController({ controller: controller });
-    }
 
     public async initState(): Promise<void> {
         this.buildElements();

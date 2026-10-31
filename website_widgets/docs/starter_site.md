@@ -71,7 +71,8 @@ The home page's controller shows both ways, by who needs the data:
   `context.page`, and the controller shows it with the endpoint's answer. Any controller imports
   `AppState` and reads it.
 - **Data only one element needs is a `data-` attribute on that element**, the root the
-  controller's `focusElementSelector` finds, read from `this.__element.dataset`. `HomePage` puts
+  selector the template passes to `App.initController()` finds, read from
+  `this.__element.dataset`. `HomePage` puts
   the default name there.
 
 **The starter has no sign-in and never reads the user.** How a site signs people in is its own

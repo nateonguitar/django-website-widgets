@@ -1,4 +1,3 @@
-import { App } from "../../ts/website_widgets/app";
 import { Controller } from "../../ts/website_widgets/controller";
 import { ApiError } from "../../ts/api/api-service";
 import { AuthApiService } from "../../ts/api/auth-api-service";
@@ -26,12 +25,6 @@ export class SignInPageController extends Controller {
     private fieldErrors = new FieldErrors();
     // Anything that isn't one field's fault: wrong password, a server error, no connection.
     private message = '';
-
-    public static async initializeController(selector: string): Promise<void> {
-        const controller = new SignInPageController();
-        controller.focusElementSelector = selector;
-        await App.initializeController({ controller: controller });
-    }
 
     public async initState(): Promise<void> {
         this.buildElements();

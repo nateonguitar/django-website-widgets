@@ -50,6 +50,6 @@
 </main>
 
 <script type="module">
-  import { MyHistoryPageController } from '{% static "main.js" %}';
-  await MyHistoryPageController.initializeController('#my-history-page');
+  import { App, MyHistoryPageController } from '{% static "main.js" %}';
+  await App.initController(new MyHistoryPageController(), '#my-history-page');
 </script>

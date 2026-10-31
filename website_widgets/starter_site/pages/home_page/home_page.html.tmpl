@@ -55,6 +55,6 @@
 </main>
 
 <script type="module">
-  import { HomePageController } from '{% static "main.js" %}';
-  await HomePageController.initializeController('#home-page');
+  import { App, HomePageController } from '{% static "main.js" %}';
+  await App.initController(new HomePageController(), '#home-page');
 </script>

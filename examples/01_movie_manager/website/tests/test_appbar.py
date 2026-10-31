@@ -22,8 +22,8 @@ class AppbarTestCase(TestCase):
         menu_button = soup.select_one('#appbar #account-menu .account-menu__button')
         self.assertEqual(menu_button.get_text(strip=True), 'alex')
         # Each widget starts its own controller.
-        self.assertIn("await AccountMenuController.initializeController('#account-menu');", html)
-        self.assertIn("await AppbarController.initializeController('#appbar');", html)
+        self.assertIn("await App.initController(new AccountMenuController(), '#account-menu');", html)
+        self.assertIn("await App.initController(new AppbarController(), '#appbar');", html)
 
     async def test_appbar__has_no_account_menu__when_signed_out(self):
         html = await self.render_appbar(AnonymousUser())

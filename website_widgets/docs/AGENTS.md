@@ -23,8 +23,8 @@ in the doc.
   async code, never by calling its template. A whole document that answers no request, such as
   an HTML email, is a widget whose template is the document, never a `WebPage`, which answers a
   web request.
-- **A widget's frontend is a `Controller` subclass,** started by `App.initializeController()`
-  from the widget's `<script>`. **Never edit the framework's TypeScript files** (`app.ts`,
+- **A widget's frontend is a `Controller` subclass,** started by
+  `App.initController(new MyController(), '#root')` from the widget's `<script>`. **Never edit the framework's TypeScript files** (`app.ts`,
   `controller.ts`, `completer.ts`); subclass `Controller` or `App` instead, and keep project
   state in the project's own classes.
 

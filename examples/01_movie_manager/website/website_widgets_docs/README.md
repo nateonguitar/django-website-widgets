@@ -1,6 +1,6 @@
 # django-website-widgets docs
 
-Copied from django-website-widgets 0.9.0 by `python manage.py ww_upgrade` or `ww_create_app`.
+Copied from django-website-widgets 0.10.0 by `python manage.py ww_upgrade` or `ww_create_app`.
 
 **This folder is managed by the package: don't edit the files it wrote here** (listed below).
 They're the package's docs for the version installed, kept beside your code so they always

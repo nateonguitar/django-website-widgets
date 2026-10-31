@@ -6,6 +6,6 @@
 </main>
 
 <script type="module">
-    import { __ClassName__Controller } from '{% static "main.js" %}';
-    await __ClassName__Controller.initializeController('#__css_name__');
+    import { App, __ClassName__Controller } from '{% static "main.js" %}';
+    await App.initController(new __ClassName__Controller(), '#__css_name__');
 </script>

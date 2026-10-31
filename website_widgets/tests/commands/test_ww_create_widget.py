@@ -22,7 +22,7 @@ class WwCreateWidgetTestCase(ComponentTestCase):
         html = self.read(folder, 'like_button.html')
         self.assertIn('<div id="like-button"', html)
         self.assertIn('data-label="{{ data.label }}"', html)
-        self.assertIn("await LikeButtonController.initializeController('#like-button');", html)
+        self.assertIn("await App.initController(new LikeButtonController(), '#like-button');", html)
         controller_ts = self.read(folder, 'like_button.ts')
         self.assertIn('export class LikeButtonController extends Controller', controller_ts)
         self.assertIn("querySelector<HTMLElement>('.like-button__label')", controller_ts)
@@ -85,7 +85,7 @@ class WwCreateWidgetTestCase(ComponentTestCase):
         self.create_widget('dialogs/login_dialog', '--tscontroller=true', '--stylesheet=false')
 
         controller_ts = self.read(self.app_folder, 'widgets', 'dialogs', 'login_dialog', 'login_dialog.ts')
-        self.assertIn('from "../../../ts/website_widgets/app"', controller_ts)
+        self.assertIn('from "../../../ts/website_widgets/controller"', controller_ts)
         self.assertIn(
             "export { LoginDialogController } from '../widgets/dialogs/login_dialog/login_dialog';",
             self.read(self.app_folder, 'ts', 'main.ts'))

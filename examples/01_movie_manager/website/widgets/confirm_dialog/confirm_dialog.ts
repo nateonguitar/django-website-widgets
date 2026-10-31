@@ -54,8 +54,7 @@ export class ConfirmDialogController extends Controller {
         document.body.append(dialog);
 
         const controller = new ConfirmDialogController(message, yesLabel, noLabel);
-        controller.focusElementSelector = `#${dialog.id}`;
-        await App.initializeController({ controller: controller });
+        await App.initController(controller, `#${dialog.id}`);
         return controller.answer.promise;
     }
 

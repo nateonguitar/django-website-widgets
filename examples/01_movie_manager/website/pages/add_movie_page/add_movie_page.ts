@@ -1,4 +1,3 @@
-import { App } from "../../ts/website_widgets/app";
 import { Controller } from "../../ts/website_widgets/controller";
 import { ApiError } from "../../ts/api/api-service";
 import { CreateMovieRequest, MovieApiService } from "../../ts/api/movie-api-service";
@@ -43,12 +42,6 @@ export class AddMoviePageController extends Controller {
     private chosen: MovieChosenDetail | null = null;
     private typingTimer: number | undefined;
     private searchInFlight: AbortController | null = null;
-
-    public static async initializeController(selector: string): Promise<void> {
-        const controller = new AddMoviePageController();
-        controller.focusElementSelector = selector;
-        await App.initializeController({ controller: controller });
-    }
 
     public async initState(): Promise<void> {
         this.buildElements();

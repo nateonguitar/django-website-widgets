@@ -1,4 +1,3 @@
-import { App } from "../../ts/website_widgets/app";
 import { Controller } from "../../ts/website_widgets/controller";
 import { ApiError } from "../../ts/api/api-service";
 import { MovieApiService } from "../../ts/api/movie-api-service";
@@ -27,12 +26,6 @@ export class FindMoviePageController extends Controller {
     private typingTimer: number | undefined;
     // Aborted when a newer search starts, so a slow answer can't replace a newer one.
     private inFlight: AbortController | null = null;
-
-    public static async initializeController(selector: string): Promise<void> {
-        const controller = new FindMoviePageController();
-        controller.focusElementSelector = selector;
-        await App.initializeController({ controller: controller });
-    }
 
     public async initState(): Promise<void> {
         this.buildElements();

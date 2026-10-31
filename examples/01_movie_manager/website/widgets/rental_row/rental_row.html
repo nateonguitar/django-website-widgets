@@ -11,6 +11,6 @@
 </li>
 
 <script type="module">
-  import { RentalRowController } from '{% static "main.js" %}';
-  await RentalRowController.initializeController('#rental-row-{{ data.rental.id }}');
+  import { App, RentalRowController } from '{% static "main.js" %}';
+  await App.initController(new RentalRowController(), '#rental-row-{{ data.rental.id }}');
 </script>

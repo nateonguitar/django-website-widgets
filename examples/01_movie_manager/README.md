@@ -20,7 +20,7 @@ and SCSS rebuild as you edit them. Tests: `poetry run python manage.py test`.
 The tests parse each page with BeautifulSoup, a dev dependency, and find what they check with
 the same class names the SCSS and controllers use (`.movie-card__title`, `#account-menu dialog`),
 rather than matching strings of HTML. Lines of JavaScript, such as a controller's
-`initializeController()` call, are still checked as text.
+`App.initController()` call, are still checked as text.
 
 ## How it was made
 
@@ -68,8 +68,12 @@ grew what this site needs.
   and the dialog's `close` event resolves it. Each call clones the `<template>` the document
   renders into a `<dialog>` of its own, with its own controller and Completer, so questions asked
   back to back, or one over another, never get each other's answers.
-- **The appbar is a singleton** other controllers reach with `AppbarController.instance()`, which
-  waits on its `Completer`, to update the cart count.
+- **The appbar is a singleton** (`static readonly singleton = true`, which `App.initController()`
+  reads) other controllers reach with `AppbarController.instance()`, which waits on its
+  `Completer`, to update the cart count.
+- **Every controller is started by its template's `<script>`**,
+  `await App.initController(new MovieCardController(), '#movie-card-{{ data.movie.id }}')`, so
+  the selector sits beside the root it names and no controller has a static starter of its own.
 - **One service per API router** (`website/ts/api/`): `AuthApiService`, `MovieApiService` and
   `RentalApiService`, each a singleton reached through `.instance`, with a method per endpoint.
   Their base, `ApiService`, sends every request, so the CSRF header (from `AppState`, since the

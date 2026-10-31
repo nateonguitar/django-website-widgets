@@ -36,8 +36,9 @@ imports, so each must be a lowercase identifier (`login_dialog`, not `LoginDialo
 name breaks that rule or the folder already exists.
 
 **The root element's id and class are the module name in kebab case** (`like-button`), and a
-page's root is a `<main>` holding an `<h1>`. The generated controller takes the root's selector,
-`await LikeButtonController.initializeController('#like-button')`, and looks its elements up
+page's root is a `<main>` holding an `<h1>`. The generated `<script>` starts the controller on
+that root, `await App.initController(new LikeButtonController(), '#like-button')`, and the
+controller looks its elements up
 inside that root, so a widget shown several times on a page works once each root has its own id
 (`like-button-{{ data.movie.id }}`, passed the same way). The one example value, `label`, shows
 how data reaches a controller: `set_context()` puts it in `context.data`, the template writes it

@@ -15,19 +15,12 @@ class Elements {
  * own controller, AccountMenuController.
  */
 export class AppbarController extends Controller {
+    // App.initController() registers it, for App.getSingleton().
+    static readonly singleton = true;
     public static singletonInitializationCompleter = new Completer<null>();
 
     private elements = new Elements();
     private cartCount = 0;
-
-    public static async initializeController(selector: string): Promise<void> {
-        const controller = new AppbarController();
-        controller.focusElementSelector = selector;
-        await App.initializeController({
-            controller: controller,
-            registerAsSingleton: true,
-        });
-    }
 
     /** Waits for the appbar to be registered, then hands it over. */
     public static async instance(): Promise<AppbarController | null> {

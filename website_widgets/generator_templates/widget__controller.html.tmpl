@@ -1,7 +1,7 @@
 {% load static %}
 {% comment %}
 A widget shown more than once on a page needs a different id on each root, such as
-__css_name__-{{ data.movie.id }}, passed to initializeController() the same way.
+__css_name__-{{ data.movie.id }}, passed to App.initController() the same way.
 {% endcomment %}
 <div id="__css_name__"
      class="__css_name__"
@@ -10,6 +10,6 @@ __css_name__-{{ data.movie.id }}, passed to initializeController() the same way.
 </div>
 
 <script type="module">
-    import { __ClassName__Controller } from '{% static "main.js" %}';
-    await __ClassName__Controller.initializeController('#__css_name__');
+    import { App, __ClassName__Controller } from '{% static "main.js" %}';
+    await App.initController(new __ClassName__Controller(), '#__css_name__');
 </script>

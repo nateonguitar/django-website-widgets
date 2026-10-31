@@ -107,6 +107,6 @@
 </main>
 
 <script type="module">
-  import { AddMoviePageController } from '{% static "main.js" %}';
-  await AddMoviePageController.initializeController('#add-movie-page');
+  import { App, AddMoviePageController } from '{% static "main.js" %}';
+  await App.initController(new AddMoviePageController(), '#add-movie-page');
 </script>

@@ -1,4 +1,3 @@
-import { App } from "../../ts/website_widgets/app";
 import { Controller } from "../../ts/website_widgets/controller";
 import { Theme } from "../../ts/theme";
 // Types only: erased from the build, so main.js still doesn't contain Chart.js.
@@ -14,12 +13,6 @@ export class MyHistoryPageController extends Controller {
     private labels: string[] = [];
     private counts: number[] = [];
     private chartReady = false;
-
-    public static async initializeController(selector: string): Promise<void> {
-        const controller = new MyHistoryPageController();
-        controller.focusElementSelector = selector;
-        await App.initializeController({ controller: controller });
-    }
 
     public async initState(): Promise<void> {
         this.buildElements();

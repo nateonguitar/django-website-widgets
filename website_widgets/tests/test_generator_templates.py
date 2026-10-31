@@ -24,8 +24,6 @@ class GeneratorTemplatesTestCase(SimpleTestCase):
         for expected in (
             'class Elements {\n    label: HTMLElement | null = null;\n}',
             'private elements = new Elements();',
-            'public static async initializeController(selector: string)',
-            'controller.focusElementSelector = selector;',
             'protected buildElements(): void',
             'this.elements.label = this.__element?.querySelector',
             'this.__element?.dataset.label',
@@ -35,6 +33,8 @@ class GeneratorTemplatesTestCase(SimpleTestCase):
             with self.subTest(expected=expected):
                 self.assertIn(expected, controller_ts)
         self.assertNotIn('super.', controller_ts)
+        # The template's <script> starts it, so the controller has no static starter of its own.
+        self.assertNotIn('static', controller_ts)
 
     def test_controller_html_templates__start_the_controller_on_their_root__when_shipped(self):
         for filename in ('page__controller.html.tmpl', 'widget__controller.html.tmpl'):
@@ -43,7 +43,8 @@ class GeneratorTemplatesTestCase(SimpleTestCase):
             with self.subTest(template=filename):
                 self.assertIn('id="__css_name__"', html)
                 self.assertIn('data-label="{{ data.label }}"', html)
-                self.assertIn("await __ClassName__Controller.initializeController('#__css_name__');", html)
+                self.assertIn("import { App, __ClassName__Controller } from", html)
+                self.assertIn("await App.initController(new __ClassName__Controller(), '#__css_name__');", html)
 
     def test_starter_site__holds_no_nonce_or_gametabs_code__when_shipped(self):
         # The starter shows conventions, so it may fetch and keep state, but a CSP is the site's call.

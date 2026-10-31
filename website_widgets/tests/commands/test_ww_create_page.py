@@ -36,7 +36,7 @@ class WwCreatePageTestCase(ComponentTestCase):
 
         html = self.read(self.app_folder, 'pages', 'home_page', 'home_page.html')
         self.assertIn('<main id="home-page"', html)
-        self.assertIn("await HomePageController.initializeController('#home-page');", html)
+        self.assertIn("await App.initController(new HomePageController(), '#home-page');", html)
 
     def test_create_page__uses_project_page_template_only_for_pages__when_templates_dir_has_one(self):
         self.write('<div class="app-page">{{ data.label }}</div>\n', self.templates_dir, 'page.html.tmpl')

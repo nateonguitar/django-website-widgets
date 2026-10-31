@@ -42,6 +42,6 @@
 </main>
 
 <script type="module">
-  import { SignInPageController } from '{% static "main.js" %}';
-  await SignInPageController.initializeController('#sign-in-page');
+  import { App, SignInPageController } from '{% static "main.js" %}';
+  await App.initController(new SignInPageController(), '#sign-in-page');
 </script>

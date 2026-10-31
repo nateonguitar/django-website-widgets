@@ -30,6 +30,6 @@
 </article>
 
 <script type="module">
-  import { MovieCardController } from '{% static "main.js" %}';
-  await MovieCardController.initializeController('#movie-card-{{ data.movie.id }}');
+  import { App, MovieCardController } from '{% static "main.js" %}';
+  await App.initController(new MovieCardController(), '#movie-card-{{ data.movie.id }}');
 </script>

@@ -11,7 +11,7 @@ class FindMoviePageTestCase(TestCase):
         self.assertEqual(soup.title.get_text(), 'Find a movie | Movie Manager')
         self.assertEqual(soup.select_one('.movie-results__prompt').get_text(strip=True), 'Search or pick a category.')
         self.assertIsNotNone(soup.select_one('.find-movie-page__genre option[value="horror"]'))
-        self.assertContains(response, "await FindMoviePageController.initializeController('#find-movie-page');")
+        self.assertContains(response, "await App.initController(new FindMoviePageController(), '#find-movie-page');")
 
     def test_find_movie_page__renders_the_results_for_its_url__when_opened_from_a_bookmark(self):
         response = self.client.get('/find', {'genre': 'horror', 'rating': 'R'})

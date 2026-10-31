@@ -52,6 +52,6 @@
 </main>
 
 <script type="module">
-  import { FindMoviePageController } from '{% static "main.js" %}';
-  await FindMoviePageController.initializeController('#find-movie-page');
+  import { App, FindMoviePageController } from '{% static "main.js" %}';
+  await App.initController(new FindMoviePageController(), '#find-movie-page');
 </script>

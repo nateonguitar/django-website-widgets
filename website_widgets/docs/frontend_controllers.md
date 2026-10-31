@@ -6,7 +6,7 @@ before writing a controller, or when two controllers need to talk to each other.
 
 Primary code, in the app's `ts/website_widgets/`:
 - `controller.ts` — `Controller`
-- `app.ts` — `App`: `initializeController()`, `registerSingleton()`, `getSingleton()`
+- `app.ts` — `App`: `initController()`, `registerSingleton()`, `getSingleton()`
 - `completer.ts` — `Completer`
 - `README.md` — the don't-edit notice, the package version and the list of files the package wrote
 
@@ -21,37 +21,38 @@ logged-in user or feature flags, lives in its own classes, never on `App`.
 
 ## A controller's lifecycle
 
-A widget's template starts its controller from a `<script type="module">` that imports it from
-the bundle, passing the selector of the widget's root element:
+A widget's template starts its controller from a `<script type="module">` that imports `App`
+and the controller from the bundle, and hands `App.initController()` a new controller and the
+selector of the widget's root element:
 
 ```django
 <div id="my-widget" class="my-widget" data-label="{{ data.label }}">…</div>
 
 <script type="module">
-    import { MyWidgetController } from '{% static "main.js" %}';
-    await MyWidgetController.initializeController('#my-widget');
+    import { App, MyWidgetController } from '{% static "main.js" %}';
+    await App.initController(new MyWidgetController(), '#my-widget');
 </script>
 ```
 
-By convention a controller has a static `initializeController(selector)` that constructs the
-controller, sets its `focusElementSelector` to the selector, and passes it to
-`App.initializeController({ controller: controller })`. Taking the selector is what lets a widget
-shown several times on a page start one controller per root, each root with its own id; nothing
-in `App` is kept per class except singletons, so each instance is independent.
+**The template is the one place a selector is chosen,** a few lines from the id it names, so the
+two can't drift apart unseen. A widget shown several times on a page passes each root's own id
+(`'#my-widget-{{ data.movie.id }}'`) and gets one controller per root; nothing in `App` is kept per
+class except singletons, so each instance is independent. A controller with no element, such as
+one that only watches the window, is started with no selector, `App.initController(new
+ThemeController())`, and gets no DOM binding: `__element` stays `null`, while the lifecycle and
+the singleton registry work as for any other. The caller constructs the controller, so its
+constructor can take arguments.
 
-`App.initializeController()` always takes a controller the caller has constructed, so the
-constructor can take arguments. The selector is set on it first: by the caller, as above, or as a
-default on the class (`focusElementSelector = '#tab-page'`) for an element there's only ever one
-of. A controller with no element, such as one that only watches the window, leaves it `null`.
-`App.initializeController()`:
+`App.initController(controller, selector)`:
 
-1. when `focusElementSelector` is set and an element matches it, binds the two: the element's
+1. when a selector is given and an element matches it, binds the two: the element's
    `__controller` is the controller, the controller's `__element` is the element, and the
    controller is added to its parent element's `__childControllers`, with `__parentElement`
    pointing back. When no element matches, nothing is bound and a warning names the controller
-   and its selector, since a controller with no element silently does nothing;
+   and its selector, since a controller that was meant to have an element silently does nothing
+   without one;
 2. awaits `initState()`;
-3. registers the controller as a singleton, when `registerAsSingleton` is true;
+3. registers the controller as a singleton, when its class says `static readonly singleton = true`;
 4. calls `setState()`;
 5. calls `afterFirstSetState()`.
 
@@ -85,13 +86,16 @@ deprecated: it looks the element up a second time; bind on the element already f
 
 ## Singletons and readiness
 
-Two controllers on one page talk through the singleton registry. One registers itself with
-`registerAsSingleton: true`, and the other fetches it with `App.getSingleton(ChildController)`,
-which returns `null` when none is registered.
+Two controllers on one page talk through the singleton registry. A class declares itself one
+with `static readonly singleton = true`, which `App.initController()` reads and registers, and
+the other fetches it with `App.getSingleton(ChildController)`, which returns `null` when none is
+registered. It's on the class, not an option at each call, since the code that relies on it is
+elsewhere: a template that forgot the option would leave every `getSingleton()` call `null`.
 
 **The registry is keyed on the class itself, not its name.** Production builds minify class
 names (`class u extends c`), so two controllers can share a `constructor.name`. Nothing in the
-framework reads `constructor.name` or `Class.name`, and nothing in a project should.
+framework is keyed on `constructor.name` or `Class.name`, and nothing in a project should be; the
+no-element warning only prints it, beside the selector, which survives minifying.
 
 Controllers start concurrently, each from its own `<script>`, and a singleton is only registered
 after its `initState()`. So the controller asking for it may run first. The child signals that
@@ -99,6 +103,7 @@ it is ready with a `Completer`, a promise resolved from outside:
 
 ```typescript
 export class ChildController extends Controller {
+    static readonly singleton = true;
     public static singletonInitializationCompleter = new Completer<null>();
 
     public afterFirstSetState(): void {

@@ -21,6 +21,6 @@
 </header>
 
 <script type="module">
-  import { AppbarController } from '{% static "main.js" %}';
-  await AppbarController.initializeController('#appbar');
+  import { App, AppbarController } from '{% static "main.js" %}';
+  await App.initController(new AppbarController(), '#appbar');
 </script>

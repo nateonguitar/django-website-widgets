@@ -1,9 +1,13 @@
 export class Controller {
+    /**
+     * Set to true on a subclass that other controllers reach through `App.getSingleton()`.
+     * `App.initController()` registers it, so a page's template can't forget to.
+     */
+    static readonly singleton: boolean = false;
+
+    /** The element `App.initController()`'s selector matched, or null when it was given none. */
     public __element: HTMLElement | null = null;
     public __parentElement: HTMLElement | null = null;
-
-    /** Set this if a dom element is associated with this controller */
-    public focusElementSelector: string | null = null;
 
     public async initState(): Promise<void> {
         // To be overridden by subclasses
