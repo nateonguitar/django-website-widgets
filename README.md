@@ -44,6 +44,7 @@ inside the package, indexed by
 - [`checking_the_setup.md`](https://github.com/nateonguitar/django-website-widgets/blob/main/website_widgets/docs/checking_the_setup.md): the system checks and `ww_doctor`
 - [`creating_pages_and_widgets.md`](https://github.com/nateonguitar/django-website-widgets/blob/main/website_widgets/docs/creating_pages_and_widgets.md): `ww_create_page` and `ww_create_widget`, and overriding their templates
 - [`npm_watch.md`](https://github.com/nateonguitar/django-website-widgets/blob/main/website_widgets/docs/npm_watch.md): starting `npm run watch` with `runserver`
+- [`node_and_package_managers.md`](https://github.com/nateonguitar/django-website-widgets/blob/main/website_widgets/docs/node_and_package_managers.md): installing Node, building without it in a container, and yarn, pnpm and the rest
 
 Lessons, with worked code:
 
@@ -51,6 +52,7 @@ Lessons, with worked code:
 - [`widgets_in_plain_django.md`](https://github.com/nateonguitar/django-website-widgets/blob/main/website_widgets/docs/widgets_in_plain_django.md): widgets in an ordinary view and template, and in the admin
 - [`html_emails.md`](https://github.com/nateonguitar/django-website-widgets/blob/main/website_widgets/docs/html_emails.md): HTML emails built from widgets
 - [`etags_and_304s.md`](https://github.com/nateonguitar/django-website-widgets/blob/main/website_widgets/docs/etags_and_304s.md): answering 304 Not Modified from a page
+- [`deploying_the_frontend.md`](https://github.com/nateonguitar/django-website-widgets/blob/main/website_widgets/docs/deploying_the_frontend.md): the production build, and cache busting
 
 `AGENTS.md` is written for AI coding assistants as well as people: an index plus the rules
 every change follows.

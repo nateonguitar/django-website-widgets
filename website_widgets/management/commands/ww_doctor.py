@@ -40,6 +40,8 @@ class Command(BaseCommand):
     # What webpack.config.js writes and the templates load with {% static %}.
     BUNDLE_FILES = ('main.js', 'bundled-styles.css')
     VERSION_RE = re.compile(r'(\d+)\.(\d+)\.(\d+)')
+    # Checked in this order, npm first, since start_npm_watch() and the starter's docs use it.
+    PACKAGE_MANAGERS = ('npm', 'yarn', 'pnpm')
 
     def handle(self, *args, **options):
         """Prints one checklist line per check, each failure followed by its fixes, then a count."""
@@ -61,7 +63,7 @@ class Command(BaseCommand):
         if not any(message.id == 'website_widgets.E002' for message in messages):
             lines.append(self._app_line(app_label))
         lines.append(self._node_line())
-        lines.append(self._npm_line())
+        lines.append(self._package_manager_line())
         app_folder = self._app_folder(app_label)
         if app_folder is not None:
             lines.append(self._package_json_line(app_folder, app_label))
@@ -136,7 +138,10 @@ class Command(BaseCommand):
             return DoctorLine(
                 passed=False,
                 summary='node is not on the PATH, so nothing builds the TypeScript or SCSS',
-                fixes=[install_fix])
+                fixes=[
+                    install_fix,
+                    'Without Node on this machine, node_and_package_managers.md shows the build in a '
+                    'docker or podman container'])
         match = self.VERSION_RE.search(node_version)
         parsed = tuple(int(part) for part in match.groups()) if match else None
         if parsed is not None and parsed < self.MINIMUM_NODE_VERSION:
@@ -146,15 +151,31 @@ class Command(BaseCommand):
                 fixes=[install_fix])
         return DoctorLine(passed=True, summary=f'node {node_version}')
 
-    def _npm_line(self) -> DoctorLine:
-        """Whether npm is on the PATH."""
-        npm_version = self._command_version('npm')
-        if npm_version is None:
+    def _package_manager_line(self) -> DoctorLine:
+        """
+        Whether a JavaScript package manager is on the PATH: npm, which start_npm_watch() runs,
+        or one of the others, which a project drives itself.
+        """
+        for manager in self.PACKAGE_MANAGERS:
+            version = self._command_version(manager)
+            if version is None:
+                continue
+            if manager == 'npm':
+                return DoctorLine(passed=True, summary=f'npm {version}')
             return DoctorLine(
-                passed=False,
-                summary='npm is not on the PATH, so start_npm_watch() and npm install can\'t run',
-                fixes=['Install Node.js, which includes npm: https://nodejs.org'])
-        return DoctorLine(passed=True, summary=f'npm {npm_version}')
+                passed=True,
+                summary=(
+                    f'{manager} {version}, with no npm: start_npm_watch() runs npm, so a watcher '
+                    f'for {manager} is the project\'s own (node_and_package_managers.md)'))
+        return DoctorLine(
+            passed=False,
+            summary=(
+                f"No JavaScript package manager is installed ({', '.join(self.PACKAGE_MANAGERS)}), "
+                f"so nothing installs or builds the frontend"),
+            fixes=[
+                'Install Node.js, which includes npm: https://nodejs.org',
+                'Without Node on this machine, node_and_package_managers.md shows the build in a '
+                'docker or podman container'])
 
     @staticmethod
     def _package_json_line(

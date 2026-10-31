@@ -20,10 +20,12 @@ them:
 - `checking_the_setup.md`
 - `creating_and_upgrading_an_app.md`
 - `creating_pages_and_widgets.md`
+- `deploying_the_frontend.md`
 - `etags_and_304s.md`
 - `frontend_controllers.md`
 - `html_emails.md`
 - `loading_data.md`
+- `node_and_package_managers.md`
 - `npm_watch.md`
 - `rendering_pipeline.md`
 - `reverse_template.md`

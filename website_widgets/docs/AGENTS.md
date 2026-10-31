@@ -39,6 +39,7 @@ in the doc.
 - `starter_site.md` — the site `ww_create_app` writes: each file's job, `AppPage` and its refusal exceptions, `AppState` vs `data-` attributes, `AppUrls` and why static URLs go through it, the REST-agnostic endpoint, the build files as the developer's to change
 - `checking_the_setup.md` — the package's system checks (E001–E003, W001) and their fixes, `ww_doctor`'s checklist, the `package.json` check
 - `npm_watch.md` — `start_npm_watch()` in `manage.py`: when it starts `npm run watch`, how it avoids a second watcher, why it sets Django up early
+- `node_and_package_managers.md` — installing Node; building without it in a docker or podman container, and why each option of the command; `node_modules` built for Linux on macOS and Windows; yarn, pnpm and the rest, with `start_npm_watch()` as the model for their own watcher
 
 ## Lessons
 
@@ -48,3 +49,4 @@ Techniques shown with worked code, for the cases the docs above explain but don'
 - `widgets_in_plain_django.md` — `render()` in an ordinary `TemplateView`, a widget with a controller in a plain template, a custom admin page holding a widget
 - `html_emails.md` — an email as an `EmailDocument` widget around each email's content widget: sync `set_context()`, no request, absolute links, the plain-text version
 - `etags_and_304s.md` — answering 304 from `handle_request()` before the tree is built, what goes in the ETag, `Vary: Cookie`
+- `deploying_the_frontend.md` — the production build and what it writes, building in the deploy rather than in git, cache busting with `ManifestStaticFilesStorage`, `{% static %}` and `AppUrls`, why chunks carry their own hash

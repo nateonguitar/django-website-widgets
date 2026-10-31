@@ -34,12 +34,13 @@ Everything a system check shouldn't do on every command, as a checklist in the s
 `flutter doctor`: a line per check, and under each failing one, how to fix it.
 
 ```
-Checking the setup for django-website-widgets 0.8.0:
+Checking the setup for django-website-widgets 0.10.2:
 [✓] The package's system checks pass
 [✓] The website app 'website' is installed, at website/
-[✓] node v22.3.0
-[✗] npm is not on the PATH, so start_npm_watch() and npm install can't run
-    Install Node.js, which includes npm: https://nodejs.org
+[✗] node is not on the PATH, so nothing builds the TypeScript or SCSS
+    Install Node.js 18.12.0 or newer, which includes npm: https://nodejs.org
+    Without Node on this machine, node_and_package_managers.md shows the build in a docker or podman container
+[✗] No JavaScript package manager is installed (npm, yarn, pnpm), so nothing installs or builds the frontend
 ...
 ```
 
@@ -50,7 +51,10 @@ In order:
 2. **The website app is installed.** Without it, the checks on its folder are skipped. When
    E002 has already said the app isn't installed, this line is left out rather than say it twice.
 3. **`node` is on the `PATH`,** at least 18.12, which webpack-cli 6 needs.
-4. **`npm` is on the `PATH`.**
+4. **A JavaScript package manager is on the `PATH`:** npm, yarn or pnpm, checked in that order.
+   yarn or pnpm with no npm passes, noting that `start_npm_watch()` runs npm, so the project's
+   watcher is its own. With none, the fixes are installing Node or building in a container
+   (`node_and_package_managers.md`).
 5. **`package.json` has what the starter site's build needs**, the same check `ww_upgrade` runs
    (below).
 6. **`node_modules/` holds each build tool**, so `npm install` has run.

@@ -137,12 +137,22 @@ class WwDoctorTestCase(SimpleTestCase):
 
         self.assertIn('[✗] node is v16.20.0, older than the build tools need (18.12.0)', output)
 
-    def test_doctor__fails_npm__when_npm_is_missing(self):
+    def test_doctor__fails_naming_the_package_managers__when_none_is_installed(self):
         del self.versions['npm']
 
         output = self.run_doctor()
 
-        self.assertIn('[✗] npm is not on the PATH', output)
+        self.assertIn('[✗] No JavaScript package manager is installed (npm, yarn, pnpm)', output)
+        self.assertIn('https://nodejs.org', output)
+        self.assertIn('node_and_package_managers.md', output)
+
+    def test_doctor__passes_saying_the_watcher_is_the_projects__when_yarn_is_installed_without_npm(self):
+        del self.versions['npm']
+        self.versions['yarn'] = '1.22.22'
+
+        output = self.run_doctor()
+
+        self.assertIn('[✓] yarn 1.22.22, with no npm: start_npm_watch() runs npm', output)
 
     def test_doctor__prints_install_command__when_package_json_declares_a_tool_too_low(self):
         self.write(self.starter_site.file('package.json').replace('"^5.110.2"', '"^5.97.1"'), 'package.json')

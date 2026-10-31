@@ -39,7 +39,9 @@ Only when the command is `runserver` (`sys.argv[1]`), and only once per folder:
   project on the same machine runs in another folder, so it doesn't count. A process the user
   may not inspect reports no working directory and is skipped.
 
-When npm isn't installed it prints a warning and returns, so the server still starts.
+When npm isn't installed it prints a warning and returns, so the server still starts. A project
+on yarn, pnpm or another package manager, or building in a container without Node, writes its
+own watcher on this one's model (`node_and_package_managers.md`).
 
 The watcher is a child of the outer server process. Stopping the server with Ctrl+C in a
 terminal stops both, since they share the terminal. Started any other way, such as a detached
