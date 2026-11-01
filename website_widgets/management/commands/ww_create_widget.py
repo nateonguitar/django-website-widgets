@@ -5,7 +5,7 @@ from django.core.management.base import BaseCommand, CommandError
 
 from website_widgets.config import get_config
 from website_widgets.management.component_files import ComponentFiles, ComponentName, WrittenFile
-from website_widgets.management.framework_folder import FrameworkFolder, TypeScriptFolder
+from website_widgets.management.framework_folder import FrameworkFolder
 
 
 class Command(BaseCommand):
@@ -63,7 +63,6 @@ class Command(BaseCommand):
             stdout=self.stdout,
             stderr=self.stderr)
         app_folder = files.website_app_folder(config.website_app_name)
-        files.require_framework_files(app_folder)
 
         name = ComponentName.parse(options['name'])
         widget_folder = os.path.join(app_folder, 'widgets', name.path)
@@ -78,12 +77,10 @@ class Command(BaseCommand):
             default=False)
         instances = 'repeating' if repeating else 'single'
 
-        framework_folder = os.path.join(app_folder, TypeScriptFolder.RELATIVE_PATH)
         replacements = {
             '__ClassName__': name.class_name,
             '__module_name__': name.module_name,
             '__css_name__': name.css_name,
-            '__framework_path__': files.relative_import_path(framework_folder, widget_folder),
         }
         set_context = options['set_context'] or 'async'
         package_inits = files.make_component_folder(os.path.join(app_folder, 'widgets'), name)

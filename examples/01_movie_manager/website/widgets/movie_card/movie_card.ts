@@ -1,4 +1,4 @@
-import { Controller } from "../../ts/website_widgets/controller";
+import { Controller } from "django-website-widgets";
 import { Cart } from "../../ts/cart";
 import { AppbarController } from "../appbar/appbar";
 

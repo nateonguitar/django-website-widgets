@@ -11,10 +11,11 @@ from website_widgets.management.framework_folder import DocsFolder, FrameworkFol
 
 class Command(BaseCommand):
     help = (
-        "Brings the two folders the package manages in the website app, ts/website_widgets/ "
-        "(the framework's TypeScript) and website_widgets_docs/ (the package's docs), up to the "
-        "installed django-website-widgets, and checks its build files against the starter site's. Run it after every upgrade, and once on an app that never "
-        "ran ww_create_app.")
+        "Brings the folder the package manages in the website app, website_widgets_docs/ (the "
+        "package's docs), up to the installed django-website-widgets, sets the npm package "
+        "django-website-widgets in package.json to the range it works with, and checks the build "
+        "files against the starter site's. Run it after every upgrade, and once on an app that "
+        "never ran ww_create_app.")
     # It is the fix for the stale-folder warning, so that warning shouldn't open its output, and
     # a page module that fails to import, which stops route discovery's check, mustn't stop it.
     requires_system_checks = []

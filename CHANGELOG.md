@@ -11,17 +11,26 @@ settled. This entry is the upgrade guide from 0.11.
 ### Upgrading from 0.11
 
 1. Require `django-website-widgets>=1.0,<2`, install it, and run `python manage.py ww_upgrade`.
-   That replaces the framework TypeScript in `ts/website_widgets/` and the docs in
-   `website_widgets_docs/`; the steps below are the project's own code.
-2. Python: move pages onto `AsyncWebPage`, each widget onto `AsyncWidget` (an `async def
+   That replaces the docs in `website_widgets_docs/` and adds the npm package
+   `django-website-widgets` to `package.json`; the steps below are the project's own code.
+2. The framework TypeScript moved to that npm package. In the website app's folder:
+   - run `npm install`;
+   - delete `ts/website_widgets/`, which nothing manages any more;
+   - change every import of it to the package name: `import { Controller } from
+     "../../ts/website_widgets/controller"` becomes `import { Controller } from
+     "django-website-widgets"`, and in `ts/main.ts` the three `export { … } from
+     './website_widgets/…'` lines become
+     `export { App, Controller, Completer } from 'django-website-widgets';`.
+3. Python: move pages onto `AsyncWebPage`, each widget onto `AsyncWidget` (an `async def
    set_context()`) or `SyncWidget` (a plain one, or none), and make the renames under "Python".
-3. TypeScript: rename `__element` to `rootElement` in every controller, and replace each
+4. TypeScript: rename `__element` to `rootElement` in every controller, and replace each
    `getElementByIdOrWarn()` (under "TypeScript").
-4. Generator template overrides in `GenerateComponentConfig.templates_dir`: rename them (under
-   "Generators"), since a file under an old name is now ignored.
-5. Scripts calling `ww_create_page` or `ww_create_widget`: change `--x=true` to `--x` and
+5. Generator template overrides in `GenerateComponentConfig.templates_dir`: rename them (under
+   "Generators"), and drop `__framework_path__` from a controller template, importing from
+   `django-website-widgets` instead, since a file under an old name is now ignored.
+6. Scripts calling `ww_create_page` or `ww_create_widget`: change `--x=true` to `--x` and
    `--x=false` to `--no-x`.
-6. Run the project's tests. The new errors under "Python" name anything left to move.
+7. Run the project's tests. The new errors under "Python" name anything left to move.
 
 ### Breaking changes
 
@@ -63,7 +72,18 @@ settled. This entry is the upgrade guide from 0.11.
 
 #### TypeScript
 
-`ww_upgrade` replaces the framework files; these change a project's controllers.
+- **The framework TypeScript is the npm package `django-website-widgets`,** no longer copied
+  into `ts/website_widgets/`. It is versioned separately from the Python package, which declares
+  the npm range it works with: `ww_create_app` writes the range into `package.json`,
+  `ww_upgrade` sets it there, and a system check (`website_widgets.W002`) and `ww_doctor` say
+  when what is installed is outside it. Controllers import `App`, `Controller` and `Completer`
+  from `"django-website-widgets"`. The npm package's changes are in its own changelog,
+  `frontend/CHANGELOG.md`.
+- **`ww_create_page` and `ww_create_widget` no longer require `ts/website_widgets/`,** and the
+  generator placeholder `__framework_path__` is gone; a generated controller imports from the
+  npm package.
+
+These change a project's controllers.
 
 - **`Controller.__element` is `rootElement`.** Rename every `this.__element` (and
   `controller.__element`).

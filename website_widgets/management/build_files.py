@@ -1,10 +1,13 @@
 import difflib
 import importlib.metadata
+import json
 import os
+import re
 
 from django.core.management.base import OutputWrapper
 
 from website_widgets.management.framework_folder import FrameworkFolder
+from website_widgets.management.npm_package import NpmPackage
 from website_widgets.management.package_json_check import PackageJsonCheck
 from website_widgets.management.starter_site import StarterSite
 
@@ -14,7 +17,8 @@ class BuildFiles:
     A website app's build files, as `ww_upgrade` keeps them against the starter site's. A missing
     one is created, since a build needs it. `webpack.config.js` and `tsconfig.json` are the
     developer's to tune, so one that differs is only replaced on a yes. `package.json` holds the
-    developer's own dependencies too, so it is never edited: what it lacks is printed as fixes.
+    developer's own dependencies too, so the only thing written there is the npm package's range,
+    the one the installed Python package works with; what else it lacks is printed as fixes.
     """
 
     def __init__(
@@ -87,6 +91,7 @@ class BuildFiles:
             self._write(file_path, self.starter_site.file(StarterSite.PACKAGE_JSON))
             self.stdout.write(f"Created {shown_folder}/{StarterSite.PACKAGE_JSON} from the starter site's.")
             return
+        self._set_npm_package_range(file_path, shown_folder)
         package_json_check = PackageJsonCheck(
             app_folder=self.app_folder,
             app_label=self.app_label)
@@ -98,6 +103,44 @@ class BuildFiles:
             f"in django-website-widgets {self.version}. It is yours, so it wasn't changed:")
         for line in fixes.fix_lines(shown_folder):
             self.stdout.write(f'  {line}')
+
+    def _set_npm_package_range(
+        self,
+        file_path: str,
+        shown_folder: str
+    ):
+        """
+        Sets the npm package to `NpmPackage.RANGE`, in the section that already names it, or in
+        `dependencies` when none does. A spec naming a folder or git is left alone. Only that one
+        value changes, so the rest of the file keeps its formatting; adding the key rewrites it
+        as two-space JSON. Unreadable JSON is left for `PackageJsonCheck` to report.
+        """
+        with open(file_path, encoding='utf-8') as file:
+            content = file.read()
+        try:
+            package_json = json.loads(content)
+        except ValueError:
+            return
+        if not isinstance(package_json, dict):
+            return
+        spec = NpmPackage.declared_spec(package_json)
+        if spec == NpmPackage.RANGE or (spec is not None and not NpmPackage.is_registry_spec(spec)):
+            return
+        if spec is None:
+            dependencies = package_json.get('dependencies')
+            if not isinstance(dependencies, dict):
+                dependencies = {}
+                package_json['dependencies'] = dependencies
+            dependencies[NpmPackage.NAME] = NpmPackage.RANGE
+            updated = json.dumps(package_json, indent=2) + '\n'
+        else:
+            declared = re.compile(rf'("{re.escape(NpmPackage.NAME)}"\s*:\s*)"{re.escape(spec)}"')
+            updated = declared.sub(lambda match: f'{match.group(1)}"{NpmPackage.RANGE}"', content, count=1)
+        self._write(file_path, updated)
+        self.stdout.write(
+            f'Set {NpmPackage.NAME} to "{NpmPackage.RANGE}" in {shown_folder}/{StarterSite.PACKAGE_JSON}, '
+            f'the range django-website-widgets {self.version} works with. In {shown_folder}/, run: '
+            f'npm install')
 
     @staticmethod
     def _write(

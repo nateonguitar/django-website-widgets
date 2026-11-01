@@ -22,6 +22,22 @@ jobs:
       - run: pip install . "django~=${{ matrix.django }}.0"
       - run: django-admin test website_widgets --settings=test_settings --pythonpath=.
 
+  # The npm package: npm ci runs its prepare script, which builds dist/ with tsc.
+  frontend:
+    runs-on: ubuntu-latest
+    name: npm package
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - run: npm ci --no-audit --no-fund
+      - run: npm run typecheck
+      - run: npm pack --dry-run
+
   # Every folder under examples/ holding a manage.py is a project, so a new example needs no edit here.
   find-examples:
     runs-on: ubuntu-latest
@@ -61,6 +77,12 @@ jobs:
         if: hashFiles(format('{0}/*/package.json', matrix.example)) != ''
         with:
           node-version: '24'
+      # The example depends on frontend/ by path, and npm builds a path dependency with that
+      # folder's own tools, so they're installed first.
+      - name: Install the npm package's build tools
+        if: hashFiles(format('{0}/*/package.json', matrix.example)) != ''
+        working-directory: frontend
+        run: npm ci --no-audit --no-fund
       - name: Type-check and build the frontend
         if: hashFiles(format('{0}/*/package.json', matrix.example)) != ''
         run: |

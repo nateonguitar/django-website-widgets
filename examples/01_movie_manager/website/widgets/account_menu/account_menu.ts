@@ -1,4 +1,4 @@
-import { Controller } from "../../ts/website_widgets/controller";
+import { Controller } from "django-website-widgets";
 import { AuthApiService } from "../../ts/api/auth-api-service";
 import { Cart } from "../../ts/cart";
 import { Theme, ThemeChoice } from "../../ts/theme";

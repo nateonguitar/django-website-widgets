@@ -1,4 +1,4 @@
-import { Controller } from "../../ts/website_widgets/controller";
+import { Controller } from "django-website-widgets";
 import { ApiError } from "../../ts/api/api-service";
 import { CreateMovieRequest, MovieApiService } from "../../ts/api/movie-api-service";
 import { MovieCardController, MovieChosenDetail } from "../../widgets/movie_card/movie_card";

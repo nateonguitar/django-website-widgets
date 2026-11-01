@@ -35,12 +35,12 @@ class WwCreateAppTestCase(SimpleTestCase):
         with open(self.app_path(*path_parts), encoding='utf-8') as file:
             return file.read()
 
-    def test_create_app__writes_app_and_framework_folder__when_answer_is_yes(self):
+    def test_create_app__writes_app_and_docs_folder__when_answer_is_yes(self):
         self.run_create_app(answers=['y', 'n'])
 
         self.assertIn("name = 'website'", self.read('apps.py'))
         self.assertIn('class WebsiteConfig(AppConfig):', self.read('apps.py'))
-        for path in ('__init__.py', 'pages/__init__.py', 'widgets/__init__.py', 'ts/website_widgets/controller.ts'):
+        for path in ('__init__.py', 'pages/__init__.py', 'widgets/__init__.py', 'website_widgets_docs/AGENTS.md'):
             with self.subTest(path=path):
                 self.assertTrue(os.path.isfile(self.app_path(path)))
 
@@ -48,7 +48,7 @@ class WwCreateAppTestCase(SimpleTestCase):
         output = self.run_create_app(answers=['n'])
 
         self.assertIn('apps.py', output)
-        self.assertIn('ts/website_widgets/controller.ts', output)
+        self.assertIn('package.json', output)
         self.assertIn('  website_widgets_docs/routing.md', output)
         self.assertEqual(self.questions, ['Create these files? [y/N] '])
 

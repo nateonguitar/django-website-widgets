@@ -17,6 +17,7 @@
     "webpack-cli": "^6.0.1"
   },
   "dependencies": {
-    "chart.js": "^4.6.1"
+    "chart.js": "^4.6.1",
+    "django-website-widgets": "file:../../../frontend"
   }
 }

@@ -4,6 +4,7 @@ import tempfile
 
 from django.test import SimpleTestCase
 
+from website_widgets.management.npm_package import NpmPackage
 from website_widgets.management.package_json_check import PackageJsonCheck
 from website_widgets.management.starter_site import StarterSite
 
@@ -32,7 +33,27 @@ class PackageJsonCheckTestCase(SimpleTestCase):
 
     def test_run__accepts_a_build_tool__when_it_is_under_dependencies_instead(self):
         webpack_range = self.starter['devDependencies'].pop('webpack')
-        self.starter['dependencies'] = {'webpack': webpack_range}
+        self.starter['dependencies']['webpack'] = webpack_range
+
+        fixes = self.run_check(json.dumps(self.starter))
+
+        self.assertTrue(fixes.is_empty())
+
+    def test_run__says_to_install_the_npm_package__when_it_is_missing_or_below_the_range(self):
+        for spec in (None, '^0.9.0'):
+            with self.subTest(spec=spec):
+                starter = json.loads(json.dumps(self.starter))
+                if spec is None:
+                    del starter['dependencies'][NpmPackage.NAME]
+                else:
+                    starter['dependencies'][NpmPackage.NAME] = spec
+
+                fixes = self.run_check(json.dumps(starter))
+
+                self.assertEqual(fixes.fix_lines('website'), [f'In website/, run: {NpmPackage.install_command()}'])
+
+    def test_run__accepts_the_npm_package__when_it_is_a_local_folder(self):
+        self.starter['dependencies'][NpmPackage.NAME] = 'file:../../../frontend'
 
         fixes = self.run_check(json.dumps(self.starter))
 

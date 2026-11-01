@@ -39,7 +39,7 @@ inside the package, indexed by
 - [`routing.md`](https://github.com/nateonguitar/django-website-widgets/blob/main/website_widgets/docs/routing.md): `@register_url`, route discovery and ordering
 - [`frontend_controllers.md`](https://github.com/nateonguitar/django-website-widgets/blob/main/website_widgets/docs/frontend_controllers.md): the TypeScript `Controller`, `App` and `Completer`
 - [`reverse_template.md`](https://github.com/nateonguitar/django-website-widgets/blob/main/website_widgets/docs/reverse_template.md): URL templates for the frontend
-- [`creating_and_upgrading_an_app.md`](https://github.com/nateonguitar/django-website-widgets/blob/main/website_widgets/docs/creating_and_upgrading_an_app.md): `ww_create_app` and `ww_upgrade`, and the framework's TypeScript and these docs copied into a project
+- [`creating_and_upgrading_an_app.md`](https://github.com/nateonguitar/django-website-widgets/blob/main/website_widgets/docs/creating_and_upgrading_an_app.md): `ww_create_app` and `ww_upgrade`, these docs copied into a project, and the npm package's range
 - [`starter_site.md`](https://github.com/nateonguitar/django-website-widgets/blob/main/website_widgets/docs/starter_site.md): the working site `ww_create_app` writes, and the conventions it shows
 - [`checking_the_setup.md`](https://github.com/nateonguitar/django-website-widgets/blob/main/website_widgets/docs/checking_the_setup.md): the system checks and `ww_doctor`
 - [`creating_pages_and_widgets.md`](https://github.com/nateonguitar/django-website-widgets/blob/main/website_widgets/docs/creating_pages_and_widgets.md): `ww_create_page` and `ww_create_widget`, and overriding their templates
@@ -585,9 +585,9 @@ python manage.py ww_create_app
 ```
 The app holds a working starter site: a page whose TypeScript controller calls a JSON endpoint,
 a page that is always refused, the document template, `AppState` and `AppUrls`, a web component,
-and the webpack build. It also holds two folders the package manages: the framework's
-TypeScript (`App`, `Controller`, `Completer`) in `ts/website_widgets/`, and the package's docs
-in `website_widgets_docs/`. It prints the next steps,
+and the webpack build. Its `package.json` depends on the npm package `django-website-widgets`,
+the framework's TypeScript (`App`, `Controller`, `Completer`), and it holds one folder the
+package manages, its docs in `website_widgets_docs/`. It prints the next steps,
 each a one-line change: the app in `INSTALLED_APPS`, its URLs in `urls.py`, `start_npm_watch()`
 in `manage.py`, and `npm install`. See
 [`docs/starter_site.md`](https://github.com/nateonguitar/django-website-widgets/blob/main/website_widgets/docs/starter_site.md).
@@ -604,21 +604,25 @@ on a website app that never ran `ww_create_app`):
 ```bash
 python manage.py ww_upgrade
 ```
-It overwrites only the files the package ships in its two folders, `ts/website_widgets/` and
-`website_widgets_docs/`, deletes ones it no longer ships, and leaves anything else in them alone.
-Commit both, so an upgrade shows up as a diff. It asks before replacing a `webpack.config.js` or `tsconfig.json` that
-differs from the starter's, never edits `package.json` (it prints the `npm install` command for
-anything the build needs), and never touches the other starter files. Both commands offer to
+It overwrites only the files the package ships in `website_widgets_docs/`, deletes ones it no
+longer ships, and leaves anything else there alone. Commit it, so an upgrade shows up as a diff.
+It sets the npm package's range in `package.json` to the one the installed Python package works
+with (the two are versioned separately; run `npm install` after), asks before replacing a
+`webpack.config.js` or `tsconfig.json` that differs from the starter's, changes nothing else in
+`package.json` (it prints the `npm install` command for anything the build needs), and never
+touches the other starter files. Both commands offer to
 point your `CLAUDE.md`, `.claude/CLAUDE.md` or `AGENTS.md` at the copied docs. See
 [`docs/creating_and_upgrading_an_app.md`](https://github.com/nateonguitar/django-website-widgets/blob/main/website_widgets/docs/creating_and_upgrading_an_app.md).
 
 When something doesn't work, check the setup: the package's system checks, then Node, npm,
-`package.json`, `node_modules` and a built bundle, each failing line with its fix:
+`package.json`, `node_modules`, the npm package's version and a built bundle, each failing line
+with its fix:
 ```bash
 python manage.py ww_doctor
 ```
 System checks also fail at `runserver` when the app is missing from `INSTALLED_APPS` or its
-pages aren't in `urls.py`, and warn when either managed folder is from another version. See
+pages aren't in `urls.py`, and warn when the docs folder is from another version or the
+installed npm package is outside the range the Python package works with. See
 [`docs/checking_the_setup.md`](https://github.com/nateonguitar/django-website-widgets/blob/main/website_widgets/docs/checking_the_setup.md).
 
 Create a page or widget, with an optional TypeScript controller and stylesheet registered in
@@ -628,7 +632,7 @@ route made from its name unless `--route` gives one:
 python manage.py ww_create_widget like_button --tscontroller --stylesheet
 python manage.py ww_create_page profile_page --no-tscontroller --no-stylesheet --route=profile
 ```
-They need the framework TypeScript in `ts/website_widgets/`, and for a page, the base class at
+A generated controller imports `Controller` from the npm package; a page needs the base class at
 `GenerateComponentConfig.app_page_class`. A project overrides any of their templates with its
 own, in `templates_dir`. See
 [`docs/creating_pages_and_widgets.md`](https://github.com/nateonguitar/django-website-widgets/blob/main/website_widgets/docs/creating_pages_and_widgets.md).

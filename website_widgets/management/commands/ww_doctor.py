@@ -14,6 +14,7 @@ from django.core.management.base import BaseCommand
 
 from website_widgets.config import get_config
 from website_widgets.management.framework_folder import FrameworkFolder
+from website_widgets.management.npm_package import NpmPackage
 from website_widgets.management.package_json_check import PackageJsonCheck
 from website_widgets.management.starter_site import StarterSite
 
@@ -31,7 +32,7 @@ class Command(BaseCommand):
     help = (
         "Checks a website app's setup and prints a checklist with a fix for each problem: the "
         "package's system checks, Node and npm, package.json against the starter site's, "
-        "node_modules, and a built bundle.")
+        "node_modules, the npm package's version, and a built bundle.")
     # Django would stop on a failing check before handle(); this command reports them instead.
     requires_system_checks = []
 
@@ -68,6 +69,7 @@ class Command(BaseCommand):
         if app_folder is not None:
             lines.append(self._package_json_line(app_folder, app_label))
             lines.append(self._node_modules_line(app_folder, app_label))
+            lines.append(self._npm_package_line(app_folder))
             lines.append(self._bundle_line(app_folder))
 
         for line in lines:
@@ -216,6 +218,28 @@ class Command(BaseCommand):
                 summary=f"{shown_folder}/node_modules/ lacks {', '.join(missing)}",
                 fixes=[f'In {shown_folder}/, run: npm install'])
         return DoctorLine(passed=True, summary=f'{shown_folder}/node_modules/ has the build tools')
+
+    @staticmethod
+    def _npm_package_line(app_folder: str) -> DoctorLine:
+        """Whether the npm package is installed at a version this Python release works with."""
+        shown_folder = FrameworkFolder.display_path(app_folder)
+        fix = f'In {shown_folder}/, run: {NpmPackage.install_command()}'
+        installed = NpmPackage.installed_version(app_folder)
+        if installed is None:
+            return DoctorLine(
+                passed=False,
+                summary=f'The npm package {NpmPackage.NAME} is not installed, so no controller can start',
+                fixes=[fix])
+        if not NpmPackage.range_allows(installed):
+            return DoctorLine(
+                passed=False,
+                summary=(
+                    f'The npm package {NpmPackage.NAME} is {installed.as_text()}, outside '
+                    f'{NpmPackage.RANGE}, the range this Python release works with'),
+                fixes=[fix])
+        return DoctorLine(
+            passed=True,
+            summary=f'The npm package {NpmPackage.NAME} {installed.as_text()}, in {NpmPackage.RANGE}')
 
     def _bundle_line(self, app_folder: str) -> DoctorLine:
         """Whether the static file finders find each of `BUNDLE_FILES`, so the build has run."""

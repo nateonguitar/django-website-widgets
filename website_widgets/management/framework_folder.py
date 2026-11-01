@@ -62,7 +62,7 @@ class FrameworkFolder:
     @staticmethod
     def managed_folders() -> list[type['FrameworkFolder']]:
         """Every folder the package manages, in the order the commands write and list them."""
-        return [DocsFolder, TypeScriptFolder]
+        return [DocsFolder]
 
     @classmethod
     def read_version_stamp(cls, app_folder: str) -> str | None:
@@ -235,21 +235,6 @@ class FrameworkFolder:
     def _read(path: str) -> str:
         with open(path, encoding='utf-8', newline='') as file:
             return file.read()
-
-
-class TypeScriptFolder(FrameworkFolder):
-    """The app's `ts/website_widgets/`: the framework TypeScript its controllers import."""
-
-    RELATIVE_PATH = os.path.join('ts', 'website_widgets')
-    README_TEMPLATE_PATH = os.path.join('frontend', 'README.md')
-
-    def source_files(self) -> dict[str, str]:
-        files = {}
-        frontend_dir = os.path.join(PACKAGE_DIR, 'frontend')
-        for filename in sorted(os.listdir(frontend_dir)):
-            if filename.endswith('.ts'):
-                files[filename] = self._read(os.path.join(frontend_dir, filename))
-        return files
 
 
 class DocsFolder(FrameworkFolder):

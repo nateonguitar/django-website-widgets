@@ -1,4 +1,5 @@
 import io
+import json
 import os
 import subprocess
 import tempfile
@@ -10,6 +11,7 @@ from django.core.exceptions import ImproperlyConfigured
 from django.core.management import call_command
 from django.test import SimpleTestCase
 
+from website_widgets.management.npm_package import NpmPackage
 from website_widgets.management.starter_site import StarterSite
 
 
@@ -18,8 +20,9 @@ COMMAND_MODULE = 'website_widgets.management.commands.ww_doctor'
 
 class WwDoctorTestCase(SimpleTestCase):
     """
-    A temp website app holding the starter's package.json, every build tool in node_modules and a
-    built bundle, with node 22 and npm 10 on the PATH, so each test breaks one thing.
+    A temp website app holding the starter's package.json, every build tool and the npm package in
+    node_modules and a built bundle, with node 22 and npm 10 on the PATH, so each test breaks one
+    thing.
     """
 
     def setUp(self):
@@ -31,6 +34,7 @@ class WwDoctorTestCase(SimpleTestCase):
         self.write(self.starter_site.file('package.json'), 'package.json')
         for name in ('css-loader', 'mini-css-extract-plugin', 'sass', 'sass-loader', 'ts-loader', 'typescript', 'webpack', 'webpack-cli'):
             os.makedirs(os.path.join(self.app_folder, 'node_modules', name))
+        self.install_npm_package(NpmPackage.range_minimum().as_text())
 
         self.mock_apps = self.enterContext(patch(f'{COMMAND_MODULE}.apps'))
         self.mock_apps.get_app_config.return_value = SimpleNamespace(path=self.app_folder)
@@ -54,6 +58,11 @@ class WwDoctorTestCase(SimpleTestCase):
     def write(self, content: str, *path_parts: str):
         with open(os.path.join(self.app_folder, *path_parts), 'w', encoding='utf-8') as file:
             file.write(content)
+
+    def install_npm_package(self, version: str):
+        folder = os.path.join(self.app_folder, 'node_modules', NpmPackage.NAME)
+        os.makedirs(folder, exist_ok=True)
+        self.write(json.dumps({'name': NpmPackage.NAME, 'version': version}), 'node_modules', NpmPackage.NAME, 'package.json')
 
     def run_doctor(self) -> str:
         """The checklist printed; the exit status is kept as `self.exit_code`."""
@@ -169,6 +178,15 @@ class WwDoctorTestCase(SimpleTestCase):
 
         self.assertIn('node_modules/ lacks ts-loader', output)
         self.assertIn('run: npm install', output)
+
+    def test_doctor__says_to_install_the_npm_package__when_installed_version_is_outside_the_range(self):
+        self.install_npm_package('0.9.0')
+
+        output = self.run_doctor()
+
+        self.assertIn(f'is 0.9.0, outside {NpmPackage.RANGE}', output)
+        self.assertIn(NpmPackage.install_command(), output)
+        self.assertEqual(self.exit_code, 1)
 
     def test_doctor__says_to_build__when_bundle_is_not_built(self):
         self.built_files = {'bundled-styles.css'}

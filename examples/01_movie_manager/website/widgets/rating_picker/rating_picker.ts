@@ -1,4 +1,4 @@
-import { Controller } from "../../ts/website_widgets/controller";
+import { Controller } from "django-website-widgets";
 
 class Elements {
     select: HTMLSelectElement | null = null;

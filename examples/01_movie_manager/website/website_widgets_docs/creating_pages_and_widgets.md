@@ -122,9 +122,9 @@ which line to add by hand.
 
 ## What it needs first
 
-- **The framework files.** A generated controller imports `App` and `Controller` from
-  `ts/website_widgets/`, so the command stops, pointing at `ww_upgrade`, when
-  `app.ts` or `controller.ts` isn't there.
+- **The npm package, to build.** A generated controller imports `Controller` from
+  `django-website-widgets`, the npm package `package.json` depends on. The command writes the
+  file either way; the build needs the package installed (`ww_doctor` checks it).
 - **A page base class, for a page.** A generated page subclasses the class at
   `GenerateComponentConfig.app_page_class`, which defaults to
   `<website_app_name>.pages.app_page.AppPage`, where `ww_create_app`'s starter site puts it
@@ -170,7 +170,6 @@ something in an HTML template and `${...}` in TypeScript:
 | `__ClassName__` | `LikeButton` |
 | `__module_name__` | `like_button` |
 | `__css_name__` | `like-button`, the root element's id and class |
-| `__framework_path__` | the relative import path to `ts/website_widgets`, such as `../../ts/website_widgets` |
 | `__app_page_module__`, `__AppPageClass__` | the two halves of `app_page_class`, in the page templates |
 | `__route__` | the page's route, in the page templates' `@register_url('__route__')` |
 

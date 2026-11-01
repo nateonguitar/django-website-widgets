@@ -94,11 +94,11 @@ class WwCreateWidgetTestCase(ComponentTestCase):
             "export { LikeButtonController } from '../widgets/like_button/like_button';\n",
             main_ts)
 
-    def test_create_widget__imports_framework_relative_to_depth__when_name_is_nested(self):
+    def test_create_widget__imports_controller_from_the_npm_package__when_name_is_nested(self):
         self.create_widget('dialogs/login_dialog', '--tscontroller', '--no-stylesheet')
 
         controller_ts = self.read(self.app_folder, 'widgets', 'dialogs', 'login_dialog', 'login_dialog.ts')
-        self.assertIn('from "../../../ts/website_widgets/controller"', controller_ts)
+        self.assertIn('import { Controller } from "django-website-widgets";', controller_ts)
         self.assertIn(
             "export { LoginDialogController } from '../widgets/dialogs/login_dialog/login_dialog';",
             self.read(self.app_folder, 'ts', 'main.ts'))
@@ -142,12 +142,6 @@ class WwCreateWidgetTestCase(ComponentTestCase):
             '<script type="module" nonce="{{ page.nonce }}">LikeButton</script>\n')
         self.assertIn('class LikeButton(AsyncWidget):', self.read(folder, 'like_button.py'))
         self.assertIn('export class LikeButtonController', self.read(folder, 'like_button.ts'))
-
-    def test_create_widget__fails_pointing_at_upgrade__when_framework_files_are_missing(self):
-        os.remove(os.path.join(self.app_folder, 'ts', 'website_widgets', 'controller.ts'))
-
-        with self.assertRaisesMessage(CommandError, 'ww_upgrade'):
-            self.create_widget('like_button', '--tscontroller', '--no-stylesheet')
 
     def test_create_widget__fails__when_folder_exists(self):
         os.makedirs(os.path.join(self.app_folder, 'widgets', 'like_button'))

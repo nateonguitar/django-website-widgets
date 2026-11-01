@@ -7,7 +7,7 @@ They're the package's docs for the version installed, kept beside your code so t
 match it, and running `ww_upgrade` after an upgrade overwrites them. Commit this folder, so an
 upgrade shows up as a diff of what changed in the docs. A system check warns when this folder is
 from another version than the installed package. Nothing here is imported or served; the
-framework TypeScript is in the app's other managed folder, `ts/website_widgets/`.
+framework TypeScript is the npm package `django-website-widgets`, which `package.json` depends on.
 
 Start at `AGENTS.md`: the index of the other docs here, one line each, and the rules every change
 follows. Point AI coding assistants at it from the project's `CLAUDE.md` or `AGENTS.md`.

@@ -10,7 +10,7 @@ from django.utils.regex_helper import normalize
 
 from website_widgets.config import WebsiteWidgetsConfig, get_config
 from website_widgets.management.component_files import ComponentFiles, ComponentName, WrittenFile
-from website_widgets.management.framework_folder import FrameworkFolder, TypeScriptFolder
+from website_widgets.management.framework_folder import FrameworkFolder
 from website_widgets.page_routes import PageRoute, PageRoutes
 from website_widgets.web_page import AsyncWebPage, _WebPage
 
@@ -61,7 +61,6 @@ class Command(BaseCommand):
             stdout=self.stdout,
             stderr=self.stderr)
         app_folder = files.website_app_folder(config.website_app_name)
-        files.require_framework_files(app_folder)
         # Checked before anything is written, so a missing base class leaves no half-made page.
         page_base_class = self._page_base_class(config)
 
@@ -78,12 +77,10 @@ class Command(BaseCommand):
         if routed:
             self._check_route_is_free(route, name)
 
-        framework_folder = os.path.join(app_folder, TypeScriptFolder.RELATIVE_PATH)
         replacements = {
             '__ClassName__': name.class_name,
             '__module_name__': name.module_name,
             '__css_name__': name.css_name,
-            '__framework_path__': files.relative_import_path(framework_folder, page_folder),
             '__app_page_module__': page_base_class.module_path,
             '__AppPageClass__': page_base_class.class_name,
             '__route__': route,

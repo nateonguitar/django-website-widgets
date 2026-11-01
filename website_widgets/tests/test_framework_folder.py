@@ -6,7 +6,7 @@ from unittest.mock import patch
 
 from django.test import SimpleTestCase
 
-from website_widgets.management.framework_folder import DocsFolder, FrameworkFolder, TypeScriptFolder
+from website_widgets.management.framework_folder import DocsFolder, FrameworkFolder
 
 
 class CheckVersionStampTestCase(SimpleTestCase):
@@ -31,25 +31,17 @@ class CheckVersionStampTestCase(SimpleTestCase):
             file.write(f'# A managed folder\n\nCopied from django-website-widgets {version} by `ww_upgrade`.\n')
 
     def test_check_version_stamp__warns_naming_both_versions__when_folder_is_from_another_version(self):
-        self.write_readme(TypeScriptFolder, '0.0.1')
-        self.write_readme(DocsFolder, self.installed)
+        self.write_readme(DocsFolder, '0.0.1')
 
         warnings = FrameworkFolder.check_version_stamp()
 
         self.assertEqual([warning.id for warning in warnings], ['website_widgets.W001'])
-        self.assertIn('ts/website_widgets/', warnings[0].msg)
+        self.assertIn('website_widgets_docs/', warnings[0].msg)
         self.assertIn('0.0.1', warnings[0].msg)
         self.assertIn(self.installed, warnings[0].msg)
         self.assertIn('ww_upgrade', warnings[0].hint)
 
-    def test_check_version_stamp__warns_once_per_folder__when_both_are_from_another_version(self):
-        self.write_readme(TypeScriptFolder, '0.0.1')
-        self.write_readme(DocsFolder, '0.0.1')
-
-        self.assertEqual(len(FrameworkFolder.check_version_stamp()), 2)
-
-    def test_check_version_stamp__passes__when_folders_match_the_installed_version(self):
-        self.write_readme(TypeScriptFolder, self.installed)
+    def test_check_version_stamp__passes__when_folder_matches_the_installed_version(self):
         self.write_readme(DocsFolder, self.installed)
 
         self.assertEqual(FrameworkFolder.check_version_stamp(), [])

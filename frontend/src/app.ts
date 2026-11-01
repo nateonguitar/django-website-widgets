@@ -1,4 +1,4 @@
-import { Controller } from "./controller";
+import { Controller } from "./controller.js";
 
 export class App {
     // Keyed on the class itself: production builds minify class names, so two

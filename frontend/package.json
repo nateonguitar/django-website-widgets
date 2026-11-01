@@ -1,0 +1,45 @@
+{
+  "name": "django-website-widgets",
+  "version": "1.0.0-rc.1",
+  "description": "The frontend half of django-website-widgets: controllers for server-rendered Django widgets, started from the templates that render them.",
+  "keywords": [
+    "django",
+    "widgets",
+    "controllers",
+    "server-rendered"
+  ],
+  "homepage": "https://github.com/nateonguitar/django-website-widgets",
+  "bugs": {
+    "url": "https://github.com/nateonguitar/django-website-widgets/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nateonguitar/django-website-widgets.git",
+    "directory": "frontend"
+  },
+  "license": "MIT",
+  "author": "Nate Brooks",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "src",
+    "CHANGELOG.md"
+  ],
+  "sideEffects": false,
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "prepare": "npm run build"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.3"
+  }
+}

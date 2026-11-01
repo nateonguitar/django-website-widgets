@@ -1,4 +1,4 @@
-import { Controller } from "../../ts/website_widgets/controller";
+import { Controller } from "django-website-widgets";
 import { ApiError } from "../../ts/api/api-service";
 import { RentalApiService } from "../../ts/api/rental-api-service";
 import { Cart, CartItem } from "../../ts/cart";

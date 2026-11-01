@@ -1,5 +1,6 @@
 import importlib
 import io
+import json
 import os
 import sys
 import tempfile
@@ -14,6 +15,7 @@ from django.urls import include, path
 
 from website_widgets import PageRoutes
 from website_widgets.config import WebsiteWidgetsConfig
+from website_widgets.management.npm_package import NpmPackage
 from website_widgets.management.starter_site import StarterSite
 
 
@@ -145,15 +147,23 @@ class StarterSiteTestCase(SimpleTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn('<h1>AboutPage</h1>', response.content.decode())
 
-    def test_starter_site__upgrade_overwrites_framework_and_leaves_starter_files__when_both_were_edited(self):
-        self.write('// edited\n', 'ts', 'website_widgets', 'controller.ts')
+    def test_starter_site__upgrade_overwrites_docs_and_leaves_starter_files__when_both_were_edited(self):
+        self.write('# edited\n', 'website_widgets_docs', 'routing.md')
         self.write('# mine\n', 'pages', 'home_page', 'home_page.py')
 
         output = self.run_upgrade()
 
-        self.assertNotEqual(self.read('ts', 'website_widgets', 'controller.ts'), '// edited\n')
+        self.assertNotEqual(self.read('website_widgets_docs', 'routing.md'), '# edited\n')
         self.assertEqual(self.read('pages', 'home_page', 'home_page.py'), '# mine\n')
-        self.assertIn('changed    controller.ts', output)
+        self.assertIn('changed    routing.md', output)
+
+    def test_starter_site__imports_the_framework_from_the_npm_package__when_created(self):
+        main_ts = self.read('ts', 'main.ts')
+        package_json = json.loads(self.read('package.json'))
+
+        self.assertIn("export { App, Controller, Completer } from 'django-website-widgets';", main_ts)
+        self.assertEqual(package_json['dependencies'][NpmPackage.NAME], NpmPackage.RANGE)
+        self.assertFalse(os.path.exists(os.path.join(self.app_folder, 'ts', 'website_widgets')))
 
     def test_starter_site__upgrade_says_nothing_about_build_files__when_they_are_unchanged(self):
         output = self.run_upgrade()

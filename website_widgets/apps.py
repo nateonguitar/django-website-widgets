@@ -10,6 +10,7 @@ class WebsiteWidgetsConfig(AppConfig):
         from django.utils.autoreload import autoreload_started
 
         from website_widgets.management.framework_folder import FrameworkFolder
+        from website_widgets.management.npm_package import NpmPackage
         from website_widgets.page_routes import PageRoutes
 
         autoreload_started.connect(PageRoutes.watch_pages_folder, dispatch_uid='website_widgets.watch_pages_folder')
@@ -17,3 +18,4 @@ class WebsiteWidgetsConfig(AppConfig):
         checks.register(PageRoutes.check_pages_are_routed, checks.Tags.urls)
         checks.register(PageRoutes.check_for_ties, checks.Tags.urls)
         checks.register(FrameworkFolder.check_version_stamp)
+        checks.register(NpmPackage.check_installed_version)

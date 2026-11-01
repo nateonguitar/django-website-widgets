@@ -8,9 +8,16 @@ SCSS and webpack, a Django Ninja API and real sign-in.
 ```bash
 poetry install
 poetry run python manage.py migrate
+(cd ../../frontend && npm ci)
 cd website && npm install && npm run build && cd ..
 poetry run python manage.py runserver
 ```
+
+`website/package.json` depends on this repository's `frontend/`, the npm package
+`django-website-widgets`, by path (`file:../../../frontend`), as `pyproject.toml` depends on the
+Python package, so the example runs both halves from the same commit. npm builds that folder when
+it installs it, with the folder's own TypeScript, hence `npm ci` there first. A project of your
+own depends on the published npm package instead.
 
 Then open http://localhost:8000/ and sign in as `alex`, `jordan` or `sam`, password
 `try-the-widgets`. `sam` is also a superuser, for `/admin/`. The site and the admin share

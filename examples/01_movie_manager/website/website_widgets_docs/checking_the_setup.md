@@ -20,7 +20,8 @@ subprocesses, no network.
 | `website_widgets.E001` | two equally specific routes can match the same URL | see `routing.md` |
 | `website_widgets.E002` | the project root holds the website app's folder (one with an `apps.py`, as `ww_create_app` writes it), but the app isn't in `INSTALLED_APPS` | add it to `INSTALLED_APPS` |
 | `website_widgets.E003` | the website app has pages with `@register_url`, but no URL pattern includes `PageRoutes.urls()`, so all of them would 404 | `path('', include('<app>.urls'))`, or `path('', PageRoutes.urls())` |
-| `website_widgets.W001` | a managed folder, `website_widgets_docs/` or `ts/website_widgets/`, is from another package version than the installed one | `ww_upgrade`, see `creating_and_upgrading_an_app.md` |
+| `website_widgets.W001` | the managed folder, `website_widgets_docs/`, is from another package version than the installed one | `ww_upgrade`, see `creating_and_upgrading_an_app.md` |
+| `website_widgets.W002` | the npm package in the app's `node_modules/` is outside `NpmPackage.RANGE`, the range the installed Python package works with | `npm install django-website-widgets@"<range>"` in the app's folder |
 
 E002 and E003 catch the next steps `ww_create_app` prints and leaves to the developer, so a
 skipped one fails with its fix instead of as a 404. Both stay quiet for a project using only the
@@ -58,7 +59,10 @@ In order:
 5. **`package.json` has what the starter site's build needs**, the same check `ww_upgrade` runs
    (below).
 6. **`node_modules/` holds each build tool**, so `npm install` has run.
-7. **The bundle is built:** Django's static finders find `main.js` and `bundled-styles.css`, the
+7. **The npm package is installed, inside `NpmPackage.RANGE`**, the range the installed Python
+   package works with, read from `node_modules/django-website-widgets/package.json`. The fix is
+   the install command naming that range.
+8. **The bundle is built:** Django's static finders find `main.js` and `bundled-styles.css`, the
    names the starter's webpack config writes and the templates load.
 
 It ends with the number of problems found, and exits with status 1 when there are any, as
@@ -69,9 +73,13 @@ missing from a container, and for an AI assistant helping them: one command repo
 
 ## The `package.json` check
 
-Each build tool the starter site's `package.json` lists must be declared, in `devDependencies`
-or `dependencies`, with a range whose minimum is at least the starter's (`^5.97.1` is below
-`^5.110.2`). A range with no version to compare, such as `latest` or a git URL, passes. The
-`build` and `watch` scripts must exist, since a build and `start_npm_watch()` run them. The check
-never edits the file: it prints `npm install --save-dev <name>@<range> ...` for the tools, and
-the line to add for each script.
+The npm package `django-website-widgets` must be declared with a range whose minimum is at least
+`NpmPackage.RANGE`'s; a spec naming a folder or git, such as the examples'
+`file:../../../frontend`, passes. Each build tool the starter site's `package.json` lists must be
+declared, in `devDependencies` or `dependencies`, with a range whose minimum is at least the
+starter's (`^5.97.1` is below `^5.110.2`). A range with no version to compare, such as `latest`
+or a git URL, passes. The `build` and `watch` scripts must exist, since a build and
+`start_npm_watch()` run them. The check never edits the file: it prints
+`npm install django-website-widgets@"<range>"` for the npm package,
+`npm install --save-dev <name>@<range> ...` for the tools, and the line to add for each script.
+`ww_upgrade` sets the npm package's range itself before running the check.

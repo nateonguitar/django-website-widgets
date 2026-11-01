@@ -4,20 +4,24 @@ The framework's TypeScript: `Controller`, the base class of every page and widge
 `App`, which starts controllers and holds the singleton registry, and `Completer`. Read this
 before writing a controller, or when two controllers need to talk to each other.
 
-Primary code, in the app's `ts/website_widgets/`:
+Primary code, the npm package `django-website-widgets`, which the app's `package.json` depends
+on and its controllers import from (`import { Controller } from "django-website-widgets"`). Its
+sources ship beside the compiled code, in the app's `node_modules/django-website-widgets/src/`:
 - `controller.ts` — `Controller`
 - `app.ts` — `App`: `initController()`, `registerSingleton()`, `getSingleton()`
 - `completer.ts` — `Completer`
-- `README.md` — the don't-edit notice, the package version and the list of files the package wrote
 
-## The files belong to the package
+## The code belongs to the package
 
-**Never edit the framework's TypeScript files.** They are the package's code, copied into the
-project by `ww_create_app` and `ww_upgrade` only because a bundler needs them in the project
-tree. Running `ww_upgrade` after a package upgrade overwrites them, so an edit is lost; with the
-folder committed, the diff shows what it replaced. A project changes behaviour by
-subclassing `Controller` or `App` in its own files. A project's own frontend state, such as the
-logged-in user or feature flags, lives in its own classes, never on `App`.
+**The framework's TypeScript is a dependency, not project code.** It comes from npm, at the range
+the installed Python package works with (`creating_and_upgrading_an_app.md`), so an upgrade is a
+version change, never an edit. A project changes behaviour by subclassing `Controller` or `App`
+in its own files. A project's own frontend state, such as the logged-in user or feature flags,
+lives in its own classes, never on `App`.
+
+**A bundle holds one copy of the package.** `App` keeps the singleton registry on the class, so
+two copies would mean two registries, and a controller registered in one could never be found
+from the other. The app's `package.json` depends on it once; npm installs one copy.
 
 ## A controller's lifecycle
 

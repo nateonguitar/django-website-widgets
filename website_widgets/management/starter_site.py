@@ -1,5 +1,6 @@
 import os
 
+from website_widgets.management.npm_package import NpmPackage
 
 PACKAGE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -50,4 +51,5 @@ class StarterSite:
         return content \
             .replace('__app_label__', self.app_label) \
             .replace('__AppConfigClass__', config_class_name) \
-            .replace('__npm_package_name__', npm_package_name)
+            .replace('__npm_package_name__', npm_package_name) \
+            .replace('__npm_package_range__', NpmPackage.RANGE)

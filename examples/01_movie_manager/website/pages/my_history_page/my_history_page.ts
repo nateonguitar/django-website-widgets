@@ -1,4 +1,4 @@
-import { Controller } from "../../ts/website_widgets/controller";
+import { Controller } from "django-website-widgets";
 import { Theme } from "../../ts/theme";
 // Types only: erased from the build, so main.js still doesn't contain Chart.js.
 import type { Chart } from "chart.js";

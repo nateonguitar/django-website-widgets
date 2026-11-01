@@ -1,6 +1,4 @@
-import { App } from "./website_widgets/app";
-import { Completer } from "./website_widgets/completer";
-import { Controller } from "./website_widgets/controller";
+import { App, Completer, Controller } from "django-website-widgets";
 
 /**
  * The base of a dialog its caller awaits:

@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from django.apps import apps
 from django.core.management.base import CommandError, OutputWrapper
 
-from website_widgets.management.framework_folder import FrameworkFolder, TypeScriptFolder
+from website_widgets.management.framework_folder import FrameworkFolder
 
 
 PACKAGE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -68,7 +68,6 @@ class ComponentFiles:
     """
 
     TEMPLATES_DIR = os.path.join(PACKAGE_DIR, 'generator_templates')
-    FRAMEWORK_FILES = ('app.ts', 'controller.ts')
 
     def __init__(
         self,
@@ -95,18 +94,6 @@ class ComponentFiles:
     def website_app_module(app_label: str) -> str:
         """The website app's module, which its label need not match."""
         return apps.get_app_config(app_label).name
-
-    def require_framework_files(self, app_folder: str):
-        """Stops when the framework TypeScript a generated controller imports isn't there."""
-        framework_folder = os.path.join(app_folder, TypeScriptFolder.RELATIVE_PATH)
-        missing = [
-            filename for filename in self.FRAMEWORK_FILES
-            if not os.path.isfile(os.path.join(framework_folder, filename))
-        ]
-        if missing:
-            raise CommandError(
-                f'{FrameworkFolder.display_path(framework_folder)} has no {", ".join(missing)}. Run '
-                f'`python manage.py ww_upgrade` first: generated controllers import them.')
 
     def ask_yes_no(
         self,

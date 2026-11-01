@@ -1,6 +1,4 @@
-import { App } from "../../ts/website_widgets/app";
-import { Completer } from "../../ts/website_widgets/completer";
-import { Controller } from "../../ts/website_widgets/controller";
+import { App, Completer, Controller } from "django-website-widgets";
 import { Cart } from "../../ts/cart";
 
 class Elements {

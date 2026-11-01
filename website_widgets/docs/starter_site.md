@@ -11,8 +11,8 @@ Primary code:
 - `website_widgets.management.commands.ww_create_app` — the command that calls it
 
 **Every starter file is yours from the moment it's written.** The package never touches one
-again: `ww_upgrade` keeps only its two managed folders up to date, and checks the build files
-(below). Edit, rename or delete them freely.
+again: `ww_upgrade` keeps only its managed docs folder up to date, sets the npm package's range
+in `package.json`, and checks the build files (below). Edit, rename or delete them freely.
 
 ## The files
 
@@ -37,10 +37,11 @@ again: `ww_upgrade` keeps only its two managed folders up to date, and checks th
 │   ├── app-state.ts        AppState: data every page shares
 │   ├── app-urls.ts         AppUrls: the URLs the frontend reads
 │   ├── styles.scss         styles every page shares
-│   ├── web-components/loading-spinner.ts and .scss
-│   └── website_widgets/    the framework TypeScript, managed by the package, not yours
+│   └── web-components/loading-spinner.ts and .scss
 ├── website_widgets_docs/   the package's docs and AGENTS.md, managed by the package, not yours
-├── package.json, webpack.config.js, tsconfig.json
+├── package.json            depends on the npm package django-website-widgets (the framework
+│                           TypeScript) and the build tools
+├── webpack.config.js, tsconfig.json
 └── .gitignore              node_modules/
 ```
 

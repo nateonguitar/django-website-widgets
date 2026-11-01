@@ -1,10 +1,16 @@
 # Node and package managers
 
-The frontend `ww_create_app` writes is built by npm: `npm install` for the build tools, `npm run
-build` or `npm run build:production` for the bundle, and `npm run watch`, which
-`start_npm_watch()` starts beside `runserver` (`npm_watch.md`). Read this when Node isn't
-installed, or when a project uses yarn, pnpm or another package manager. `ww_doctor` says which
-is the case (`checking_the_setup.md`).
+The frontend `ww_create_app` writes is built by npm: `npm install` for the npm package
+`django-website-widgets` (the framework TypeScript) and the build tools, `npm run build` or
+`npm run build:production` for the bundle, and `npm run watch`, which `start_npm_watch()` starts
+beside `runserver` (`npm_watch.md`). Read this when Node isn't installed, or when a project uses
+yarn, pnpm or another package manager. `ww_doctor` says which is the case
+(`checking_the_setup.md`).
+
+**Upgrading the npm package** follows the Python package: after a Python upgrade, `ww_upgrade`
+sets the npm package's range in `package.json` to the one the new release works with, and
+`npm install` then installs it. To take a newer npm release inside that range without a Python
+upgrade, run `npm update django-website-widgets`.
 
 ## Installing Node
 

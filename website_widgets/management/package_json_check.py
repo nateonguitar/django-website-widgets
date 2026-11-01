@@ -3,6 +3,7 @@ import os
 import re
 from dataclasses import dataclass, field
 
+from website_widgets.management.npm_package import NpmPackage, NpmVersion
 from website_widgets.management.starter_site import StarterSite
 
 
@@ -16,15 +17,23 @@ class PackageJsonFixes:
     packages_to_install: list[str] = field(default_factory=list)
     # The starter's command for each script it needs and the file lacks.
     missing_scripts: dict[str, str] = field(default_factory=dict)
+    # Set when the npm package is missing, or asked for below the range the Python package works with.
+    npm_package_out_of_range: bool = False
 
     def is_empty(self) -> bool:
-        return self.error is None and not self.packages_to_install and not self.missing_scripts
+        return (
+            self.error is None
+            and not self.packages_to_install
+            and not self.missing_scripts
+            and not self.npm_package_out_of_range)
 
     def fix_lines(self, shown_folder: str) -> list[str]:
         """One line per fix, each something to run or add by hand."""
         if self.error is not None:
             return [self.error]
         lines = []
+        if self.npm_package_out_of_range:
+            lines.append(f'In {shown_folder}/, run: {NpmPackage.install_command()}')
         if self.packages_to_install:
             packages = ' '.join(self.packages_to_install)
             lines.append(f'In {shown_folder}/, run: npm install --save-dev {packages}')
@@ -35,10 +44,11 @@ class PackageJsonFixes:
 
 class PackageJsonCheck:
     """
-    Checks a website app's `package.json` against the starter site's: every build tool the starter
-    lists, declared with at least the starter's minimum version, and the scripts
-    `start_npm_watch()` and a build run. It never edits the file, since developers add their own
-    dependencies to it; `ww_upgrade` and `ww_doctor` print the fixes instead.
+    Checks a website app's `package.json` against the starter site's: the npm package at the range
+    the Python package works with, every build tool the starter lists, declared with at least the
+    starter's minimum version, and the scripts `start_npm_watch()` and a build run. It edits
+    nothing; `ww_upgrade` sets the npm package's range itself (`BuildFiles`), and prints the rest
+    as fixes, as `ww_doctor` does.
     """
 
     REQUIRED_SCRIPTS = ('build', 'watch')
@@ -86,7 +96,22 @@ class PackageJsonCheck:
         }
         return PackageJsonFixes(
             packages_to_install=packages_to_install,
-            missing_scripts=missing_scripts)
+            missing_scripts=missing_scripts,
+            npm_package_out_of_range=self._npm_package_out_of_range(package_json))
+
+    def _npm_package_out_of_range(self, package_json: dict) -> bool:
+        """
+        Whether the npm package is missing, or asked for below the range the Python package works
+        with. A spec naming a folder or git, as the examples' `file:` one does, is the
+        developer's choice and passes.
+        """
+        spec = NpmPackage.declared_spec(package_json)
+        if spec is None:
+            return True
+        if not NpmPackage.is_registry_spec(spec):
+            return False
+        declared_minimum = NpmVersion.parse(spec.lstrip('^~=v> '))
+        return declared_minimum is not None and not declared_minimum.is_at_least(NpmPackage.range_minimum())
 
     @classmethod
     def minimum_version(cls, version_range: str) -> tuple[int, int, int] | None:

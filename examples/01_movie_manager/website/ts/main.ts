@@ -6,9 +6,7 @@ import './styles.scss';
 import './web-components/loading-spinner.scss';
 import { LoadingSpinner } from './web-components/loading-spinner';
 
-export { App } from './website_widgets/app';
-export { Controller } from './website_widgets/controller';
-export { Completer } from './website_widgets/completer';
+export { App, Controller, Completer } from 'django-website-widgets';
 export { AppState } from './app-state';
 export { AppUrls } from './app-urls';
 export { Cart } from './cart';

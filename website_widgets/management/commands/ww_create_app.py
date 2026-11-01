@@ -12,8 +12,8 @@ from website_widgets.management.starter_site import StarterSite
 class Command(BaseCommand):
     help = (
         "Creates the website app named by WEBSITE_WIDGETS.website_app_name ('website' by default): "
-        "a working starter site, its build files, and the two folders the package manages: the "
-        "framework's TypeScript in ts/website_widgets/ and the package's docs in "
+        "a working starter site, its build files, with package.json depending on the npm package "
+        "django-website-widgets, and the folder the package manages: its docs in "
         "website_widgets_docs/. Lists the files and asks before writing. To upgrade an app that "
         "exists, run ww_upgrade.")
 
@@ -126,12 +126,13 @@ class Command(BaseCommand):
             '  3. In manage.py, call start_npm_watch() (from website_widgets) after '
             'DJANGO_SETTINGS_MODULE is set, so runserver rebuilds the TypeScript and SCSS as '
             'you edit them.\n'
-            f'  4. In {shown_folder}/, run npm install, for webpack and the rest of the build.\n'
+            f'  4. In {shown_folder}/, run npm install, for the npm package django-website-widgets, '
+            f'webpack and the rest of the build.\n'
             '  5. Run python manage.py runserver and open the home page.\n'
             'Other helpful management commands:\n'
             '  ww_create_page <name>     write a new page\'s files and add it to ts/main.ts\n'
             '  ww_create_widget <name>   write a new widget\'s files and add it to ts/main.ts\n'
             '  ww_show_routes            list every page\'s URL, in the order Django tries them\n'
             '  ww_doctor                 check the setup and print a fix for each problem\n'
-            f'  ww_upgrade                update {shown_folder}/website_widgets_docs/ and '
-            f'{shown_folder}/ts/website_widgets/ after upgrading the package')
+            f'  ww_upgrade                update {shown_folder}/website_widgets_docs/ and the npm '
+            f'package\'s range in package.json after upgrading the package')
