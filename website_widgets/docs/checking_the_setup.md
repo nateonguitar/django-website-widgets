@@ -34,7 +34,7 @@ Everything a system check shouldn't do on every command, as a checklist in the s
 `flutter doctor`: a line per check, and under each failing one, how to fix it.
 
 ```
-Checking the setup for django-website-widgets 0.11.0:
+Checking the setup for django-website-widgets 1.0.0:
 [✓] The package's system checks pass
 [✓] The website app 'website' is installed, at website/
 [✗] node is not on the PATH, so nothing builds the TypeScript or SCSS
