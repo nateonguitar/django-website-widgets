@@ -1,9 +1,9 @@
-from website_widgets import Widget
+from website_widgets import SyncWidget
 
 from api.models import Rental
 
 
-class CheckoutReceipt(Widget):
+class CheckoutReceipt(SyncWidget):
     """The checkout receipt's own part: what someone just took home, and where to bring it back."""
 
     def __init__(self, username: str, rentals: list[Rental]):

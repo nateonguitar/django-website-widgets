@@ -11,8 +11,8 @@ widget whose template is the whole document, taking the one email's own part as 
 constructor:
 
 ```python
-class EmailDocument(Widget):
-    def __init__(self, subject: str, site_url: str, content: Widget):
+class EmailDocument(SyncWidget):
+    def __init__(self, subject: str, site_url: str, content: SyncWidget):
         super().__init__()
         self.subject = subject
         self.site_url = site_url

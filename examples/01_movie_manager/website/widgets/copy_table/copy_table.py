@@ -1,10 +1,10 @@
-from website_widgets import Widget
+from website_widgets import SyncWidget
 
 from api.models import Copy
 from website.widgets.copy_table_row import CopyTableRow
 
 
-class CopyTable(Widget):
+class CopyTable(SyncWidget):
     """
     Each copy of a movie, when it arrived and where it is. Rendered by MoviePage, and by the
     Movie admin's change page with render(), so its copies come in through the constructor: each

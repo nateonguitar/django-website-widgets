@@ -1,10 +1,10 @@
-from website_widgets import Widget
+from website_widgets import AsyncWidget
 
 from api.models import Rental
 from website.widgets.timestamp import Timestamp
 
 
-class RentalRow(Widget):
+class RentalRow(AsyncWidget):
     """One movie the signed-in user has out, with the button that returns it."""
 
     def __init__(

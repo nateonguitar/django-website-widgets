@@ -1,10 +1,10 @@
-from website_widgets import Widget
+from website_widgets import SyncWidget
 
 from api.models import Rental
 from website.widgets.timestamp import Timestamp, TimestampStyle
 
 
-class WhoHasWhatRow(Widget):
+class WhoHasWhatRow(SyncWidget):
     """One movie that's out, on the Who has what page: the movie, who has it, and for how long."""
 
     def __init__(self, rental: Rental, viewer_id: int):

@@ -1,10 +1,10 @@
-from website_widgets import Widget
+from website_widgets import SyncWidget
 
 from api.models import Copy
 from website.widgets.timestamp import Timestamp, TimestampStyle
 
 
-class CopyTableRow(Widget):
+class CopyTableRow(SyncWidget):
     """One copy in a CopyTable: its number, when it arrived, and where it is."""
 
     def __init__(self, copy: Copy, number: int, show_who: bool, viewer_id: int | None):

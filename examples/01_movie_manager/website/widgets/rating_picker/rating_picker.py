@@ -1,9 +1,9 @@
-from website_widgets import Widget
+from website_widgets import SyncWidget
 
 from api.models import MovieRating
 
 
-class RatingPicker(Widget):
+class RatingPicker(SyncWidget):
     """
     A rating <select> that says what the chosen rating means. Used by the add-to-inventory page,
     and by the Movie admin through RatingSelect, with the same controller in both: its template's

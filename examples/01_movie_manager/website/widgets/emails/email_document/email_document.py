@@ -1,16 +1,16 @@
-from website_widgets import Widget
+from website_widgets import SyncWidget
 
 from website.widgets.emails.email_footer import EmailFooter
 
 
-class EmailDocument(Widget):
+class EmailDocument(SyncWidget):
     """
     Every email's whole document, the way a document template is every page's: the <head>, one
     email's own part (its `content` widget), and the EmailFooter they all share. Rendered with
     render() and no request, since emails are sent from sync code.
     """
 
-    def __init__(self, subject: str, site_url: str, content: Widget):
+    def __init__(self, subject: str, site_url: str, content: SyncWidget):
         super().__init__()
         self.subject = subject
         self.site_url = site_url

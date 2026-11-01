@@ -2,7 +2,7 @@ from datetime import datetime, timedelta
 from enum import StrEnum
 
 from django.utils import timezone
-from website_widgets import Widget
+from website_widgets import SyncWidget
 
 
 class TimestampStyle(StrEnum):
@@ -14,7 +14,7 @@ class TimestampStyle(StrEnum):
     DURATION = 'duration'
 
 
-class Timestamp(Widget):
+class Timestamp(SyncWidget):
     """
     Every date the site shows, written one way: a <time> with the moment in its `datetime`, for
     screen readers and anything reading the page, the exact time on hover, and the text in one

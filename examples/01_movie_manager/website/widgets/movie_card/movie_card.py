@@ -1,9 +1,9 @@
-from website_widgets import Widget
+from website_widgets import AsyncWidget
 
 from api.models import Movie
 
 
-class MovieCard(Widget):
+class MovieCard(AsyncWidget):
     """
     One movie and how many copies are on the shelf, its title linking to its own page. For the
     pages that list movies its button adds the movie to the cart; for the add-to-inventory page

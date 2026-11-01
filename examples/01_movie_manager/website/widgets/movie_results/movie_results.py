@@ -1,10 +1,10 @@
-from website_widgets import Widget
+from website_widgets import AsyncWidget
 
 from api.models import Genre, Movie, MovieRating
 from website.widgets.movie_card import MovieCard
 
 
-class MovieResults(Widget):
+class MovieResults(AsyncWidget):
     """
     The movies matching a search, one `MovieCard` each. `FindMoviePage` renders it for the search
     in its URL, and the search endpoint renders it with `arender()` for every search after, so the

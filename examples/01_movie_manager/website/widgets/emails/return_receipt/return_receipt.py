@@ -1,9 +1,9 @@
-from website_widgets import Widget
+from website_widgets import SyncWidget
 
 from api.models import Rental
 
 
-class ReturnReceipt(Widget):
+class ReturnReceipt(SyncWidget):
     """The return receipt's own part: which movie went back on the shelf."""
 
     def __init__(self, username: str, rental: Rental):

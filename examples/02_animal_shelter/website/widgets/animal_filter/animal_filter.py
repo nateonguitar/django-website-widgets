@@ -1,7 +1,7 @@
-from website_widgets import Widget
+from website_widgets import SyncWidget
 
 
-class AnimalFilter(Widget):
+class AnimalFilter(SyncWidget):
     """The All, Dogs and Cats buttons. Filtering happens in the browser, in its template's script."""
 
     def __init__(self, animal_types: list[tuple[str, str]]):

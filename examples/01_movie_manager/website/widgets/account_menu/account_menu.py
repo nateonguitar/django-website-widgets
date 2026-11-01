@@ -1,7 +1,7 @@
-from website_widgets import Widget
+from website_widgets import SyncWidget
 
 
-class AccountMenu(Widget):
+class AccountMenu(SyncWidget):
     """
     The signed-in user's name in the appbar, and the dialog it opens: the theme and signing out.
     A child of `Appbar`, which builds it only when someone is signed in.

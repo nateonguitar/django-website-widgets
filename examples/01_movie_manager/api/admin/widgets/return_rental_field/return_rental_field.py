@@ -1,11 +1,11 @@
 from django.urls import reverse
-from website_widgets import Widget
+from website_widgets import SyncWidget
 
 from api.models import Rental
 from website.widgets.timestamp import Timestamp, TimestampStyle
 
 
-class ReturnRentalField(Widget):
+class ReturnRentalField(SyncWidget):
     """
     The Rental admin's "Returned" field: when the copy came back, or, while it's still out, a
     Return button that calls the same return endpoint the site's My movies page does. Only the

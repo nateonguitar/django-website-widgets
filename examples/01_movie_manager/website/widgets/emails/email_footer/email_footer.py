@@ -1,7 +1,7 @@
-from website_widgets import Widget
+from website_widgets import SyncWidget
 
 
-class EmailFooter(Widget):
+class EmailFooter(SyncWidget):
     """
     The footer every email ends with, identical in each, the way a company's emails share one.
     EmailDocument places it, so an email's own widget never repeats it. Its links come from

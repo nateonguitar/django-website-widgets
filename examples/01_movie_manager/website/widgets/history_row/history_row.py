@@ -1,10 +1,10 @@
-from website_widgets import Widget
+from website_widgets import SyncWidget
 
 from api.models import Rental
 from website.widgets.timestamp import Timestamp, TimestampStyle
 
 
-class HistoryRow(Widget):
+class HistoryRow(SyncWidget):
     """One movie the signed-in user took, on My history: when, when it came back, and for how long."""
 
     def __init__(self, rental: Rental):

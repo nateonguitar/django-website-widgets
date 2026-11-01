@@ -3,7 +3,7 @@
 What happens between a request arriving at a page and HTML going back out: the order the widget
 tree is built and rendered in, what a template can see, and where the async boundary sits. The
 package's [README](https://github.com/nateonguitar/django-website-widgets#readme) covers the
-shapes of `Widget`, `AsyncWebPage`, `SyncWebPage` and `WidgetContext`; this covers the order
+shapes of the widget and page classes and `WidgetContext`; this covers the order
 things run in, which is where the surprises are. Read this before overriding `handle_request()` or
 `build_response()`, or when a widget renders but its content is missing.
 
@@ -16,24 +16,28 @@ Primary code:
 - `website_widgets.widget_context` — `WidgetContext`
 - `website_widgets.config` — `WebsiteWidgetsConfig`, `get_config()`
 
-## Async and sync pages
+## Async and sync widgets and pages
 
-A page subclasses one of two classes, and nothing is called plain `WebPage`, so every page says
-which it is:
+A widget subclasses `AsyncWidget` or `SyncWidget`, and a page `AsyncWebPage` or `SyncWebPage`.
+Nothing is called plain `Widget` or `WebPage`, so every class says which kind it is, and all four
+share a private base, `_Widget`. An `AsyncWidget`'s `set_context()` is `async def`; a
+`SyncWidget`'s is plain `def`, or it has none, and it renders everywhere. For pages:
 
 - **`AsyncWebPage`**, the one to use, and what the starter site and `ww_create_page` write. Its
   `set_context()`, `handle_request()` and `build_response()` are `async def`, its view is an
   `async def` view, and it awaits the ORM's async methods (`await Movie.objects.aget(...)`). Its
-  widgets may be either kind: an `async def set_context()` is awaited, a plain one called.
+  widgets may be either kind: an `AsyncWidget`'s `set_context()` is awaited, a `SyncWidget`'s
+  called.
 - **`SyncWebPage`**, for a page with no async work and a team that would rather write the ORM as
   in any Django view. The same three methods are plain `def`, its view is a plain view, and it
-  runs with no event loop. Every widget in it must have a plain `set_context()`; an async one
-  raises `TypeError` when the page renders.
+  runs with no event loop. Every widget in it is a `SyncWidget`; an `AsyncWidget` raises
+  `TypeError` when the page renders.
 
-Each class checks its subclasses when they're defined (`__init_subclass__`): an `AsyncWebPage`
-with a `def set_context()`, or a `SyncWebPage` with an `async def` one, raises `TypeError` at
-import, naming the method and the fix. That check is what lets an override call `set_context()`
-directly. Subclassing the shared base, `_WebPage`, directly raises too.
+Each class checks its subclasses when they're defined (`__init_subclass__`): an `AsyncWidget` or
+`AsyncWebPage` with a `def set_context()`, or a `SyncWidget` or `SyncWebPage` with an `async def`
+one, raises `TypeError` at import, naming the method and the fix (a page checks
+`handle_request()` and `build_response()` too). That check is what lets an override call
+`set_context()` directly. Subclassing a private base, `_Widget` or `_WebPage`, raises too.
 
 ## One instance per request
 
@@ -83,15 +87,15 @@ constructor arguments, never up.
 
 **Pass 3 replaces the widgets with their HTML.** `_render_children_to_html()` renders children
 before their parent and then overwrites `self.context.children`: the dict's values stop being
-`Widget` objects and become `SafeText`. After this pass, `context.children` is no longer a tree.
+widget objects and become `SafeText`. After this pass, `context.children` is no longer a tree.
 
-A child value may be a `Widget`, a `list[Widget]`, or `None`:
+A child value may be a widget, a list of widgets, or `None`:
 
 | Value in `context.children` | Pass 1 | Pass 3 |
 |---|---|---|
-| `Widget` | initialized | rendered to `SafeText` |
-| `list` of `Widget` | each initialized | rendered to a list of `SafeText` |
-| `list` containing a non-`Widget` | `TypeError` | `TypeError` |
+| a widget | initialized | rendered to `SafeText` |
+| `list` of widgets | each initialized | rendered to a list of `SafeText` |
+| `list` containing a non-widget | `TypeError` | `TypeError` |
 | `None` | skipped | stays `None` |
 | anything else | silently skipped | `TypeError` |
 
@@ -239,7 +243,7 @@ not-found state keeps `project_page__not_found.html` beside `project_page.html` 
 there. The package's README suggests that `<module>__<variant>.html` naming.
 
 **The lookup walks the class hierarchy, the concrete class first.** `get_template_path()` checks
-the folder of each class in the MRO, skipping the library's own `Widget` and page classes, and returns
+the folder of each class in the MRO, skipping the library's own widget and page classes, and returns
 the first folder holding the file. A base class's variant, kept beside the base class's module,
 therefore works for every subclass, wherever the subclass lives; a subclass with a file of the same
 name shadows it. A name found nowhere raises `FileNotFoundError` listing the folders searched.
@@ -298,7 +302,7 @@ With a middleware that sets a loaded user, `self.context.page['user'] = request.
 
 **`context.children` changes type mid-pipeline.** Code that runs after `_render_children_to_html()`,
 such as a `build_response()` override doing work after `await super().build_response()`, sees
-`SafeText`, not `Widget`. Inspect the tree before rendering, not after.
+`SafeText`, not widgets. Inspect the tree before rendering, not after.
 
 **Configuration is read once per process.** `get_config()` caches `settings.WEBSITE_WIDGETS` on
 first use, so changing it afterwards, for example with `override_settings` in a test, has no

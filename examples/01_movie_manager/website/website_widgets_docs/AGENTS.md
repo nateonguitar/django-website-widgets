@@ -7,7 +7,7 @@ in the doc.
 ## Rules every change follows
 
 - **A page is an `AsyncWebPage` subclass (a `SyncWebPage` only for a page with no async work), a
-  component a `Widget` subclass,** each in its own folder with
+  component an `AsyncWidget` or `SyncWidget` subclass,** each in its own folder with
   its template beside its `.py` file and named after it (`info_card.py` renders
   `info_card.html`). Create one with `python manage.py ww_create_page` or `ww_create_widget`, not by hand. A variant render is `<name>__<variant>.html`, chosen by setting
   `template_filename` to a bare file name.
@@ -35,7 +35,7 @@ in the doc.
 - `routing.md` — routing a page by hand or with `@register_url`: discovery under `pages/` (and `runserver` reloading on a new page), the namespace and default names, most-specific-first ordering, the tie check, `ww_show_routes`
 - `frontend_controllers.md` — the framework TypeScript: why it is never edited, a controller's lifecycle and its selector, `setState()`, a controller's shape (`Elements` and its `findIn()`, extending a base controller's, `data-` attributes), element lookups, singletons and `Completer`, what `Controller` leaves to the project
 - `reverse_template.md` — `reverse_template()`: URL names into `/posts/{post_id}` templates for the frontend, why it reads the route, `param_names`, why it isn't called `reverse`
-- `creating_pages_and_widgets.md` — `ww_create_page` and `ww_create_widget`: the files they write, routing a new page (`__route__`, `--route`), single-use or repeating widgets (`--repeating`, `key=`), the root element and its selector, async or sync `set_context()` (`--async`/`--sync`, `widget_set_context`), registering in `main.ts`, what they need first, `app_page_class`, overriding their templates with `templates_dir`, the placeholders
+- `creating_pages_and_widgets.md` — `ww_create_page` and `ww_create_widget`: the files they write, routing a new page (`__route__`, `--route`), single-use or repeating widgets (`--repeating`, `key=`), the root element and its selector, `AsyncWidget` or `SyncWidget` (`--async`/`--sync`), registering in `main.ts`, what they need first, `app_page_class`, overriding their templates with `templates_dir`, the placeholders
 - `creating_and_upgrading_an_app.md` — `ww_create_app` and `ww_upgrade`: why the app's name comes only from settings, what each writes, the next steps, the build files an upgrade asks about or checks, the two managed folders file by file (these docs in `website_widgets_docs/`, the TypeScript in `ts/website_widgets/`), the version and file list in each README, what an upgrade deletes, the out-of-date warning, the docs pointer
 - `starter_site.md` — the site `ww_create_app` writes: each file's job, `AppPage` and its refusal exceptions, `AppState` vs `data-` attributes, `AppUrls` and why static URLs go through it, the REST-agnostic endpoint, the build files as the developer's to change
 - `checking_the_setup.md` — the package's system checks (E001–E003, W001) and their fixes, `ww_doctor`'s checklist, the `package.json` check

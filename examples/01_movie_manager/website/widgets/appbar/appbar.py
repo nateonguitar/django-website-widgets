@@ -1,9 +1,9 @@
-from website_widgets import Widget
+from website_widgets import AsyncWidget
 
 from website.widgets.account_menu import AccountMenu
 
 
-class Appbar(Widget):
+class Appbar(AsyncWidget):
     """
     The bar at the top of every page: the links, the cart's count, and either the signed-in
     user's `AccountMenu` or a link to sign in.
