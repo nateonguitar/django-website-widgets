@@ -20,13 +20,6 @@ class WebsiteWidgetsConfigTestCase(SimpleTestCase):
         self.assertEqual(config.generate_component.get_app_page_class('website'), 'mysite.pages.base.BasePage')
         self.assertEqual(config.generate_component.templates_dir, '/srv/generator_templates')
 
-    def test_widget_set_context__returns_async__when_not_given(self):
-        self.assertEqual(GenerateComponentConfig().widget_set_context, 'async')
-
-    def test_widget_set_context__fails_naming_the_choices__when_neither_async_nor_sync(self):
-        with self.assertRaisesMessage(ValueError, "'async' or 'sync'"):
-            GenerateComponentConfig(widget_set_context='asynchronous')
-
     def test_website_app_name__returns_website__when_not_given(self):
         self.assertEqual(WebsiteWidgetsConfig().website_app_name, 'website')
 

@@ -8,12 +8,43 @@ from django.utils.safestring import SafeText
 import os
 from website_widgets.widget_context import WidgetContext
 
-class Widget:
+class _Widget:
+    """
+    What `AsyncWidget`, `SyncWidget` and the page classes share. Not subclassed directly: a widget
+    says which kind it is by subclassing `AsyncWidget` or `SyncWidget`.
+    """
+
     template_filename: str | None = None
     # Shown beside the class name in the debug tree, to tell instances apart: TabCard(42).
     debug_label: object | None = None
     # Library base classes, whose folders hold no application templates.
     _LIBRARY_MODULES = ('website_widgets.widget', 'website_widgets.web_page')
+    # Set by the async and sync classes: whether the methods below are `async def`.
+    _renders_async: bool | None = None
+    _METHODS_MATCHING_RENDERS_ASYNC: tuple[str, ...] = ('set_context',)
+    # The async and sync class names, for the error naming the fix.
+    _KIND_NAMES = ('AsyncWidget', 'SyncWidget')
+
+    def __init_subclass__(cls, **kwargs):
+        super().__init_subclass__(**kwargs)
+        if cls.__module__ in cls._LIBRARY_MODULES:
+            return
+        async_name, sync_name = cls._KIND_NAMES
+        if cls._renders_async is None:
+            raise TypeError(
+                f'{cls.__name__} subclasses a private base; subclass {async_name} or {sync_name} '
+                f'instead.')
+        for method_name in cls._METHODS_MATCHING_RENDERS_ASYNC:
+            is_async = inspect.iscoroutinefunction(getattr(cls, method_name))
+            if is_async == cls._renders_async:
+                continue
+            if cls._renders_async:
+                raise TypeError(
+                    f'{cls.__name__}.{method_name}() is `def`, but {cls.__name__} is an '
+                    f'{async_name}: write `async def {method_name}()`, or subclass {sync_name}.')
+            raise TypeError(
+                f'{cls.__name__}.{method_name}() is `async def`, but {cls.__name__} is a '
+                f'{sync_name}: write `def {method_name}()`, or subclass {async_name}.')
 
     def __init__(self):
         """
@@ -81,8 +112,9 @@ class Widget:
                 self.context.data['item'] = data
                 self.context.children['child'] = SomeWidget(data=data)
 
-        Use `def` for sync, `async def` for async - system auto-detects. A widget rendered with
-        `render()` must use `def`. Base implementation does nothing.
+        An `AsyncWidget` writes `async def`, a `SyncWidget` plain `def`; the wrong kind raises
+        when the class is defined. A widget rendered with `render()`, or in a `SyncWebPage`, is a
+        `SyncWidget`. Base implementation does nothing.
         """
         pass
 
@@ -103,7 +135,7 @@ class Widget:
 
         Runs the whole lifecycle with no event loop: this widget's `set_context()`, every
         descendant's, then the templates, so synchronous ORM calls work in `set_context()`. Raises
-        on a widget whose `set_context()` is `async def`; await `arender()` for those. Values put
+        on an `AsyncWidget`; await `arender()` for those. Values put
         in `context.page` beforehand reach every descendant. No document template wraps the
         result.
 
@@ -194,23 +226,23 @@ class Widget:
             await widget._acall_set_context()
             await widget._ainitialize_widget_tree()
 
-    def _child_widgets(self) -> list[Widget]:
+    def _child_widgets(self) -> list[_Widget]:
         widgets = []
         for key, value in self.context.children.items():
             if isinstance(value, list):
                 for widget in value:
-                    if not isinstance(widget, Widget):
-                        raise TypeError(f"Expected Widget in children['{key}'] list, got {type(widget)}")
+                    if not isinstance(widget, _Widget):
+                        raise TypeError(f"Expected a widget in children['{key}'] list, got {type(widget)}")
                     self._refuse_page_child(widget, key)
                     widgets.append(widget)
-            elif isinstance(value, Widget):
+            elif isinstance(value, _Widget):
                 self._refuse_page_child(value, key)
                 widgets.append(value)
         return widgets
 
     def _refuse_page_child(
         self,
-        widget: Widget,
+        widget: _Widget,
         key: str
     ):
         # Imported here: web_page.py imports this module. Both are loaded by the time a render runs.
@@ -222,7 +254,7 @@ class Widget:
                 f"['{key}']: a page is only ever the root, rendered by its view. Render a widget "
                 f"there instead.")
 
-    def _share_render_state_with(self, widget: Widget):
+    def _share_render_state_with(self, widget: _Widget):
         # Request and page context are shared by reference across the whole tree.
         widget._request = self._request
         if widget.context.page is not self.context.page and widget.context.page:
@@ -246,19 +278,19 @@ class Widget:
             elif isinstance(value, list):
                 rendered_list = []
                 for widget in value:
-                    if not isinstance(widget, Widget):
-                        raise TypeError(f"Expected Widget in children['{key}'] list, got {type(widget)}")
+                    if not isinstance(widget, _Widget):
+                        raise TypeError(f"Expected a widget in children['{key}'] list, got {type(widget)}")
                     widget._render_children_to_html()
                     html = widget._render_template()
                     rendered_list.append(html)
                 rendered_children[key] = rendered_list
-            elif isinstance(value, Widget):
+            elif isinstance(value, _Widget):
                 widget = value
                 widget._render_children_to_html()
                 html = widget._render_template()
                 rendered_children[key] = html
             else:
-                raise TypeError(f"Expected Widget, list[Widget], or None in children['{key}'], got {type(value)}")
+                raise TypeError(f"Expected a widget, a list of widgets, or None in children['{key}'], got {type(value)}")
 
         self.context.children = rendered_children
 
@@ -278,10 +310,10 @@ class Widget:
             elif isinstance(value, list):
                 lines.append(f"<div style='margin-left: {(indent + 1) * 20}px; color: #888;'>{key}: [</div>")
                 for item in value:
-                    if isinstance(item, Widget):
+                    if isinstance(item, _Widget):
                         lines.append(item._generate_debug_tree(indent + 2))
                 lines.append(f"<div style='margin-left: {(indent + 1) * 20}px; color: #888;'>]</div>")
-            elif isinstance(value, Widget):
+            elif isinstance(value, _Widget):
                 lines.append(f"<div style='margin-left: {(indent + 1) * 20}px; color: #888;'>{key}:</div>")
                 lines.append(value._generate_debug_tree(indent + 2))
 
@@ -311,7 +343,7 @@ class Widget:
                 f'not {filename!r}')
         searched = []
         for cls in type(self).__mro__:
-            if cls.__module__ in self._LIBRARY_MODULES or not issubclass(cls, Widget):
+            if cls.__module__ in self._LIBRARY_MODULES or not issubclass(cls, _Widget):
                 continue
             folder = os.path.dirname(inspect.getfile(cls))
             if folder in searched:
@@ -367,3 +399,28 @@ class Widget:
         with open(filepath, 'r') as file:
             template = Template(file.read())
         return template.render(Context(context))
+
+
+class AsyncWidget(_Widget):
+    """
+    A widget whose `set_context()` is `async def`, so it awaits the ORM's async methods. Renders
+    in an `AsyncWebPage` or with `await arender()`; `render()` and a `SyncWebPage` refuse it.
+    A `def set_context()` raises when the class is defined.
+    """
+
+    _renders_async = True
+
+    async def set_context(self):
+        """The widget's data and children. Base implementation does nothing."""
+        pass
+
+
+class SyncWidget(_Widget):
+    """
+    A widget whose `set_context()` is plain `def`, or that has none. Renders everywhere: in either
+    page, with `render()` from sync code (a plain view, an email, the admin) and with `arender()`.
+    In an `AsyncWebPage` or `arender()` it runs on the event loop, so its `set_context()` makes no
+    database query there. An `async def set_context()` raises when the class is defined.
+    """
+
+    _renders_async = False

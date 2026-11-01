@@ -33,10 +33,8 @@ class UpcomingEventsView(TemplateView):
 **A widget rendered this way is written with `def set_context()`,** which is where the sync ORM
 belongs here: `render()` runs from sync code with no event loop, so
 `Event.objects.filter(...)` works, the reverse of a page, where the same query raises
-`SynchronousOnlyOperation`. `render()` refuses an `async def set_context()` with a message
-naming the widget. `ww_create_widget --sync` writes one, and a project rendering most of its
-widgets this way sets `GenerateComponentConfig(widget_set_context='sync')`
-(`creating_pages_and_widgets.md`).
+`SynchronousOnlyOperation`. Such a widget is a `SyncWidget`; `render()` refuses an `AsyncWidget`
+with a message naming it. `ww_create_widget --sync` writes one (`creating_pages_and_widgets.md`).
 
 The request is optional. `render(self.request)` lets the widget read `self.request` and its
 template `{{ request }}`; without one, `self.request` raises rather than handing it a fake one.

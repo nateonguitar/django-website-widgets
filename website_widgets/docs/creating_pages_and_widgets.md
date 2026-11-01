@@ -8,7 +8,7 @@ or before changing what the commands write for a project.
 Primary code:
 - `website_widgets.management.commands.ww_create_page` and `website_widgets.management.commands.ww_create_widget` — the commands
 - `website_widgets.management.component_files.ComponentFiles` — the file work both call: a file from a template, a line in `main.ts`
-- `website_widgets.config.GenerateComponentConfig` — their three settings
+- `website_widgets.config.GenerateComponentConfig` — their two settings
 - the package's `generator_templates/` — the default templates, listed below
 
 ## What it writes
@@ -21,7 +21,7 @@ writes `<website app>/widgets/like_button/` (`ww_create_page` writes into `pages
 
 ```
 __init__.py         from .like_button import LikeButton
-like_button.py      class LikeButton(Widget), with an async set_context()
+like_button.py      class LikeButton(AsyncWidget), with an async set_context()
 like_button.html    its template: a root <div id="like-button">, starting the controller when there is one
 like_button.ts      class LikeButtonController extends Controller   (--tscontroller)
 like_button.scss    empty                                            (--stylesheet)
@@ -93,13 +93,13 @@ or a slug is usual. A widget without a controller isn't asked: nothing selects i
 has only its class, so the same template serves one instance or many, and `--repeating` changes
 nothing.
 
-**A widget's `set_context()` is `async def` unless the project or the command says otherwise.**
-Async is right for a widget in an `AsyncWebPage` or behind `arender()`, where a database query is
-awaited; a sync `def set_context()` runs on the page's event loop, where a sync query raises
-`SynchronousOnlyOperation`. Sync is right for a widget rendered with `render()` from sync code (a
-plain Django view, an email, the admin) or in a `SyncWebPage`, which refuse an `async def`. `--async` or `--sync`
-chooses for one widget; `GenerateComponentConfig.widget_set_context` (`'async'` or `'sync'`) sets
-the project's default. A page has no flag: its `set_context()` must match its class, so the
+**A widget is an `AsyncWidget` unless the command is told `--sync`.** Its class is its kind, the
+way a page's is. `AsyncWidget`, with `async def set_context()`, is right for a widget in an
+`AsyncWebPage` or behind `arender()`, where a database query is awaited; a sync query on that
+event loop raises `SynchronousOnlyOperation`. `SyncWidget`, with `def set_context()`, is right
+for a widget rendered with `render()` from sync code (a plain Django view, an email, the admin) or
+in a `SyncWebPage`, which refuse an `AsyncWidget`. `--async` (the default) or `--sync` chooses
+`widget__async__*.py.tmpl` or `widget__sync__*.py.tmpl`. A page has no flag: its `set_context()` must match its class, so the
 command reads it from the page base class, writing `page__async.py.tmpl`'s `async def` under an
 `AsyncWebPage` and `page__sync.py.tmpl`'s `def` under a `SyncWebPage`. It calls no
 `super().set_context()`, since the base's does nothing; a project whose page base class does work
@@ -144,7 +144,7 @@ without wrapping every widget in it:
 | --- | --- |
 | `__init__.py.tmpl` | `__init__.py` |
 | `page__async.py.tmpl`, `page__sync.py.tmpl` | a page's class, with its `@register_url` and `async def` or `def set_context()`, for an `AsyncWebPage` or `SyncWebPage` base |
-| `widget__async__single.py.tmpl`, `widget__sync__single.py.tmpl` | a widget's class, with `async def` or `def set_context()` |
+| `widget__async__single.py.tmpl`, `widget__sync__single.py.tmpl` | a widget's class, an `AsyncWidget` or a `SyncWidget` |
 | `widget__async__repeating.py.tmpl`, `widget__sync__repeating.py.tmpl` | a repeating widget's class, taking `key=` |
 | `page__nocontroller.html.tmpl`, `widget__nocontroller.html.tmpl` | the template, with no controller |
 | `page__controller.html.tmpl`, `widget__controller__single.html.tmpl` | the template, starting the controller |

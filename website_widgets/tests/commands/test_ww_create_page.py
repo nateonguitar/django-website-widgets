@@ -44,7 +44,7 @@ class WwCreatePageTestCase(ComponentTestCase):
         self.assertNotIn('async def', page_py)
 
     def test_create_page__fails__when_app_page_class_is_not_a_page(self):
-        self.config.generate_component.app_page_class = 'website_widgets.widget.Widget'
+        self.config.generate_component.app_page_class = 'website_widgets.widget.SyncWidget'
 
         with self.assertRaisesMessage(CommandError, 'is neither a website_widgets.AsyncWebPage nor'):
             self.create_page('home_page', '--no-tscontroller', '--no-stylesheet')
@@ -108,12 +108,6 @@ class WwCreatePageTestCase(ComponentTestCase):
             self.create_page('home_page', '--no-tscontroller', '--no-stylesheet')
 
         self.assertFalse(os.path.exists(os.path.join(self.app_folder, 'pages', 'home_page')))
-
-    def test_create_page__fails__when_app_page_class_is_not_a_page(self):
-        self.config.generate_component.app_page_class = 'website_widgets.widget.Widget'
-
-        with self.assertRaises(CommandError):
-            self.create_page('home_page', '--no-tscontroller', '--no-stylesheet')
 
     def test_create_page__fails_writing_nothing__when_a_part_of_the_name_cannot_be_a_module(self):
         for name in ('Bad-Name', 'account/Settings', 'return', '../escape_page'):

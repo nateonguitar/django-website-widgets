@@ -11,7 +11,7 @@ A widget in a page or behind `arender()` loads its data with the async ORM, and 
 template evaluated data, never a lazy queryset:
 
 ```python
-class MovieList(Widget):
+class MovieList(AsyncWidget):
     async def set_context(self):
         movies = [movie async for movie in Movie.objects.order_by('title')]
         self.context.children['cards'] = [MovieCard(movie=movie) for movie in movies]

@@ -1,6 +1,6 @@
 from django.test import RequestFactory
 
-from website_widgets.tests.sample_widgets import AsyncContextWidget, DocumentPage, SyncDocumentPage, WordWidget
+from website_widgets.tests.sample_widgets import AsyncContextWidget, DocumentPage, HolderWidget, SyncDocumentPage, WordWidget
 from website_widgets.tests.widget_test_case import WidgetTestCase
 
 
@@ -37,6 +37,26 @@ class BuildResponseTestCase(WidgetTestCase):
     def test_build_response__fails__when_sync_page_holds_async_widget(self):
         child = AsyncContextWidget()
         child.template_filename = self.write_template('{{ data.word }}')
+        page = SyncDocumentPage(
+            document_template_filename=self.write_template('{{ page_content_html }}'),
+            template_filename=self.write_template('{{ children.child }}'),
+            child=child)
+        request = RequestFactory().get('/')
+        page._request = request
+
+        with self.assertRaisesMessage(TypeError, 'AsyncContextWidget.set_context() is async'):
+            page.handle_request(request)
+
+    def test_build_response__fails__when_sync_page_holds_async_widget_as_grandchild(self):
+        async_template = self.write_template('{{ data.word }}')
+
+        def place_async_grandchild(children):
+            grandchild = AsyncContextWidget()
+            grandchild.template_filename = async_template
+            children['grandchild'] = grandchild
+
+        child = HolderWidget(place_async_grandchild)
+        child.template_filename = self.write_template('{{ children.grandchild }}')
         page = SyncDocumentPage(
             document_template_filename=self.write_template('{{ page_content_html }}'),
             template_filename=self.write_template('{{ children.child }}'),

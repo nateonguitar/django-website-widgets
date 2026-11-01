@@ -20,7 +20,7 @@ class WwCreateWidgetTestCase(ComponentTestCase):
             sorted(os.listdir(folder)),
             ['__init__.py', 'like_button.html', 'like_button.py', 'like_button.scss', 'like_button.ts'])
         self.assertIn('from .like_button import LikeButton', self.read(folder, '__init__.py'))
-        self.assertIn('class LikeButton(Widget):', self.read(folder, 'like_button.py'))
+        self.assertIn('class LikeButton(AsyncWidget):', self.read(folder, 'like_button.py'))
         html = self.read(folder, 'like_button.html')
         self.assertIn('<div id="like-button"', html)
         self.assertIn('data-label="{{ data.label }}"', html)
@@ -29,34 +29,27 @@ class WwCreateWidgetTestCase(ComponentTestCase):
         self.assertIn('export class LikeButtonController extends Controller', controller_ts)
         self.assertIn("querySelector('.like-button__label')", controller_ts)
 
-    def test_create_widget__writes_async_set_context__when_no_flag_or_setting(self):
+    def test_create_widget__writes_async_widget__when_no_flag_given(self):
         self.create_widget('like_button', '--no-tscontroller', '--no-stylesheet')
 
         widget_py = self.read(self.app_folder, 'widgets', 'like_button', 'like_button.py')
+        self.assertIn('from website_widgets import AsyncWidget', widget_py)
+        self.assertIn('class LikeButton(AsyncWidget):', widget_py)
         self.assertIn('    async def set_context(self):', widget_py)
 
-    def test_create_widget__writes_sync_set_context__when_sync_flag_given(self):
+    def test_create_widget__writes_sync_widget__when_sync_flag_given(self):
         self.create_widget('like_button', '--no-tscontroller', '--no-stylesheet', '--sync')
 
         widget_py = self.read(self.app_folder, 'widgets', 'like_button', 'like_button.py')
+        self.assertIn('class LikeButton(SyncWidget):', widget_py)
         self.assertIn('    def set_context(self):', widget_py)
         self.assertNotIn('async', widget_py)
 
-    def test_create_widget__writes_sync_set_context__when_setting_is_sync(self):
-        self.config.generate_component.widget_set_context = 'sync'
-
-        self.create_widget('like_button', '--no-tscontroller', '--no-stylesheet')
-
-        widget_py = self.read(self.app_folder, 'widgets', 'like_button', 'like_button.py')
-        self.assertNotIn('async', widget_py)
-
-    def test_create_widget__writes_async_set_context__when_async_flag_overrides_sync_setting(self):
-        self.config.generate_component.widget_set_context = 'sync'
-
+    def test_create_widget__writes_async_widget__when_async_flag_given(self):
         self.create_widget('like_button', '--no-tscontroller', '--no-stylesheet', '--async')
 
         widget_py = self.read(self.app_folder, 'widgets', 'like_button', 'like_button.py')
-        self.assertIn('    async def set_context(self):', widget_py)
+        self.assertIn('class LikeButton(AsyncWidget):', widget_py)
 
     def test_create_widget__fails__when_both_async_and_sync_given(self):
         with self.assertRaises(CommandError):
@@ -147,7 +140,7 @@ class WwCreateWidgetTestCase(ComponentTestCase):
         self.assertEqual(
             self.read(folder, 'like_button.html'),
             '<script type="module" nonce="{{ page.nonce }}">LikeButton</script>\n')
-        self.assertIn('class LikeButton(Widget):', self.read(folder, 'like_button.py'))
+        self.assertIn('class LikeButton(AsyncWidget):', self.read(folder, 'like_button.py'))
         self.assertIn('export class LikeButtonController', self.read(folder, 'like_button.ts'))
 
     def test_create_widget__fails_pointing_at_upgrade__when_framework_files_are_missing(self):
@@ -188,7 +181,7 @@ class WwCreateWidgetTestCase(ComponentTestCase):
         self.assertIn(
             f'Created the widget LoginDialog in {widget_folder}/:\n'
             '  __init__.py\n'
-            '  login_dialog.py     class LoginDialog, with def set_context()\n'
+            '  login_dialog.py     class LoginDialog(SyncWidget)\n'
             '  login_dialog.html   root #login-dialog\n'
             '  login_dialog.ts     LoginDialogController, exported from ts/main.ts\n'
             '  login_dialog.scss   imported in ts/main.ts\n',
@@ -216,7 +209,7 @@ class WwCreateWidgetTestCase(ComponentTestCase):
                 self.assertIn(f'<div class="{css_name}"\n     data-key="{{{{ data.key }}}}"', html)
                 self.assertIn(f"""'.{css_name}[data-key="{{{{ data.key }}}}"]');""", html)
                 self.assertNotIn('{% comment %}', html)
-                self.assertIn('(key=...)', output)
+                self.assertIn(', taking key=\n', output)
                 self.assertIn(f'root .{css_name}[data-key=<key>]', output)
 
     def test_create_widget__renders_one_key_and_selector_per_instance__when_repeating_widget_is_shown_twice(self):

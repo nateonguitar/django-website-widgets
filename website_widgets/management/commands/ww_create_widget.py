@@ -10,7 +10,7 @@ from website_widgets.management.framework_folder import FrameworkFolder, TypeScr
 
 class Command(BaseCommand):
     help = (
-        "Creates a widget in the website app's widgets/: a Widget subclass, its template, and "
+        "Creates a widget in the website app's widgets/: an AsyncWidget or SyncWidget subclass, its template, and "
         "optionally a TypeScript controller and a stylesheet, registered in ts/main.ts.")
 
     def add_arguments(self, parser):
@@ -44,17 +44,17 @@ class Command(BaseCommand):
             const='async',
             dest='set_context',
             help=(
-                'Write `async def set_context()`, for a widget in a page or behind arender(), '
-                'where database queries are awaited. The default unless '
-                'WEBSITE_WIDGETS.generate_component.widget_set_context says otherwise.'))
+                'Write an AsyncWidget, with `async def set_context()`, for a widget in an '
+                'AsyncWebPage or behind arender(), where database queries are awaited. The '
+                'default.'))
         set_context.add_argument(
             '--sync',
             action='store_const',
             const='sync',
             dest='set_context',
             help=(
-                'Write `def set_context()`, for a widget rendered with render() from sync code: '
-                'a plain Django view, an email, the admin.'))
+                'Write a SyncWidget, with `def set_context()`, for a widget rendered with render() '
+                'from sync code (a plain Django view, an email, the admin) or in a SyncWebPage.'))
 
     def handle(self, *args, **options):
         config = get_config()
@@ -85,7 +85,7 @@ class Command(BaseCommand):
             '__css_name__': name.css_name,
             '__framework_path__': files.relative_import_path(framework_folder, widget_folder),
         }
-        set_context = options['set_context'] or config.generate_component.widget_set_context
+        set_context = options['set_context'] or 'async'
         package_inits = files.make_component_folder(os.path.join(app_folder, 'widgets'), name)
         written_files = []
         files.write_from_template(widget_folder, '__init__.py', '__init__.py.tmpl', replacements)
@@ -95,11 +95,11 @@ class Command(BaseCommand):
             f'{name.module_name}.py',
             f'widget__{set_context}__{instances}.py.tmpl',
             replacements)
-        set_context_definition = 'async def set_context()' if set_context == 'async' else 'def set_context()'
-        class_description = f'{name.class_name}(key=...)' if repeating else name.class_name
-        written_files.append(WrittenFile(
-            f'{name.module_name}.py',
-            f'class {class_description}, with {set_context_definition}'))
+        base_class = 'AsyncWidget' if set_context == 'async' else 'SyncWidget'
+        py_note = f'class {name.class_name}({base_class})'
+        if repeating:
+            py_note += ', taking key='
+        written_files.append(WrittenFile(f'{name.module_name}.py', py_note))
         html_template = f'widget__controller__{instances}.html.tmpl' if generate_ts else 'widget__nocontroller.html.tmpl'
         files.write_from_template(widget_folder, f'{name.module_name}.html', html_template, replacements)
         if repeating:

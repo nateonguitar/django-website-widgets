@@ -1,4 +1,4 @@
-from .widget import Widget
+from .widget import AsyncWidget, SyncWidget
 from .web_page import AsyncWebPage, SyncWebPage
 from .widget_context import WidgetContext
 from .url_templates import reverse_template
@@ -9,7 +9,8 @@ register_url = PageRoutes.register_url
 start_npm_watch = NpmWatch.start
 
 __all__ = [
-    'Widget',
+    'AsyncWidget',
+    'SyncWidget',
     'AsyncWebPage',
     'SyncWebPage',
     'WidgetContext',

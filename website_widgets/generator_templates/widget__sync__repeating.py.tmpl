@@ -1,7 +1,7 @@
-from website_widgets import Widget
+from website_widgets import SyncWidget
 
 
-class __ClassName__(Widget):
+class __ClassName__(SyncWidget):
     def __init__(self, *, key):
         super().__init__()
         self.context.data['key'] = key

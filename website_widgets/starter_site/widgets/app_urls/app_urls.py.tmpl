@@ -1,7 +1,7 @@
-from website_widgets import Widget, reverse_template
+from website_widgets import SyncWidget, reverse_template
 
 
-class AppUrls(Widget):
+class AppUrls(SyncWidget):
     """
     Hands the frontend its URLs. The template assigns each one to the TypeScript `AppUrls` in
     `ts/app-urls.ts`, so a controller reads `AppUrls.endpoint_greeting` rather than writing a

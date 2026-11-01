@@ -24,7 +24,7 @@ because widget templates are compiled with `Template()`, which raises `Improperl
 without one. Any project using the library has one already.
 
 **One test class per file, named for what it tests.** A class's tests sit in a folder named for
-the module (`tests/widget/test_render.py` for `Widget.render()`,
+the module (`tests/widget/test_render.py` for a widget's `render()`,
 `tests/page_routes/test_register_url.py`); a module with one test class keeps a flat
 `tests/test_<module>.py`. Test names follow `test_<feature>__<succeeds/fails>__when_<condition>`.
 The shared pieces sit beside the tests:
@@ -117,12 +117,13 @@ django-website-widgets/
     │                           # ww_create_app and ww_upgrade copy into a project
     ├── generator_templates/    # ww_create_page's and ww_create_widget's default templates (*.tmpl)
     ├── starter_site/           # The site ww_create_app writes, its build files included (*.tmpl)
-    ├── __init__.py             # Exports Widget, AsyncWebPage, SyncWebPage, WidgetContext,
-    │                           # PageRoutes, register_url, reverse_template, start_npm_watch
+    ├── __init__.py             # Exports AsyncWidget, SyncWidget, AsyncWebPage, SyncWebPage,
+    │                           # WidgetContext, PageRoutes, register_url, reverse_template,
+    │                           # start_npm_watch
     ├── apps.py
     ├── config.py               # WebsiteWidgetsConfig, GenerateComponentConfig, get_config()
     ├── py.typed                # Says the package's type hints are its public types (PEP 561)
-    ├── widget.py
+    ├── widget.py               # AsyncWidget and SyncWidget, over their private _Widget
     ├── web_page.py             # AsyncWebPage and SyncWebPage, over their private _WebPage
     ├── page_routes.py          # @register_url, route discovery, the routing system checks
     ├── url_templates.py        # reverse_template()

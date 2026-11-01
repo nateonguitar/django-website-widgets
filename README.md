@@ -148,19 +148,15 @@ directly.
 
 `website/widgets/project_details_card/project_details_card.py`
 ```python
-from website_widgets import Widget
+from website_widgets import SyncWidget
 from project.models import Project
 
-class ProjectDetailsCard(Widget):
-    """Widget that displays project details."""
+class ProjectDetailsCard(SyncWidget):
+    """Displays a project it is given; it loads nothing, so it is a SyncWidget."""
 
     def __init__(self, project: Project):
         super().__init__()
         self.context.data['project'] = project
-
-    def set_context(self):
-        """Called before rendering. Can be sync or async."""
-        super().set_context()
 ```
 
 `website/widgets/project_details_card/project_details_card.html`
@@ -186,8 +182,6 @@ class ProjectPage(AppPage):
         self.pk = pk
 
     async def set_context(self):
-        await super().set_context()
-
         project = await Project.objects.aget(pk=self.pk)
         self.context.page['title'] = f'Project - {project.name}'
         self.context.data['project'] = project
@@ -221,9 +215,20 @@ urlpatterns = [
 
 ## Core Concepts
 
-### Widget
+### AsyncWidget and SyncWidget
 
-Base class for reusable UI components. Uses a declarative, constructor-based pattern similar to Flutter or React.
+The base classes for reusable UI components, which use a declarative, constructor-based pattern
+similar to Flutter or React. A widget subclasses one of the two, the way a page does, so every
+widget says which kind it is:
+
+- **`AsyncWidget`**: its `set_context()` is `async def` and awaits the ORM's async methods. It
+  renders in an `AsyncWebPage` or with `await arender()`. `ww_create_widget` writes one unless
+  told `--sync`.
+- **`SyncWidget`**: its `set_context()` is plain `def`, or it has none. It renders everywhere:
+  in either page, with `render()` from sync code (a plain view, an email, the admin) and with
+  `arender()`. A widget that loads nothing is a `SyncWidget`.
+
+The wrong kind of `set_context()` raises `TypeError` when the class is defined, naming the fix.
 
 **Key Pattern:**
 - Accept data via `__init__()` parameters
@@ -233,7 +238,7 @@ Base class for reusable UI components. Uses a declarative, constructor-based pat
 
 **Example:**
 ```python
-class InfoCard(Widget):
+class InfoCard(SyncWidget):
     def __init__(self, title: str, content: str):
         super().__init__()
         self.title = title
@@ -246,29 +251,29 @@ class InfoCard(Widget):
 
 Widgets:
 - Accept data parameters in `__init__()` and store them
-- Use `set_context()` to create child widgets (Widget objects or lists)
+- Use `set_context()` to create child widgets (widget objects or lists of them)
 - Store children in `self.context.children` - system renders them
 - Access `self.request` from `set_context()` onwards (not in `__init__()`). Whether a page can
   read `self.request.user` depends on the project's middleware: with Django's
   `AuthenticationMiddleware` it's lazy, and its first read queries the database, so load the
   user with `await self.request.auser()` instead (`docs/rendering_pipeline.md`)
-- Can be sync or async - use `async def set_context(self):` only when awaiting. An
-  `AsyncWebPage` renders in an async view, so database access in a sync `set_context()` there
-  raises `SynchronousOnlyOperation`; use the async ORM. A widget rendered with `render()` from
-  sync code, or in a `SyncWebPage`, is the reverse: it must use `def`, and the sync ORM works
+- An `AsyncWebPage` renders in an async view, so database access in a `SyncWidget`'s
+  `set_context()` there raises `SynchronousOnlyOperation`; load data in an `AsyncWidget` with the
+  async ORM. A widget rendered with `render()` from sync code, or in a `SyncWebPage`, is the
+  reverse: it is a `SyncWidget`, and the sync ORM works
 
 ### AsyncWebPage and SyncWebPage
 
-Each extends `Widget` and represents a full page answering a web request. A page subclasses one of
+Each is a widget that represents a full page answering a web request. A page subclasses one of
 the two, so every page says which it is; neither is called plain `WebPage`, which would read as the
 default with the other as an extra.
 
 - **`AsyncWebPage`** is the one to use, and what the starter site and `ww_create_page` write. Its
-  `set_context()` is `async def` and awaits the ORM's async methods; its widgets may be either
-  kind.
+  `set_context()` is `async def` and awaits the ORM's async methods; its widgets may be
+  `AsyncWidget`s or `SyncWidget`s.
 - **`SyncWebPage`** is for a page with no async work and a team that would rather write the ORM
   as in any Django view. Its `set_context()` is `def`, it runs with no event loop, and every
-  widget in it must have a plain `set_context()` too.
+  widget in it is a `SyncWidget`.
 
 A page with the wrong kind of `set_context()`, `handle_request()` or `build_response()` raises
 `TypeError` when its class is defined, naming the fix.
@@ -276,7 +281,7 @@ A page with the wrong kind of `set_context()`, `handle_request()` or `build_resp
 **Key Pattern:**
 - URL parameters passed to `__init__()` - store them on self
 - `set_context()` loads data and creates child widgets
-- Assign Widget objects (or lists) to `self.context.children`
+- Assign widget objects (or lists of them) to `self.context.children`
 - System calls `set_context()` recursively, then renders all widgets
 
 **Example with URL parameters:**
@@ -306,7 +311,7 @@ Pages:
 
 Each widget has `self.context`, a `WidgetContext`, with:
 - `data`: Template variables (dict)
-- `children`: Child widgets - values can be Widget, list[Widget], or None
+- `children`: Child widgets - values can be a widget, a list of widgets, or None
 - `page`: Shared page-level data (title, meta, etc.)
 
 System renders widgets to HTML automatically. Lists iterate in templates via `{% for item in children.items %}`.
@@ -557,7 +562,7 @@ CompositionPage
 For better debugging, add a `debug_label` to your widgets:
 
 ```python
-class InfoCard(Widget):
+class InfoCard(SyncWidget):
     def __init__(self, title: str, content: str):
         super().__init__()
         self.debug_label = title  # Shows as "InfoCard(My Title)" in debug tree

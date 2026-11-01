@@ -13,7 +13,8 @@ settled. This entry is the upgrade guide from 0.11.
 1. Require `django-website-widgets>=1.0,<2`, install it, and run `python manage.py ww_upgrade`.
    That replaces the framework TypeScript in `ts/website_widgets/` and the docs in
    `website_widgets_docs/`; the steps below are the project's own code.
-2. Python: move pages onto `AsyncWebPage` and make the renames under "Python".
+2. Python: move pages onto `AsyncWebPage`, each widget onto `AsyncWidget` (an `async def
+   set_context()`) or `SyncWidget` (a plain one, or none), and make the renames under "Python".
 3. TypeScript: rename `__element` to `rootElement` in every controller, and replace each
    `getElementByIdOrWarn()` (under "TypeScript").
 4. Generator template overrides in `GenerateComponentConfig.templates_dir`: rename them (under
@@ -26,6 +27,14 @@ settled. This entry is the upgrade guide from 0.11.
 
 #### Python
 
+- **`Widget` is gone: a widget subclasses `AsyncWidget` or `SyncWidget`.** A widget whose
+  `set_context()` is `async def` becomes an `AsyncWidget`; one whose `set_context()` is plain
+  `def`, or that has none, a `SyncWidget`, which renders everywhere. Change the import and the
+  base class; the wrong kind raises `TypeError` when the class is defined, naming the fix.
+  `isinstance(x, Widget)` checks become checks against the two classes.
+- **`GenerateComponentConfig(widget_set_context=...)` is removed.** A widget's class is its kind
+  now, so `ww_create_widget` writes an `AsyncWidget` by default and a `SyncWidget` with `--sync`.
+  Delete the argument from settings.
 - **`WebPage` is gone: a page subclasses `AsyncWebPage` or `SyncWebPage`.** Change
   `from website_widgets import WebPage` and `class AppPage(WebPage)` to `AsyncWebPage`, which is
   what `WebPage` was. `SyncWebPage` is new (below).
@@ -96,8 +105,8 @@ settled. This entry is the upgrade guide from 0.11.
 ### Added
 
 - **`SyncWebPage`,** for a page with no async work: its `set_context()` is `def`, it runs with no
-  event loop, so the ORM works as in any Django view, and every widget in it has a plain
-  `set_context()` too. `AsyncWebPage` remains the one to use.
+  event loop, so the ORM works as in any Django view, and every widget in it is a `SyncWidget`.
+  `AsyncWebPage` remains the one to use.
 - **`ww_create_page` routes the page it creates,** at a route made from its name
   (`account/settings_page` to `account/settings`) or `--route`, stopping on a route name already
   taken or an unknown converter and warning when the route ties with another page's.

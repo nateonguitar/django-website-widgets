@@ -3,7 +3,7 @@ from django.core.exceptions import ImproperlyConfigured
 from website_widgets import PageRoutes, register_url
 from website_widgets.web_page import AsyncWebPage
 from website_widgets.tests.page_routes.page_routes_test_case import PageRoutesTestCase
-from website_widgets.widget import Widget
+from website_widgets.widget import SyncWidget
 
 
 class RegisterUrlTestCase(PageRoutesTestCase):
@@ -53,5 +53,5 @@ class RegisterUrlTestCase(PageRoutesTestCase):
     def test_register_url__fails__when_class_is_not_a_page(self):
         with self.assertRaises(TypeError):
             @register_url('plain', name='plain')
-            class PlainWidget(Widget):
+            class PlainWidget(SyncWidget):
                 pass

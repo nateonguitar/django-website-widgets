@@ -8,27 +8,27 @@ import asyncio
 import os
 
 from website_widgets.web_page import AsyncWebPage, SyncWebPage
-from website_widgets.widget import Widget
+from website_widgets.widget import AsyncWidget, SyncWidget, _Widget
 
 
 SAMPLE_WIDGETS_DIR = os.path.dirname(os.path.abspath(__file__))
 
 
-class DefaultTemplateWidget(Widget):
+class DefaultTemplateWidget(SyncWidget):
     pass
 
 
-class ClassLevelTemplateWidget(Widget):
+class ClassLevelTemplateWidget(SyncWidget):
     # An existing file stands in for a template, since only the lookup is tested.
     template_filename = 'sample_widgets.py'
 
 
-class ContextChosenTemplateWidget(Widget):
+class ContextChosenTemplateWidget(SyncWidget):
     def set_context(self):
         self.template_filename = '__init__.py'
 
 
-class BaseFolderWidget(Widget):
+class BaseFolderWidget(SyncWidget):
     pass
 
 
@@ -61,7 +61,7 @@ class DocumentPage(AsyncWebPage):
 class SyncDocumentPage(SyncWebPage):
     """`DocumentPage` as a SyncWebPage, whose child the test may make async."""
 
-    def __init__(self, document_template_filename: str, template_filename: str, child: Widget):
+    def __init__(self, document_template_filename: str, template_filename: str, child: _Widget):
         super().__init__()
         self.document_template_path = document_template_filename
         self.template_filename = template_filename
@@ -72,17 +72,17 @@ class SyncDocumentPage(SyncWebPage):
         self.context.children['child'] = self.child
 
 
-class SyncContextWidget(Widget):
+class SyncContextWidget(SyncWidget):
     def set_context(self):
         self.context.data['word'] = 'sync'
 
 
-class AsyncContextWidget(Widget):
+class AsyncContextWidget(AsyncWidget):
     async def set_context(self):
         self.context.data['word'] = 'async'
 
 
-class WordWidget(Widget):
+class WordWidget(SyncWidget):
     def __init__(self, word: str, template_filename: str):
         super().__init__()
         self.word = word
@@ -92,7 +92,7 @@ class WordWidget(Widget):
         self.context.data['word'] = self.word
 
 
-class ParentWidget(Widget):
+class ParentWidget(SyncWidget):
     def __init__(self, child_template_filename: str):
         super().__init__()
         self.child_template_filename = child_template_filename
@@ -106,12 +106,12 @@ class ParentWidget(Widget):
         self.context.children['absent'] = None
 
 
-class RequestReadingWidget(Widget):
+class RequestReadingWidget(SyncWidget):
     def set_context(self):
         self.context.data['path'] = self.request.path
 
 
-class LoopCheckingWidget(Widget):
+class LoopCheckingWidget(SyncWidget):
     def set_context(self):
         try:
             asyncio.get_running_loop()
@@ -120,7 +120,7 @@ class LoopCheckingWidget(Widget):
             self.context.data['loop'] = 'none'
 
 
-class AsyncChildParentWidget(Widget):
+class AsyncChildParentWidget(SyncWidget):
     def __init__(self, child_template_filename: str):
         super().__init__()
         self.child_template_filename = child_template_filename
@@ -131,7 +131,7 @@ class AsyncChildParentWidget(Widget):
         self.context.children['child'] = child
 
 
-class HolderWidget(Widget):
+class HolderWidget(SyncWidget):
     """Runs the test's `fill(children)` in set_context(), to place children any way a test needs."""
 
     def __init__(self, fill):
@@ -142,7 +142,7 @@ class HolderWidget(Widget):
         self.fill(self.context.children)
 
 
-class EarlyPageWritingWidget(Widget):
+class EarlyPageWritingWidget(SyncWidget):
     """Writes context.page in its constructor, before a parent shares the page's dict with it."""
 
     def __init__(self):
@@ -150,7 +150,7 @@ class EarlyPageWritingWidget(Widget):
         self.context.page['early'] = 'lost'
 
 
-class RequestInConstructorWidget(Widget):
+class RequestInConstructorWidget(SyncWidget):
     def __init__(self):
         super().__init__()
         self.path = self.request.path
@@ -162,7 +162,7 @@ class RequestInConstructorPage(AsyncWebPage):
         self.path = self.request.path
 
 
-class PageValueWidget(Widget):
+class PageValueWidget(SyncWidget):
     """Writes `page[key] = value` in set_context(), for its siblings and parent to read."""
 
     def __init__(self, key: str, value: str, template_filename: str):

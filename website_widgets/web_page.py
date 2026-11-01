@@ -1,12 +1,11 @@
 from django.http import HttpRequest, HttpResponse
 from django.utils.safestring import SafeText, mark_safe
-import inspect
 
-from website_widgets.widget import Widget
+from website_widgets.widget import _Widget
 from website_widgets.config import get_config
 
 
-class _WebPage(Widget):
+class _WebPage(_Widget):
     """
     What `AsyncWebPage` and `SyncWebPage` share: a widget that answers a web request at a URL,
     rendering two templates against the same context: its own, found like any widget's, then the
@@ -24,27 +23,9 @@ class _WebPage(Widget):
     document_template_path: str | None = None
     # The widget tree as HTML, set by `build_response()` when `show_debug_tree` is on.
     _debug_tree_html: str | None = None
-    # Set by AsyncWebPage and SyncWebPage: whether set_context(), handle_request() and
-    # build_response() are `async def`.
-    _renders_async: bool | None = None
+    # _Widget's class-definition check covers these too on a page, naming the page classes.
     _METHODS_MATCHING_RENDERS_ASYNC = ('set_context', 'handle_request', 'build_response')
-
-    def __init_subclass__(cls, **kwargs):
-        super().__init_subclass__(**kwargs)
-        if cls._renders_async is None:
-            raise TypeError(
-                f'{cls.__name__} subclasses _WebPage; subclass AsyncWebPage or SyncWebPage instead.')
-        for method_name in cls._METHODS_MATCHING_RENDERS_ASYNC:
-            is_async = inspect.iscoroutinefunction(getattr(cls, method_name))
-            if is_async == cls._renders_async:
-                continue
-            if cls._renders_async:
-                raise TypeError(
-                    f'{cls.__name__}.{method_name}() is `def`, but {cls.__name__} is an '
-                    f'AsyncWebPage: write `async def {method_name}()`, or subclass SyncWebPage.')
-            raise TypeError(
-                f'{cls.__name__}.{method_name}() is `async def`, but {cls.__name__} is a '
-                f'SyncWebPage: write `def {method_name}()`, or subclass AsyncWebPage.')
+    _KIND_NAMES = ('AsyncWebPage', 'SyncWebPage')
 
     def get_document_template_path(self) -> str:
         """The path to the document wrapping this page's content, from `document_template_path`."""
