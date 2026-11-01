@@ -43,26 +43,25 @@ in `data-key`, and passes a selector for it: `'.movie-card[data-key="{{ data.key
 references, anchors. Each root gets one controller; nothing in `App` is kept per
 class except singletons, so each instance is independent. A controller with no element, such as
 one that only watches the window, is started with no selector, `App.initController(new
-ThemeController())`, and gets no DOM binding: `__element` stays `null`, while the lifecycle and
+ThemeController())`, and gets no DOM binding: `rootElement` stays `null`, while the lifecycle and
 the singleton registry work as for any other. The caller constructs the controller, so its
 constructor can take arguments.
 
 `App.initController(controller, selector)`:
 
-1. when a selector is given and an element matches it, binds the two: the element's
-   `__controller` is the controller, the controller's `__element` is the element, and the
-   controller is added to its parent element's `__childControllers`, with `__parentElement`
-   pointing back. When no element matches, nothing is bound and a warning names the controller
-   and its selector, since a controller that was meant to have an element silently does nothing
-   without one;
+1. when a selector is given and an element matches it, binds the two: the controller's
+   `rootElement` is the element, and the element's `__controller` is the controller, so the
+   controller can be reached from its element, in the console or a browser test. When no
+   element matches, nothing is bound and a warning names the controller and its selector, since
+   a controller that was meant to have an element silently does nothing without one;
 2. awaits `initState()`;
 3. registers the controller as a singleton, when its class says `static readonly singleton = true`;
 4. calls `setState()`;
 5. calls `afterFirstSetState()`.
 
 So `initState()` looks elements up and adds listeners, and never calls `setState()` itself,
-since `App` calls it next. `dispose()` is there to override, but nothing in the framework calls
-it; a project that removes a controller's element calls it.
+since `App` calls it next. There is no teardown hook: nothing watches for a root leaving the
+page, and a hook that never fires would invite cleanup code that never runs.
 
 **State drives the DOM.** A controller keeps state in fields, an event handler only changes them
 and calls `setState()`, and `setState()` writes the whole DOM from the fields. A DOM change made
@@ -74,20 +73,35 @@ in an event handler is lost or contradicted by the next `setState()`.
   `private elements = new Elements()`, each field typed `HTMLElement | null = null`, since a lookup
   can find nothing. The controller's own fields are state only, so `this.loading` and
   `this.elements.submitButton` can't be confused.
-- **Elements are looked up once, in `buildElements()`**, and read from `this.elements` everywhere
-  else. Looking them up inside `this.__element` keeps each instance to its own root.
-  `buildElements()` and `initializeListeners()` are `protected`: a subclass may override them, and
-  other controllers have no business calling them.
+- **`Elements` finds its own fields, in `findIn(root)`**, which `initState()` calls once with
+  `this.rootElement`, and everything else reads them from `this.elements`. The class that names
+  the elements is the one that knows their selectors, so the template's contract with the
+  controller is in one place. `findIn()` returns at once when the root is `null`; after that,
+  `querySelector()` already answers `null` for a missing element, so no fallbacks are needed.
+  The field's declaration is the only place its type is written: `this.saveButton =
+  root.querySelector('.editor__save')` takes `HTMLButtonElement` from the field, so the call
+  needs no `<HTMLButtonElement>`, and `Array.from(root.querySelectorAll(...))` likewise takes its
+  element type from an array field. Writing it on the call too checks nothing (neither form
+  confirms the element really is a button) and can drift from the field. A lookup kept in a
+  local variable, outside `Elements`, has no field to take a type from and still needs one.
+  Looking inside the root keeps each instance to its own. Everything the controller touches is
+  found there, including lists such as a form's submit buttons, so no render looks anything up
+  again.
+- **A base controller's `Elements` is exported and named for it,** such as
+  `DialogControllerElements`, so a subclass imports it from the base's file, extends it with its
+  own fields, and overrides `findIn()`, calling `super.findIn(root)` first. A controller nobody
+  extends keeps a plain, unexported `Elements`. `initializeListeners()` is `protected`: a subclass
+  may override it, and other controllers have no business calling it.
 - **Data for one element is a `data-` attribute on the controller's root**, read from
-  `this.__element.dataset`, not from child elements, hidden inputs or inline JSON. Data every page
+  `this.rootElement.dataset`, not from child elements, hidden inputs or inline JSON. Data every page
   shares, such as the signed-in user, is on a project-owned state class the document template
   fills, such as the starter site's `AppState`.
 
-**Which element lookup.** `getElementByIdOrWarn()` claims an element is always on the page, and
-logs a warning when it isn't. Use `document.getElementById()` for one the template renders only
-sometimes, where `null` is expected, so the warning keeps meaning something. Bind a listener on
-the element already found, `this.elements.saveButton?.addEventListener('click', handler)`,
-rather than looking it up again.
+**Which element lookup.** `this.rootElement.querySelector()`, so a controller finds only what
+its own template rendered, and an element it needs sits inside its root. A lookup that finds
+nothing returns `null`, and the controller checks for that where the template renders the element
+only sometimes. Bind a listener on the element already found,
+`this.elements.saveButton?.addEventListener('click', handler)`, rather than looking it up again.
 
 ## Singletons and readiness
 
@@ -129,8 +143,8 @@ whether it has.
 `Controller` only deals with the DOM. Anything a project has an opinion about stays out of it,
 so the framework doesn't impose that opinion:
 
-- **No logging.** It calls `console.warn` only for a real problem, such as
-  `getElementByIdOrWarn()` finding nothing. A project that wants logging declares a label in each
+- **No logging.** It calls `console.warn` only for a real problem, such as a selector that
+  matches nothing. A project that wants logging declares a label in each
   class and calls its own logger. `logInfo`/`logWarn`/`logError` helpers on `Controller` were
   tried and removed: they chose the logger for the project, and labelled messages with
   `this.constructor.name`, which a production build minifies to a letter or two.

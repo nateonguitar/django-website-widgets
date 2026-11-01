@@ -41,15 +41,7 @@ export class App {
             const element = document.querySelector<HTMLElement>(selector);
             if (element) {
                 (element as any).__controller = controller;
-                controller.__element = element;
-                if (element.parentElement) {
-                    const parentElement: any = element.parentElement;
-                    controller.__parentElement = parentElement;
-                    if (parentElement.__childControllers === undefined) {
-                        parentElement.__childControllers = [];
-                    }
-                    parentElement.__childControllers.push(controller);
-                }
+                controller.rootElement = element;
             } else {
                 // Otherwise the controller runs with no element, every lookup inside it finds
                 // nothing, and the page just doesn't respond. Usually the template's root id and

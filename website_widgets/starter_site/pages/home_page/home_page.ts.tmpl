@@ -7,6 +7,14 @@ class Elements {
     nameInput: HTMLInputElement | null = null;
     spinner: HTMLElement | null = null;
     greetingText: HTMLParagraphElement | null = null;
+
+    public findIn(root: HTMLElement | null): void {
+        if (!root) return;
+        this.greetingForm = root.querySelector('#home-page__greeting-form');
+        this.nameInput = root.querySelector('#home-page__name-input');
+        this.spinner = root.querySelector('#home-page__spinner');
+        this.greetingText = root.querySelector('#home-page__greeting');
+    }
 }
 
 export class HomePageController extends Controller {
@@ -15,21 +23,13 @@ export class HomePageController extends Controller {
     private greeting = '';
 
     public async initState(): Promise<void> {
-        this.buildElements();
+        this.elements.findIn(this.rootElement);
         this.initializeListeners();
         // Data for this element alone is a data- attribute on its root, the element the
         // selector found.
         if (this.elements.nameInput) {
-            this.elements.nameInput.value = this.__element?.dataset.defaultName ?? '';
+            this.elements.nameInput.value = this.rootElement?.dataset.defaultName ?? '';
         }
-    }
-
-    protected buildElements(): void {
-        const elements = this.elements;
-        elements.greetingForm = this.getElementByIdOrWarn('home-page__greeting-form');
-        elements.nameInput = this.getElementByIdOrWarn('home-page__name-input');
-        elements.spinner = this.getElementByIdOrWarn('home-page__spinner');
-        elements.greetingText = this.getElementByIdOrWarn('home-page__greeting');
     }
 
     public setState(): void {

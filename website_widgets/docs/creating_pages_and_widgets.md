@@ -57,9 +57,9 @@ warning, since the `website_widgets.E001` check then fails until one of them cha
 page's root is a `<main>` holding an `<h1>`. A widget without a controller has only the class,
 since nothing looks its root up, and so repeats as it is. The generated `<script>` starts the controller on
 that root, `await App.initController(new LikeButtonController(), '#like-button')`, and the
-controller looks its elements up inside that root. The one example value, `label`, shows how data
+controller's `Elements` finds its elements inside that root, in `findIn()`. The one example value, `label`, shows how data
 reaches a controller: `set_context()` puts it in `context.data`, the template writes it in a
-`data-` attribute on the root, and the controller reads it from `this.__element.dataset` and
+`data-` attribute on the root, and the controller reads it from `this.rootElement.dataset` and
 writes it in `setState()`.
 
 **A widget with a controller is written for single use or for repeating**, which the command asks

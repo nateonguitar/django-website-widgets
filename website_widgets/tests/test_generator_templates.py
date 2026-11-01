@@ -22,11 +22,12 @@ class GeneratorTemplatesTestCase(SimpleTestCase):
             controller_ts = file.read()
 
         for expected in (
-            'class Elements {\n    label: HTMLElement | null = null;\n}',
+            'class Elements {\n    label: HTMLElement | null = null;\n',
+            'public findIn(root: HTMLElement | null): void',
+            "this.label = root.querySelector('.__css_name____label');",
             'private elements = new Elements();',
-            'protected buildElements(): void',
-            'this.elements.label = this.__element?.querySelector',
-            'this.__element?.dataset.label',
+            'this.elements.findIn(this.rootElement);',
+            'this.rootElement?.dataset.label',
             'this.elements.label.textContent = this.label;',
             'protected initializeListeners(): void',
         ):

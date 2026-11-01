@@ -27,7 +27,7 @@ class WwCreateWidgetTestCase(ComponentTestCase):
         self.assertIn("await App.initController(new LikeButtonController(), '#like-button');", html)
         controller_ts = self.read(folder, 'like_button.ts')
         self.assertIn('export class LikeButtonController extends Controller', controller_ts)
-        self.assertIn("querySelector<HTMLElement>('.like-button__label')", controller_ts)
+        self.assertIn("querySelector('.like-button__label')", controller_ts)
 
     def test_create_widget__writes_async_set_context__when_no_flag_or_setting(self):
         self.create_widget('like_button', '--tscontroller=false', '--stylesheet=false')

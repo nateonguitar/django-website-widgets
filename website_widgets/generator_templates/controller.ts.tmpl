@@ -2,6 +2,12 @@ import { Controller } from "__framework_path__/controller";
 
 class Elements {
     label: HTMLElement | null = null;
+
+    // Looked up inside the root, so each instance on a page finds its own.
+    public findIn(root: HTMLElement | null): void {
+        if (!root) return;
+        this.label = root.querySelector('.__css_name____label');
+    }
 }
 
 export class __ClassName__Controller extends Controller {
@@ -9,16 +15,11 @@ export class __ClassName__Controller extends Controller {
     private label = '';
 
     public async initState(): Promise<void> {
-        this.buildElements();
+        this.elements.findIn(this.rootElement);
         this.initializeListeners();
         // Data for this element alone is a data- attribute on its root, the element the
         // selector found.
-        this.label = this.__element?.dataset.label ?? '';
-    }
-
-    protected buildElements(): void {
-        // Looked up inside the root, so each instance on a page finds its own.
-        this.elements.label = this.__element?.querySelector<HTMLElement>('.__css_name____label') ?? null;
+        this.label = this.rootElement?.dataset.label ?? '';
     }
 
     public setState(): void {
