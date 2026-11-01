@@ -29,7 +29,9 @@ like_button.scss    empty                                            (--styleshe
 
 The class name is the module name in PascalCase. A name with folders, such as
 `dialogs/login_dialog`, nests the component, and every relative import is worked out from where
-it lands. Each part of the name becomes a Python package or module, which route discovery
+it lands. A folder the name adds, `dialogs/` here, gets an empty `__init__.py`, so it imports as a
+package like every other, and the summary says so; a folder that already exists is left as it is.
+Each part of the name becomes a Python package or module, which route discovery
 imports, so each must be a lowercase identifier (`login_dialog`, not `LoginDialog`,
 `login-dialog` or `class`), and `..` can't climb out of `pages/` or `widgets/`. Without
 `--tscontroller`, `--stylesheet` or, for a widget with a controller, `--repeating`, the command
@@ -37,6 +39,11 @@ asks. It stops without writing anything when the
 name breaks that rule or the folder already exists. It ends by listing the files it wrote, each
 with what it holds: the class, the root's selector, whether `main.ts` took the controller and the
 stylesheet, and for a page its URL and the name it reverses by.
+
+**The commands only write into the website app,** with no flag for another destination: that
+app's `tsconfig.json`, `package.json` and webpack config are the frontend build that bundles what
+they write. A widget belonging to another app is made by hand, as the movie manager's admin-only
+`ReturnRentalField` is, in `api/admin/widgets/return_rental_field/`.
 
 **A page is routed by its template.** The package's page templates start the class with
 `@register_url('__route__')`, named after the class (`routing.md`), and the command fills in a
