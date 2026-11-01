@@ -9,6 +9,15 @@ class Elements {
     themeInputs: HTMLInputElement[] = [];
     signOutButton: HTMLButtonElement | null = null;
     closeButton: HTMLButtonElement | null = null;
+
+    public findIn(root: HTMLElement | null): void {
+        if (!root) return;
+        this.button = root.querySelector('.account-menu__button');
+        this.dialog = root.querySelector('.account-menu__dialog');
+        this.themeInputs = Array.from(root.querySelectorAll('.account-menu__theme input'));
+        this.signOutButton = root.querySelector('.account-menu__sign-out');
+        this.closeButton = root.querySelector('.account-menu__close');
+    }
 }
 
 /**
@@ -21,19 +30,9 @@ export class AccountMenuController extends Controller {
     private signingOut = false;
 
     public async initState(): Promise<void> {
-        this.buildElements();
+        this.elements.findIn(this.rootElement);
         this.initializeListeners();
         this.theme = Theme.current();
-    }
-
-    protected buildElements(): void {
-        const root = this.__element;
-        const elements = this.elements;
-        elements.button = root?.querySelector<HTMLButtonElement>('.account-menu__button') ?? null;
-        elements.dialog = root?.querySelector<HTMLDialogElement>('.account-menu__dialog') ?? null;
-        elements.themeInputs = Array.from(root?.querySelectorAll<HTMLInputElement>('.account-menu__theme input') ?? []);
-        elements.signOutButton = root?.querySelector<HTMLButtonElement>('.account-menu__sign-out') ?? null;
-        elements.closeButton = root?.querySelector<HTMLButtonElement>('.account-menu__close') ?? null;
     }
 
     public setState(): void {

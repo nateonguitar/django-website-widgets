@@ -4,6 +4,11 @@ import { AppbarController } from "../appbar/appbar";
 
 class Elements {
     actionButton: HTMLButtonElement | null = null;
+
+    public findIn(root: HTMLElement | null): void {
+        if (!root) return;
+        this.actionButton = root.querySelector('.movie-card__action');
+    }
 }
 
 export class MovieChosenDetail {
@@ -26,18 +31,14 @@ export class MovieCardController extends Controller {
     private inCart = false;
 
     public async initState(): Promise<void> {
-        this.buildElements();
+        this.elements.findIn(this.rootElement);
         this.initializeListeners();
-        const dataset = this.__element?.dataset;
+        const dataset = this.rootElement?.dataset;
         this.movieId = Number(dataset?.movieId);
         this.title = dataset?.title ?? '';
         this.available = Number(dataset?.available);
         this.purpose = dataset?.purpose ?? 'cart';
         this.inCart = Cart.has(this.movieId);
-    }
-
-    protected buildElements(): void {
-        this.elements.actionButton = this.__element?.querySelector<HTMLButtonElement>('.movie-card__action') ?? null;
     }
 
     public setState(): void {
@@ -67,7 +68,7 @@ export class MovieCardController extends Controller {
     private async act(): Promise<void> {
         if (this.purpose === 'choose') {
             const detail: MovieChosenDetail = { movieId: this.movieId, title: this.title };
-            this.__element?.dispatchEvent(new CustomEvent(MovieCardController.movieChosenEvent, {
+            this.rootElement?.dispatchEvent(new CustomEvent(MovieCardController.movieChosenEvent, {
                 bubbles: true,
                 detail: detail,
             }));

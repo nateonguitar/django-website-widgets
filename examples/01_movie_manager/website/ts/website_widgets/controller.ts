@@ -5,9 +5,13 @@ export class Controller {
      */
     static readonly singleton: boolean = false;
 
-    /** The element `App.initController()`'s selector matched, or null when it was given none. */
-    public __element: HTMLElement | null = null;
-    public __parentElement: HTMLElement | null = null;
+    /**
+     * The element `App.initController()`'s selector matched, set by `App` before `initState()`
+     * runs. Look elements up inside it, `this.rootElement.querySelector('#title')`, so a
+     * controller only finds what its own template rendered. Null when `App` was given no
+     * selector, or nothing matched it.
+     */
+    public rootElement: HTMLElement | null = null;
 
     public async initState(): Promise<void> {
         // To be overridden by subclasses
@@ -19,23 +23,5 @@ export class Controller {
 
     public afterFirstSetState(): void {
         // To be overridden by subclasses
-    }
-
-    public dispose(): void {
-        // To be overridden by subclasses
-    }
-
-    /**
-     * Use this when the element is always present on load, so a warning appears if an
-     * element that should be there isn't found. Use document.getElementById when a null
-     * is sometimes intended, such as an element the template only renders conditionally.
-     */
-    getElementByIdOrWarn<T extends HTMLElement>(elementId: string): T | null {
-        const element = document.getElementById(elementId);
-        if (!element) {
-            console.warn(`Could not find element with ID: ${elementId}`);
-            return null;
-        }
-        return element as T;
     }
 }

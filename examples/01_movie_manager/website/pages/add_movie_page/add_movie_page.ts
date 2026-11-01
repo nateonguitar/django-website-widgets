@@ -18,6 +18,24 @@ class Elements {
     message: HTMLElement | null = null;
     added: HTMLElement | null = null;
     spinner: HTMLElement | null = null;
+    submitButtons: HTMLButtonElement[] = [];
+
+    public findIn(root: HTMLElement | null): void {
+        if (!root) return;
+        this.kindInputs = Array.from(root.querySelectorAll('input[name="kind"]'));
+        this.newForm = root.querySelector('.add-movie-page__new');
+        this.fieldErrors = Array.from(root.querySelectorAll('.add-movie-page__field-error'));
+        this.copySection = root.querySelector('.add-movie-page__copy');
+        this.search = root.querySelector('.add-movie-page__search');
+        this.searchResults = root.querySelector('.add-movie-page__search-results');
+        this.copiesForm = root.querySelector('.add-movie-page__copies-form');
+        this.chosenTitle = root.querySelector('.add-movie-page__chosen-title');
+        this.copies = root.querySelector('.add-movie-page__copies');
+        this.message = root.querySelector('.add-movie-page__message');
+        this.added = root.querySelector('.add-movie-page__added');
+        this.spinner = root.querySelector('.add-movie-page__spinner');
+        this.submitButtons = Array.from(root.querySelectorAll('form button[type="submit"]'));
+    }
 }
 
 /** The new-movie form's messages from a 400, keyed by field. */
@@ -44,25 +62,8 @@ export class AddMoviePageController extends Controller {
     private searchInFlight: AbortController | null = null;
 
     public async initState(): Promise<void> {
-        this.buildElements();
+        this.elements.findIn(this.rootElement);
         this.initializeListeners();
-    }
-
-    protected buildElements(): void {
-        const root = this.__element;
-        const elements = this.elements;
-        elements.kindInputs = Array.from(root?.querySelectorAll<HTMLInputElement>('input[name="kind"]') ?? []);
-        elements.newForm = root?.querySelector<HTMLFormElement>('.add-movie-page__new') ?? null;
-        elements.fieldErrors = Array.from(root?.querySelectorAll<HTMLElement>('.add-movie-page__field-error') ?? []);
-        elements.copySection = root?.querySelector<HTMLElement>('.add-movie-page__copy') ?? null;
-        elements.search = root?.querySelector<HTMLInputElement>('.add-movie-page__search') ?? null;
-        elements.searchResults = root?.querySelector<HTMLElement>('.add-movie-page__search-results') ?? null;
-        elements.copiesForm = root?.querySelector<HTMLFormElement>('.add-movie-page__copies-form') ?? null;
-        elements.chosenTitle = root?.querySelector<HTMLElement>('.add-movie-page__chosen-title') ?? null;
-        elements.copies = root?.querySelector<HTMLInputElement>('.add-movie-page__copies') ?? null;
-        elements.message = root?.querySelector<HTMLElement>('.add-movie-page__message') ?? null;
-        elements.added = root?.querySelector<HTMLElement>('.add-movie-page__added') ?? null;
-        elements.spinner = root?.querySelector<HTMLElement>('.add-movie-page__spinner') ?? null;
     }
 
     public setState(): void {
@@ -83,7 +84,7 @@ export class AddMoviePageController extends Controller {
         if (elements.chosenTitle) {
             elements.chosenTitle.textContent = this.chosen?.title ?? '';
         }
-        for (const button of this.__element?.querySelectorAll<HTMLButtonElement>('form button[type="submit"]') ?? []) {
+        for (const button of elements.submitButtons) {
             button.disabled = this.saving;
         }
         if (elements.message) {

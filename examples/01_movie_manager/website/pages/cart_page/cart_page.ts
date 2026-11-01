@@ -13,6 +13,17 @@ class Elements {
     spinner: HTMLElement | null = null;
     message: HTMLElement | null = null;
     done: HTMLElement | null = null;
+
+    public findIn(root: HTMLElement | null): void {
+        if (!root) return;
+        this.empty = root.querySelector('.cart-page__empty');
+        this.items = root.querySelector('.cart-page__items');
+        this.checkout = root.querySelector('.cart-page__checkout');
+        this.checkoutButton = root.querySelector('.cart-page__checkout-button');
+        this.spinner = root.querySelector('.cart-page__spinner');
+        this.message = root.querySelector('.cart-page__message');
+        this.done = root.querySelector('.cart-page__done');
+    }
 }
 
 export class CartPageController extends Controller {
@@ -25,21 +36,9 @@ export class CartPageController extends Controller {
     private unavailableMovieIds = new Set<number>();
 
     public async initState(): Promise<void> {
-        this.buildElements();
+        this.elements.findIn(this.rootElement);
         this.initializeListeners();
         this.items = Cart.items();
-    }
-
-    protected buildElements(): void {
-        const root = this.__element;
-        const elements = this.elements;
-        elements.empty = root?.querySelector<HTMLElement>('.cart-page__empty') ?? null;
-        elements.items = root?.querySelector<HTMLUListElement>('.cart-page__items') ?? null;
-        elements.checkout = root?.querySelector<HTMLElement>('.cart-page__checkout') ?? null;
-        elements.checkoutButton = root?.querySelector<HTMLButtonElement>('.cart-page__checkout-button') ?? null;
-        elements.spinner = root?.querySelector<HTMLElement>('.cart-page__spinner') ?? null;
-        elements.message = root?.querySelector<HTMLElement>('.cart-page__message') ?? null;
-        elements.done = root?.querySelector<HTMLElement>('.cart-page__done') ?? null;
     }
 
     public setState(): void {

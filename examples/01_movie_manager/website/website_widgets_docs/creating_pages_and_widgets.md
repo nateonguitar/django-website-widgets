@@ -2,8 +2,8 @@
 
 `python manage.py ww_create_page <name>` and `python manage.py ww_create_widget <name>` write a new
 component's files into the website app and register its controller and stylesheet in
-`ts/main.ts`. Read this before adding a component by hand, or before changing what the commands
-write for a project.
+`ts/main.ts`; `ww_create_page` also routes the page. Read this before adding a component by hand,
+or before changing what the commands write for a project.
 
 Primary code:
 - `website_widgets.management.commands.ww_create_page` and `website_widgets.management.commands.ww_create_widget` — the commands
@@ -32,18 +32,57 @@ The class name is the module name in PascalCase. A name with folders, such as
 it lands. Each part of the name becomes a Python package or module, which route discovery
 imports, so each must be a lowercase identifier (`login_dialog`, not `LoginDialog`,
 `login-dialog` or `class`), and `..` can't climb out of `pages/` or `widgets/`. Without
-`--tscontroller` or `--stylesheet`, the command asks. It stops without writing anything when the
-name breaks that rule or the folder already exists.
+`--tscontroller`, `--stylesheet` or, for a widget with a controller, `--repeating`, the command
+asks. It stops without writing anything when the
+name breaks that rule or the folder already exists. It ends by listing the files it wrote, each
+with what it holds: the class, the root's selector, whether `main.ts` took the controller and the
+stylesheet, and for a page its URL and the name it reverses by.
+
+**A page is routed by its template.** The package's `page.py.tmpl` starts the class with
+`@register_url('__route__')`, named after the class (`routing.md`), and the command fills in a
+route made from the name: the path in kebab case with a trailing `_page` dropped, so `login_page`
+routes to `login`, `manage_auth_tokens_page` to `manage-auth-tokens` and `account/settings_page`
+to `account/settings`. `--route=<route>` gives another, and `--route=` is the site root. A
+project that routes its pages some other way leaves the decorator out of its own `page.py.tmpl`
+(below), and its pages are written without one; the command then says the page isn't routed and
+prints the `@register_url` to add, or the import and `path()` for `urls.py`.
+
+When the template has `__route__`, the command stops before writing anything on a route naming a
+converter Django doesn't have, and on a page whose class name another page's route already uses
+as its name, since two routes with one name fail every import of the pages. A route that ties
+with another page's, matching the same URLs with neither more specific, is written with a
+warning, since the `website_widgets.E001` check then fails until one of them changes.
 
 **The root element's id and class are the module name in kebab case** (`like-button`), and a
-page's root is a `<main>` holding an `<h1>`. The generated `<script>` starts the controller on
+page's root is a `<main>` holding an `<h1>`. A widget without a controller has only the class,
+since nothing looks its root up, and so repeats as it is. The generated `<script>` starts the controller on
 that root, `await App.initController(new LikeButtonController(), '#like-button')`, and the
-controller looks its elements up
-inside that root, so a widget shown several times on a page works once each root has its own id
-(`like-button-{{ data.movie.id }}`, passed the same way). The one example value, `label`, shows
-how data reaches a controller: `set_context()` puts it in `context.data`, the template writes it
-in a `data-` attribute on the root, and the controller reads it from `this.__element.dataset` and
+controller's `Elements` finds its elements inside that root, in `findIn()`. The one example value, `label`, shows how data
+reaches a controller: `set_context()` puts it in `context.data`, the template writes it in a
+`data-` attribute on the root, and the controller reads it from `this.rootElement.dataset` and
 writes it in `setState()`.
+
+**A widget with a controller is written for single use or for repeating**, which the command asks
+(`Shown more than once on a page? [y/N]`) and `--repeating=true|false` answers. A repeating widget,
+such as one card per search result, has no id: every instance shares the class, and each root
+carries its own key in `data-key`, which the selector finds it by, so each gets its own
+controller. Its class takes the key as a keyword-only argument, `MovieCard(key=movie.id)`, and its
+constructor puts it straight into `context.data['key']`, which `super().__init__()` has just
+created, so `set_context()` has nothing to copy. Its template writes:
+
+```html
+<div class="movie-card"
+     data-key="{{ data.key }}">
+...
+await App.initController(new MovieCardController(), '.movie-card[data-key="{{ data.key }}"]');
+```
+
+The controller can read the key from `dataset.key`; a value the controller needs under its own
+name, such as the movie manager card's `data-movie-id`, sits beside it even when it holds the same
+id. The key goes inside a quoted attribute selector, so anything without a double quote works; a primary key
+or a slug is usual. A widget without a controller isn't asked: nothing selects its root, which
+has only its class, so the same template serves one instance or many, and `--repeating` changes
+nothing.
 
 **A widget's `set_context()` is `async def` unless the project or the command says otherwise.**
 Async is right for a widget in a page or behind `arender()`, where a database query is awaited; a
@@ -86,10 +125,12 @@ without wrapping every widget in it:
 | Template | Writes |
 | --- | --- |
 | `__init__.py.tmpl` | `__init__.py` |
-| `page.py.tmpl` | a page's class |
-| `widget__async.py.tmpl`, `widget__sync.py.tmpl` | a widget's class, with `async def` or `def set_context()` |
-| `page.html.tmpl`, `widget.html.tmpl` | the template, with no controller |
-| `page__controller.html.tmpl`, `widget__controller.html.tmpl` | the template, starting the controller |
+| `page.py.tmpl` | a page's class, with its `@register_url` |
+| `widget__async__single.py.tmpl`, `widget__sync__single.py.tmpl` | a widget's class, with `async def` or `def set_context()` |
+| `widget__async__repeating.py.tmpl`, `widget__sync__repeating.py.tmpl` | a repeating widget's class, taking `key=` |
+| `page__nocontroller.html.tmpl`, `widget__nocontroller.html.tmpl` | the template, with no controller |
+| `page__controller.html.tmpl`, `widget__controller__single.html.tmpl` | the template, starting the controller |
+| `widget__controller__repeating.html.tmpl` | a repeating widget's template, its key in the root's `data-key` |
 | `controller.ts.tmpl` | the controller, for pages and widgets |
 | `component.scss.tmpl` | the stylesheet, for pages and widgets |
 
@@ -113,5 +154,6 @@ something in an HTML template and `${...}` in TypeScript:
 | `__css_name__` | `like-button`, the root element's id and class |
 | `__framework_path__` | the relative import path to `ts/website_widgets`, such as `../../ts/website_widgets` |
 | `__app_page_module__`, `__AppPageClass__` | the two halves of `app_page_class`, in `page.py.tmpl` |
+| `__route__` | the page's route, in `page.py.tmpl`'s `@register_url('__route__')` |
 
 Copy the package's template to start an override, so it keeps the placeholders the command fills.

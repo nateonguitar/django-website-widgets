@@ -10,6 +10,17 @@ class Elements {
     spinner: HTMLElement | null = null;
     message: HTMLElement | null = null;
     fieldErrors: HTMLElement[] = [];
+
+    public findIn(root: HTMLElement | null): void {
+        if (!root) return;
+        this.form = root.querySelector('.sign-in-page__form');
+        this.username = root.querySelector('.sign-in-page__username');
+        this.password = root.querySelector('.sign-in-page__password');
+        this.submitButton = root.querySelector('.sign-in-page__submit-button');
+        this.spinner = root.querySelector('.sign-in-page__spinner');
+        this.message = root.querySelector('.sign-in-page__message');
+        this.fieldErrors = Array.from(root.querySelectorAll('.sign-in-page__field-error'));
+    }
 }
 
 /** Each field's message from a 400, keyed by the field's name. */
@@ -27,25 +38,13 @@ export class SignInPageController extends Controller {
     private message = '';
 
     public async initState(): Promise<void> {
-        this.buildElements();
+        this.elements.findIn(this.rootElement);
         this.initializeListeners();
-        this.next = this.__element?.dataset.next ?? '';
+        this.next = this.rootElement?.dataset.next ?? '';
     }
 
     public afterFirstSetState(): void {
         this.elements.username?.focus();
-    }
-
-    protected buildElements(): void {
-        const root = this.__element;
-        const elements = this.elements;
-        elements.form = root?.querySelector<HTMLFormElement>('.sign-in-page__form') ?? null;
-        elements.username = root?.querySelector<HTMLInputElement>('.sign-in-page__username') ?? null;
-        elements.password = root?.querySelector<HTMLInputElement>('.sign-in-page__password') ?? null;
-        elements.submitButton = root?.querySelector<HTMLButtonElement>('.sign-in-page__submit-button') ?? null;
-        elements.spinner = root?.querySelector<HTMLElement>('.sign-in-page__spinner') ?? null;
-        elements.message = root?.querySelector<HTMLElement>('.sign-in-page__message') ?? null;
-        elements.fieldErrors = Array.from(root?.querySelectorAll<HTMLElement>('.sign-in-page__field-error') ?? []);
     }
 
     public setState(): void {

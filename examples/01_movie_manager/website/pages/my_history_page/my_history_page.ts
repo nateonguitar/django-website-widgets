@@ -6,6 +6,12 @@ import type { Chart } from "chart.js";
 class Elements {
     canvas: HTMLCanvasElement | null = null;
     spinner: HTMLElement | null = null;
+
+    public findIn(root: HTMLElement | null): void {
+        if (!root) return;
+        this.canvas = root.querySelector('.my-history-page__canvas');
+        this.spinner = root.querySelector('.my-history-page__chart-spinner');
+    }
 }
 
 export class MyHistoryPageController extends Controller {
@@ -15,20 +21,15 @@ export class MyHistoryPageController extends Controller {
     private chartReady = false;
 
     public async initState(): Promise<void> {
-        this.buildElements();
+        this.elements.findIn(this.rootElement);
         this.initializeListeners();
         // Each a JSON list in a data- attribute on the root, written by MyHistoryPage.set_context().
-        this.labels = JSON.parse(this.__element?.dataset.chartLabels ?? '[]');
-        this.counts = JSON.parse(this.__element?.dataset.chartCounts ?? '[]');
+        this.labels = JSON.parse(this.rootElement?.dataset.chartLabels ?? '[]');
+        this.counts = JSON.parse(this.rootElement?.dataset.chartCounts ?? '[]');
     }
 
     public async afterFirstSetState(): Promise<void> {
         await this.drawChart();
-    }
-
-    protected buildElements(): void {
-        this.elements.canvas = this.__element?.querySelector<HTMLCanvasElement>('.my-history-page__canvas') ?? null;
-        this.elements.spinner = this.__element?.querySelector<HTMLElement>('.my-history-page__chart-spinner') ?? null;
     }
 
     public setState(): void {

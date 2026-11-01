@@ -10,6 +10,17 @@ class Elements {
     loading: HTMLElement | null = null;
     error: HTMLElement | null = null;
     results: HTMLElement | null = null;
+
+    public findIn(root: HTMLElement | null): void {
+        if (!root) return;
+        this.form = root.querySelector('.find-movie-page__filters');
+        this.query = root.querySelector('.find-movie-page__query');
+        this.genre = root.querySelector('.find-movie-page__genre');
+        this.rating = root.querySelector('.find-movie-page__rating');
+        this.loading = root.querySelector('.find-movie-page__loading');
+        this.error = root.querySelector('.find-movie-page__error');
+        this.results = root.querySelector('.find-movie-page__results');
+    }
 }
 
 /**
@@ -28,20 +39,8 @@ export class FindMoviePageController extends Controller {
     private inFlight: AbortController | null = null;
 
     public async initState(): Promise<void> {
-        this.buildElements();
+        this.elements.findIn(this.rootElement);
         this.initializeListeners();
-    }
-
-    protected buildElements(): void {
-        const root = this.__element;
-        const elements = this.elements;
-        elements.form = root?.querySelector<HTMLFormElement>('.find-movie-page__filters') ?? null;
-        elements.query = root?.querySelector<HTMLInputElement>('.find-movie-page__query') ?? null;
-        elements.genre = root?.querySelector<HTMLSelectElement>('.find-movie-page__genre') ?? null;
-        elements.rating = root?.querySelector<HTMLSelectElement>('.find-movie-page__rating') ?? null;
-        elements.loading = root?.querySelector<HTMLElement>('.find-movie-page__loading') ?? null;
-        elements.error = root?.querySelector<HTMLElement>('.find-movie-page__error') ?? null;
-        elements.results = root?.querySelector<HTMLElement>('.find-movie-page__results') ?? null;
     }
 
     public setState(): void {

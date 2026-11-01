@@ -5,6 +5,11 @@ import { Cart } from "../../ts/cart";
 
 class Elements {
     cartCount: HTMLElement | null = null;
+
+    public findIn(root: HTMLElement | null): void {
+        if (!root) return;
+        this.cartCount = root.querySelector('.appbar__cart-count');
+    }
 }
 
 /**
@@ -29,7 +34,7 @@ export class AppbarController extends Controller {
     }
 
     public async initState(): Promise<void> {
-        this.buildElements();
+        this.elements.findIn(this.rootElement);
         this.initializeListeners();
         this.cartCount = Cart.items().length;
     }
@@ -42,10 +47,6 @@ export class AppbarController extends Controller {
     public cartChanged(): void {
         this.cartCount = Cart.items().length;
         this.setState();
-    }
-
-    protected buildElements(): void {
-        this.elements.cartCount = this.__element?.querySelector<HTMLElement>('.appbar__cart-count') ?? null;
     }
 
     public setState(): void {

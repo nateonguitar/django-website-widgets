@@ -7,6 +7,14 @@ class Elements {
     message: HTMLElement | null = null;
     yesButton: HTMLButtonElement | null = null;
     noButton: HTMLButtonElement | null = null;
+
+    public findIn(root: HTMLElement | null): void {
+        if (!root) return;
+        this.dialog = root as HTMLDialogElement;
+        this.message = root.querySelector('.confirm-dialog__message');
+        this.yesButton = root.querySelector('.confirm-dialog__yes');
+        this.noButton = root.querySelector('.confirm-dialog__no');
+    }
 }
 
 /**
@@ -59,7 +67,7 @@ export class ConfirmDialogController extends Controller {
     }
 
     public async initState(): Promise<void> {
-        this.buildElements();
+        this.elements.findIn(this.rootElement);
         this.initializeListeners();
         // A screen reader announces the question as the dialog's name. The id is per clone,
         // so it can't be written into the template.
@@ -68,15 +76,6 @@ export class ConfirmDialogController extends Controller {
             elements.message.id = `${elements.dialog.id}__message`;
             elements.dialog.setAttribute('aria-labelledby', elements.message.id);
         }
-    }
-
-    protected buildElements(): void {
-        const root = this.__element;
-        const elements = this.elements;
-        elements.dialog = root as HTMLDialogElement | null;
-        elements.message = root?.querySelector<HTMLElement>('.confirm-dialog__message') ?? null;
-        elements.yesButton = root?.querySelector<HTMLButtonElement>('.confirm-dialog__yes') ?? null;
-        elements.noButton = root?.querySelector<HTMLButtonElement>('.confirm-dialog__no') ?? null;
     }
 
     public setState(): void {

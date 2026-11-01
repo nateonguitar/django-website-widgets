@@ -36,8 +36,8 @@ export class AdminToolbarController extends Controller {
   private toolbarElement: HTMLElement | null = null;
 
   public async initState(): Promise<void> {
-    this.loadingElement = this.getElementByIdOrWarn("admin-toolbar-loading");
-    this.toolbarElement = this.getElementByIdOrWarn("admin-toolbar");
+    this.loadingElement = this.rootElement.querySelector("#admin-toolbar-loading");
+    this.toolbarElement = this.rootElement.querySelector("#admin-toolbar");
     // Not awaited: App calls setState() once initState() returns, so the
     // loading state shows while the role is still being fetched.
     this.waitForRole();

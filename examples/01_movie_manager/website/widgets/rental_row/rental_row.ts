@@ -5,6 +5,12 @@ import { RentalApiService } from "../../ts/api/rental-api-service";
 class Elements {
     returnButton: HTMLButtonElement | null = null;
     message: HTMLElement | null = null;
+
+    public findIn(root: HTMLElement | null): void {
+        if (!root) return;
+        this.returnButton = root.querySelector('.rental-row__return');
+        this.message = root.querySelector('.rental-row__message');
+    }
 }
 
 export class RentalRowController extends Controller {
@@ -15,19 +21,14 @@ export class RentalRowController extends Controller {
     private message = '';
 
     public async initState(): Promise<void> {
-        this.buildElements();
+        this.elements.findIn(this.rootElement);
         this.initializeListeners();
-        this.rentalId = this.__element?.dataset.rentalId ?? '';
-    }
-
-    protected buildElements(): void {
-        this.elements.returnButton = this.__element?.querySelector<HTMLButtonElement>('.rental-row__return') ?? null;
-        this.elements.message = this.__element?.querySelector<HTMLElement>('.rental-row__message') ?? null;
+        this.rentalId = this.rootElement?.dataset.rentalId ?? '';
     }
 
     public setState(): void {
         const elements = this.elements;
-        this.__element?.classList.toggle('rental-row--returned', this.returned);
+        this.rootElement?.classList.toggle('rental-row--returned', this.returned);
         if (elements.returnButton) {
             elements.returnButton.hidden = this.returned;
             elements.returnButton.disabled = this.returning;

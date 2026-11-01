@@ -3,6 +3,12 @@ import { Controller } from "../../ts/website_widgets/controller";
 class Elements {
     select: HTMLSelectElement | null = null;
     description: HTMLElement | null = null;
+
+    public findIn(root: HTMLElement | null): void {
+        if (!root) return;
+        this.select = root.querySelector('.rating-picker__select');
+        this.description = root.querySelector('.rating-picker__description');
+    }
 }
 
 /**
@@ -16,18 +22,11 @@ export class RatingPickerController extends Controller {
     private rating = '';
 
     public async initState(): Promise<void> {
-        this.buildElements();
+        this.elements.findIn(this.rootElement);
         this.initializeListeners();
         const options = Array.from(this.elements.select?.options ?? []);
         this.descriptions = new Map(options.map((option) => [option.value, option.dataset.description ?? '']));
         this.rating = this.elements.select?.value ?? '';
-    }
-
-    protected buildElements(): void {
-        const root = this.__element;
-        const elements = this.elements;
-        elements.select = root?.querySelector<HTMLSelectElement>('.rating-picker__select') ?? null;
-        elements.description = root?.querySelector<HTMLElement>('.rating-picker__description') ?? null;
     }
 
     public setState(): void {
