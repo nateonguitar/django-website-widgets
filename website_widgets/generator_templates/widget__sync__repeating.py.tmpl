@@ -6,5 +6,6 @@ class __ClassName__(Widget):
         super().__init__()
         self.context.data['key'] = key
 
+    # Runs when rendering starts: run queries, read self.request and self.context.page here.
     def set_context(self):
         self.context.data['label'] = '__ClassName__'

@@ -31,7 +31,7 @@ in the doc.
 
 ## Docs
 
-- `rendering_pipeline.md` — what happens between a request and HTML: one page instance per request, the four passes of `build_response()`, `render()` and `arender()` outside a page, a whole document with no request (email) as a widget, the four-key template context and why it has no `user`, template lookup, and the async ORM trap
+- `rendering_pipeline.md` — what happens between a request and HTML: async and sync pages, one page instance per request, the four passes of `build_response()`, what goes in the constructor and what in `set_context()` (and the errors for getting it wrong), `render()` and `arender()` outside a page, a whole document with no request (email) as a widget, the four-key template context and why it has no `user`, template lookup, and the async ORM trap
 - `routing.md` — routing a page by hand or with `@register_url`: discovery under `pages/` (and `runserver` reloading on a new page), the namespace and default names, most-specific-first ordering, the tie check, `ww_show_routes`
 - `frontend_controllers.md` — the framework TypeScript: why it is never edited, a controller's lifecycle and its selector, `setState()`, a controller's shape (`Elements` and its `findIn()`, extending a base controller's, `data-` attributes), element lookups, singletons and `Completer`, what `Controller` leaves to the project
 - `reverse_template.md` — `reverse_template()`: URL names into `/posts/{post_id}` templates for the frontend, why it reads the route, `param_names`, why it isn't called `reverse`

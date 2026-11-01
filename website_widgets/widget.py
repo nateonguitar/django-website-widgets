@@ -53,8 +53,10 @@ class Widget:
         if self._request is not None:
             return self._request
         raise RuntimeError(
-            f'{type(self).__name__} has no request: it gets one from the page rendering it, or '
-            f'from the request passed to render() or arender().')
+            f"{type(self).__name__}.request isn't set until rendering starts, so it can't be read "
+            f"in __init__(); read it in set_context() (or a page's handle_request()). It comes "
+            f"from the page rendering this widget, or the request passed to render() or "
+            f"arender().")
 
     def set_context(self):
         """
@@ -199,14 +201,37 @@ class Widget:
                 for widget in value:
                     if not isinstance(widget, Widget):
                         raise TypeError(f"Expected Widget in children['{key}'] list, got {type(widget)}")
+                    self._refuse_page_child(widget, key)
                     widgets.append(widget)
             elif isinstance(value, Widget):
+                self._refuse_page_child(value, key)
                 widgets.append(value)
         return widgets
+
+    def _refuse_page_child(
+        self,
+        widget: Widget,
+        key: str
+    ):
+        # Imported here: web_page.py imports this module. Both are loaded by the time a render runs.
+        from website_widgets.web_page import _WebPage
+
+        if isinstance(widget, _WebPage):
+            raise TypeError(
+                f"{type(widget).__name__} is a page in {type(self).__name__}.context.children"
+                f"['{key}']: a page is only ever the root, rendered by its view. Render a widget "
+                f"there instead.")
 
     def _share_render_state_with(self, widget: Widget):
         # Request and page context are shared by reference across the whole tree.
         widget._request = self._request
+        if widget.context.page is not self.context.page and widget.context.page:
+            raise RuntimeError(
+                f"{type(widget).__name__}.context.page was written before {type(self).__name__} "
+                f"rendered it, so its keys {sorted(widget.context.page)} would be lost: a child's "
+                f"context.page is replaced by the page's shared dict once rendering starts. Put "
+                f"the widget's own values in context.data, and page-wide ones in set_context(), "
+                f"where context.page is the shared dict.")
         widget.context.page = self.context.page
 
     def _render_children_to_html(self):

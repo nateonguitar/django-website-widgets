@@ -87,16 +87,23 @@ has only its class, so the same template serves one instance or many, and `--rep
 nothing.
 
 **A widget's `set_context()` is `async def` unless the project or the command says otherwise.**
-Async is right for a widget in a page or behind `arender()`, where a database query is awaited; a
-sync `def set_context()` runs on the page's event loop, where a sync query raises
+Async is right for a widget in an `AsyncWebPage` or behind `arender()`, where a database query is
+awaited; a sync `def set_context()` runs on the page's event loop, where a sync query raises
 `SynchronousOnlyOperation`. Sync is right for a widget rendered with `render()` from sync code (a
-plain Django view, an email, the admin), which refuses an `async def`. `--async` or `--sync`
+plain Django view, an email, the admin) or in a `SyncWebPage`, which refuse an `async def`. `--async` or `--sync`
 chooses for one widget; `GenerateComponentConfig.widget_set_context` (`'async'` or `'sync'`) sets
 the project's default. A page has no flag: its `set_context()` must match its class, so the
 command reads it from the page base class, writing `page__async.py.tmpl`'s `async def` under an
 `AsyncWebPage` and `page__sync.py.tmpl`'s `def` under a `SyncWebPage`. It calls no
 `super().set_context()`, since the base's does nothing; a project whose page base class does work
 there adds the call in its own page template.
+
+**The constructor keeps its arguments; `set_context()` does the rest.** The generated
+`__init__()` stores what it's given, since a constructor runs before rendering: it can't await,
+`self.request` isn't set, and a child's `context.page` isn't the page's yet. `set_context()`,
+marked by the generated comment, runs once rendering starts, so queries, the request, the user,
+`context.page` and children built from loaded data go there. Doing those in the constructor
+raises an error saying where they go instead (`rendering_pipeline.md`).
 
 **`ts/main.ts` gets the new lines between its marker pairs**, each section kept sorted:
 `// {{ WIDGET STYLES START }}` / `END`, `PAGE STYLES`, `WIDGET CONTROLLERS` and

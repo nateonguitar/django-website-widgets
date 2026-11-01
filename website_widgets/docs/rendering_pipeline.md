@@ -101,6 +101,32 @@ Pass 2 sits between 1 and 3 because it needs both: the tree must be fully constr
 drawing, and the children must still *be* widgets, since the debug tree reports class names and
 each widget's optional `debug_label`.
 
+## The constructor or `set_context()`
+
+**The constructor keeps what its arguments already are.** It runs when the widget is built,
+before any rendering: `self.request` isn't set yet, `context.page` is still the widget's own
+empty dict, and nothing can be awaited. So it stores its arguments, and may put values that need
+nothing else in `context.data`, as a repeating widget's `key` does.
+
+**`set_context()` does everything that needs rendering to have started.** It runs once per
+render, after `self.request` is set and, for a child, after its parent has handed it the page's
+shared `context.page`; every `set_context()` in the tree finishes on the server before any HTML
+is sent, so there is no later "on screen" phase. It awaits queries (in an `async def`), reads the
+request and the user, writes page-wide values to `context.page`, and builds children from what
+it loaded. A widget that needs none of that doesn't override it.
+
+Getting it wrong fails with an explanation rather than silently:
+
+- **Reading `self.request` in a constructor** raises `RuntimeError`, saying it isn't set until
+  rendering starts and to read it in `set_context()`.
+- **A child writing `context.page` before rendering**, in its constructor or by a parent writing
+  `child.context.page[...]`, raises `RuntimeError` when the parent hands it the shared dict,
+  naming the keys that would otherwise be lost. A widget rendered on its own keeps a
+  `context.page` it was given before `render()`, and a page writes its own whenever it likes,
+  since it is the root: only the handover from parent to child checks.
+- **A page placed in `context.children`**, directly, in a list, or however it got there, raises
+  `TypeError` naming the key: a page is only ever the root, rendered by its view.
+
 ## Rendering a widget outside a page
 
 A widget can be rendered on its own: into an ordinary Django template, an email body or an admin

@@ -5,5 +5,6 @@ from __app_page_module__ import __AppPageClass__
 
 @register_url('__route__')
 class __ClassName__(__AppPageClass__):
+    # Runs when rendering starts: await queries, read self.request and self.context.page here.
     async def set_context(self):
         self.context.data['label'] = '__ClassName__'

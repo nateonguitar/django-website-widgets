@@ -129,3 +129,70 @@ class AsyncChildParentWidget(Widget):
         child = AsyncContextWidget()
         child.template_filename = self.child_template_filename
         self.context.children['child'] = child
+
+
+class HolderWidget(Widget):
+    """Runs the test's `fill(children)` in set_context(), to place children any way a test needs."""
+
+    def __init__(self, fill):
+        super().__init__()
+        self.fill = fill
+
+    def set_context(self):
+        self.fill(self.context.children)
+
+
+class EarlyPageWritingWidget(Widget):
+    """Writes context.page in its constructor, before a parent shares the page's dict with it."""
+
+    def __init__(self):
+        super().__init__()
+        self.context.page['early'] = 'lost'
+
+
+class RequestInConstructorWidget(Widget):
+    def __init__(self):
+        super().__init__()
+        self.path = self.request.path
+
+
+class RequestInConstructorPage(AsyncWebPage):
+    def __init__(self):
+        super().__init__()
+        self.path = self.request.path
+
+
+class PageValueWidget(Widget):
+    """Writes `page[key] = value` in set_context(), for its siblings and parent to read."""
+
+    def __init__(self, key: str, value: str, template_filename: str):
+        super().__init__()
+        self.key = key
+        self.value = value
+        self.template_filename = template_filename
+
+    def set_context(self):
+        self.context.page[self.key] = self.value
+
+
+class PageWritingPage(AsyncWebPage):
+    """
+    Writes `context.page` in `handle_request()` before `set_context()`, as a project's AppPage
+    puts the user there, and again in `set_context()`, with a child that reads both.
+    """
+
+    def __init__(self, document_template_filename: str, template_filename: str, child_template_filename: str):
+        super().__init__()
+        self.document_template_path = document_template_filename
+        self.template_filename = template_filename
+        self.child_template_filename = child_template_filename
+
+    async def handle_request(self, request, *args, **kwargs):
+        self.context.page['user'] = 'ann'
+        return await super().handle_request(request, *args, **kwargs)
+
+    async def set_context(self):
+        self.context.page['title'] = 'Home'
+        child = DefaultTemplateWidget()
+        child.template_filename = self.child_template_filename
+        self.context.children['child'] = child
