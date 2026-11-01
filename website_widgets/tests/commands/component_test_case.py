@@ -60,7 +60,7 @@ class ComponentTestCase(SimpleTestCase):
             mock_apps.get_app_config.return_value = app_config
         self.config = WebsiteWidgetsConfig(
             generate_component=GenerateComponentConfig(
-                app_page_class='website_widgets.web_page.WebPage',
+                app_page_class='website_widgets.web_page.AsyncWebPage',
                 templates_dir=self.templates_dir))
         for command in ('ww_create_page', 'ww_create_widget'):
             self.enterContext(patch(

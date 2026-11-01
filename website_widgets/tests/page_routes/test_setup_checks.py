@@ -5,7 +5,7 @@ from django.test import override_settings
 from django.urls import path
 
 from website_widgets import PageRoutes, register_url
-from website_widgets.web_page import WebPage
+from website_widgets.web_page import AsyncWebPage
 from website_widgets.tests.page_routes.page_routes_test_case import PageRoutesTestCase
 
 
@@ -49,7 +49,7 @@ class CheckWebsiteAppIsInstalledTestCase(PageRoutesTestCase):
 class CheckPagesAreRoutedTestCase(PageRoutesTestCase):
     def test_check_pages_are_routed__fails__when_no_url_pattern_includes_the_pages(self):
         @register_url('about', name='about')
-        class AboutPage(WebPage):
+        class AboutPage(AsyncWebPage):
             pass
 
         self.use_urlconf([])
@@ -61,7 +61,7 @@ class CheckPagesAreRoutedTestCase(PageRoutesTestCase):
 
     def test_check_pages_are_routed__passes__when_urls_include_the_pages(self):
         @register_url('about', name='about')
-        class AboutPage(WebPage):
+        class AboutPage(AsyncWebPage):
             pass
 
         self.use_urlconf([path('', PageRoutes.urls())])

@@ -107,15 +107,15 @@ class StarterSiteTestCase(SimpleTestCase):
         call_command(
             'ww_create_page',
             'about_page',
-            '--tscontroller=true',
-            '--stylesheet=true',
+            '--tscontroller',
+            '--stylesheet',
             stdout=io.StringIO())
         call_command(
             'ww_create_widget',
             'info_card',
-            '--tscontroller=true',
-            '--stylesheet=true',
-            '--repeating=false',
+            '--tscontroller',
+            '--stylesheet',
+            '--no-repeating',
             stdout=io.StringIO())
 
         main_ts = self.read('ts', 'main.ts')
@@ -130,8 +130,8 @@ class StarterSiteTestCase(SimpleTestCase):
         call_command(
             'ww_create_page',
             'about_page',
-            '--tscontroller=false',
-            '--stylesheet=false',
+            '--no-tscontroller',
+            '--no-stylesheet',
             stdout=io.StringIO())
         # The urlconf in setUp read the routes before the page existed.
         self.forget_app_modules()

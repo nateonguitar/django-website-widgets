@@ -110,13 +110,16 @@ class ComponentFiles:
 
     def ask_yes_no(
         self,
-        flag: str | None,
+        flag: bool | None,
         question: str,
         default: bool = True
     ) -> bool:
-        """The flag's `true`/`false` when given, otherwise the answer, a blank one taking the default."""
+        """
+        The flag's value when `--x` or `--no-x` was given, otherwise the answer, a blank one
+        taking the default.
+        """
         if flag is not None:
-            return flag == 'true'
+            return flag
         choices = '[Y/n]' if default else '[y/N]'
         while True:
             answer = FrameworkFolder.read_answer(f'{question} {choices} ')

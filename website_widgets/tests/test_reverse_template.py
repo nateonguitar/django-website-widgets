@@ -10,7 +10,7 @@ class ReverseTemplateTestCase(SimpleTestCase):
     def test_reverse_template__returns_reverse_result__when_route_has_no_parameters(self):
         self.assertEqual(reverse_template('plain'), reverse('plain'))
 
-    def test_reverse_template__returns_route_parameter_names__when_paramnames_omitted(self):
+    def test_reverse_template__returns_route_parameter_names__when_param_names_omitted(self):
         self.assertEqual(reverse_template('comment'), '/posts/{post_id}/comments/{comment_id}')
 
     def test_reverse_template__returns_template__when_parameter_not_after_slash(self):
@@ -44,22 +44,22 @@ class ReverseTemplateTestCase(SimpleTestCase):
         with override_script_prefix('/mounted/'):
             self.assertEqual(reverse_template('outer:post'), '/mounted/outer/posts/{post_id}')
 
-    def test_reverse_template__renames_placeholders_in_order__when_paramnames_given(self):
+    def test_reverse_template__renames_placeholders_in_order__when_param_names_given(self):
         self.assertEqual(
             reverse_template('comment', ['a', 'b']),
             '/posts/{a}/comments/{b}')
 
-    def test_reverse_template__names_unnamed_group__when_paramnames_given(self):
+    def test_reverse_template__names_unnamed_group__when_param_names_given(self):
         self.assertEqual(reverse_template('unnamed_group', ['legacy_id']), '/legacy/{legacy_id}/')
 
-    def test_reverse_template__chooses_route_by_parameter_count__when_paramnames_given(self):
+    def test_reverse_template__chooses_route_by_parameter_count__when_param_names_given(self):
         self.assertEqual(reverse_template('optional_group', ['page']), '/optional/{page}/')
 
     def test_reverse_template__fails__when_routes_for_name_differ_in_parameters(self):
         with self.assertRaises(ValueError):
             reverse_template('optional_group')
 
-    def test_reverse_template__fails__when_paramnames_count_differs_from_route(self):
+    def test_reverse_template__fails__when_param_names_count_differs_from_route(self):
         with self.assertRaises(NoReverseMatch):
             reverse_template('comment', ['post_id'])
 

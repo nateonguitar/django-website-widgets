@@ -13,7 +13,7 @@ class WwCreateWidgetTestCase(ComponentTestCase):
         return self.run_command('ww_create_widget', *args)
 
     def test_create_widget__writes_widget_files__when_both_flags_true(self):
-        self.create_widget('like_button', '--tscontroller=true', '--stylesheet=true')
+        self.create_widget('like_button', '--tscontroller', '--stylesheet')
 
         folder = os.path.join(self.app_folder, 'widgets', 'like_button')
         self.assertEqual(
@@ -30,13 +30,13 @@ class WwCreateWidgetTestCase(ComponentTestCase):
         self.assertIn("querySelector('.like-button__label')", controller_ts)
 
     def test_create_widget__writes_async_set_context__when_no_flag_or_setting(self):
-        self.create_widget('like_button', '--tscontroller=false', '--stylesheet=false')
+        self.create_widget('like_button', '--no-tscontroller', '--no-stylesheet')
 
         widget_py = self.read(self.app_folder, 'widgets', 'like_button', 'like_button.py')
         self.assertIn('    async def set_context(self):', widget_py)
 
     def test_create_widget__writes_sync_set_context__when_sync_flag_given(self):
-        self.create_widget('like_button', '--tscontroller=false', '--stylesheet=false', '--sync')
+        self.create_widget('like_button', '--no-tscontroller', '--no-stylesheet', '--sync')
 
         widget_py = self.read(self.app_folder, 'widgets', 'like_button', 'like_button.py')
         self.assertIn('    def set_context(self):', widget_py)
@@ -45,7 +45,7 @@ class WwCreateWidgetTestCase(ComponentTestCase):
     def test_create_widget__writes_sync_set_context__when_setting_is_sync(self):
         self.config.generate_component.widget_set_context = 'sync'
 
-        self.create_widget('like_button', '--tscontroller=false', '--stylesheet=false')
+        self.create_widget('like_button', '--no-tscontroller', '--no-stylesheet')
 
         widget_py = self.read(self.app_folder, 'widgets', 'like_button', 'like_button.py')
         self.assertNotIn('async', widget_py)
@@ -53,24 +53,24 @@ class WwCreateWidgetTestCase(ComponentTestCase):
     def test_create_widget__writes_async_set_context__when_async_flag_overrides_sync_setting(self):
         self.config.generate_component.widget_set_context = 'sync'
 
-        self.create_widget('like_button', '--tscontroller=false', '--stylesheet=false', '--async')
+        self.create_widget('like_button', '--no-tscontroller', '--no-stylesheet', '--async')
 
         widget_py = self.read(self.app_folder, 'widgets', 'like_button', 'like_button.py')
         self.assertIn('    async def set_context(self):', widget_py)
 
     def test_create_widget__fails__when_both_async_and_sync_given(self):
         with self.assertRaises(CommandError):
-            self.create_widget('like_button', '--tscontroller=false', '--stylesheet=false', '--async', '--sync')
+            self.create_widget('like_button', '--no-tscontroller', '--no-stylesheet', '--async', '--sync')
 
     def test_create_widget__kebab_cases_root_from_last_part__when_name_is_nested(self):
-        self.create_widget('dialogs/login_dialog', '--tscontroller=false', '--stylesheet=false')
+        self.create_widget('dialogs/login_dialog', '--no-tscontroller', '--no-stylesheet')
 
         html = self.read(self.app_folder, 'widgets', 'dialogs', 'login_dialog', 'login_dialog.html')
         self.assertIn('<div class="login-dialog"', html)
         self.assertIn('<p>{{ data.label }}</p>', html)
 
     def test_create_widget__registers_stylesheet_and_controller_sorted__when_both_generated(self):
-        self.create_widget('like_button', '--tscontroller=true', '--stylesheet=true')
+        self.create_widget('like_button', '--tscontroller', '--stylesheet')
 
         main_ts = self.read(self.app_folder, 'ts', 'main.ts')
         self.assertIn(
@@ -84,7 +84,7 @@ class WwCreateWidgetTestCase(ComponentTestCase):
             main_ts)
 
     def test_create_widget__imports_framework_relative_to_depth__when_name_is_nested(self):
-        self.create_widget('dialogs/login_dialog', '--tscontroller=true', '--stylesheet=false')
+        self.create_widget('dialogs/login_dialog', '--tscontroller', '--no-stylesheet')
 
         controller_ts = self.read(self.app_folder, 'widgets', 'dialogs', 'login_dialog', 'login_dialog.ts')
         self.assertIn('from "../../../ts/website_widgets/controller"', controller_ts)
@@ -93,7 +93,7 @@ class WwCreateWidgetTestCase(ComponentTestCase):
             self.read(self.app_folder, 'ts', 'main.ts'))
 
     def test_create_widget__writes_no_controller_or_stylesheet__when_both_declined(self):
-        self.create_widget('plain_card', '--tscontroller=false', '--stylesheet=false')
+        self.create_widget('plain_card', '--no-tscontroller', '--no-stylesheet')
 
         folder = os.path.join(self.app_folder, 'widgets', 'plain_card')
         self.assertEqual(sorted(os.listdir(folder)), ['__init__.py', 'plain_card.html', 'plain_card.py'])
@@ -101,10 +101,9 @@ class WwCreateWidgetTestCase(ComponentTestCase):
         self.assertEqual(self.read(self.app_folder, 'ts', 'main.ts'), MAIN_TS)
 
     def test_create_widget__writes_root_with_class_and_no_id__when_no_controller(self):
-        for repeating_flag in ('--repeating=false', '--repeating=true'):
+        for repeating_flag, name in (('--no-repeating', 'plain_card_single'), ('--repeating', 'plain_card_repeating')):
             with self.subTest(repeating=repeating_flag):
-                name = f'plain_card_{repeating_flag.rsplit("=", 1)[1]}'
-                output = self.create_widget(name, '--tscontroller=false', '--stylesheet=false', repeating_flag)
+                output = self.create_widget(name, '--no-tscontroller', '--no-stylesheet', repeating_flag)
 
                 folder = os.path.join(self.app_folder, 'widgets', name)
                 css_name = name.replace('_', '-')
@@ -124,7 +123,7 @@ class WwCreateWidgetTestCase(ComponentTestCase):
         self.write('<script type="module" nonce="{{ page.nonce }}">__ClassName__</script>\n',
                    self.templates_dir, 'widget__controller__single.html.tmpl')
 
-        self.create_widget('like_button', '--tscontroller=true', '--stylesheet=false')
+        self.create_widget('like_button', '--tscontroller', '--no-stylesheet')
 
         folder = os.path.join(self.app_folder, 'widgets', 'like_button')
         self.assertEqual(
@@ -137,19 +136,19 @@ class WwCreateWidgetTestCase(ComponentTestCase):
         os.remove(os.path.join(self.app_folder, 'ts', 'website_widgets', 'controller.ts'))
 
         with self.assertRaisesMessage(CommandError, 'ww_upgrade'):
-            self.create_widget('like_button', '--tscontroller=true', '--stylesheet=false')
+            self.create_widget('like_button', '--tscontroller', '--no-stylesheet')
 
     def test_create_widget__fails__when_folder_exists(self):
         os.makedirs(os.path.join(self.app_folder, 'widgets', 'like_button'))
 
         with self.assertRaisesMessage(CommandError, 'already exists'):
-            self.create_widget('like_button', '--tscontroller=false', '--stylesheet=false')
+            self.create_widget('like_button', '--no-tscontroller', '--no-stylesheet')
 
     def test_create_widget__fails_writing_nothing__when_a_part_of_the_name_cannot_be_a_module(self):
         for name in ('Like-Button', 'LikeButton', 'like button', 'class', '2fast', '../escape', 'dialogs//login'):
             with self.subTest(name=name):
                 with self.assertRaisesMessage(CommandError, "can't be a component name"):
-                    self.create_widget(name, '--tscontroller=true', '--stylesheet=true')
+                    self.create_widget(name, '--tscontroller', '--stylesheet')
 
         self.assertFalse(os.path.exists(os.path.join(self.app_folder, 'widgets')))
         self.assertEqual(sorted(os.listdir(self.app_folder)), ['package.json', 'ts', 'tsconfig.json', 'webpack.config.js', 'website_widgets_docs'])
@@ -165,7 +164,7 @@ class WwCreateWidgetTestCase(ComponentTestCase):
             ['__init__.py', 'asked_card.html', 'asked_card.py', 'asked_card.scss', 'asked_card.ts'])
 
     def test_create_widget__lists_each_file_with_what_it_holds__when_created(self):
-        output = self.create_widget('dialogs/login_dialog', '--tscontroller=true', '--stylesheet=true', '--sync')
+        output = self.create_widget('dialogs/login_dialog', '--tscontroller', '--stylesheet', '--sync')
 
         widget_folder = os.path.join(self.app_folder, 'widgets', 'dialogs', 'login_dialog')
         self.assertIn(
@@ -185,9 +184,9 @@ class WwCreateWidgetTestCase(ComponentTestCase):
             with self.subTest(set_context=set_context_flag):
                 output = self.create_widget(
                     name,
-                    '--tscontroller=true',
-                    '--stylesheet=false',
-                    '--repeating=true',
+                    '--tscontroller',
+                    '--no-stylesheet',
+                    '--repeating',
                     set_context_flag)
 
                 folder = os.path.join(self.app_folder, 'widgets', name)
@@ -203,7 +202,7 @@ class WwCreateWidgetTestCase(ComponentTestCase):
                 self.assertIn(f'root .{css_name}[data-key=<key>]', output)
 
     def test_create_widget__renders_one_key_and_selector_per_instance__when_repeating_widget_is_shown_twice(self):
-        self.create_widget('movie_card', '--tscontroller=true', '--stylesheet=false', '--repeating=true', '--sync')
+        self.create_widget('movie_card', '--tscontroller', '--no-stylesheet', '--repeating', '--sync')
         movie_card_class = importlib.import_module('website.widgets.movie_card').MovieCard
 
         with override_settings(STATIC_URL='/static/'):
@@ -217,18 +216,18 @@ class WwCreateWidgetTestCase(ComponentTestCase):
 
     def test_create_widget__asks_whether_repeating__only_when_controller_generated(self):
         with patch('builtins.input', side_effect=['y']) as mock_input:
-            self.create_widget('movie_card', '--tscontroller=true', '--stylesheet=false')
+            self.create_widget('movie_card', '--tscontroller', '--no-stylesheet')
         mock_input.assert_called_once_with('Shown more than once on a page? [y/N] ')
         self.assertIn('key', self.read(self.app_folder, 'widgets', 'movie_card', 'movie_card.py'))
 
         with patch('builtins.input') as mock_input:
-            self.create_widget('plain_card', '--tscontroller=false', '--stylesheet=false')
+            self.create_widget('plain_card', '--no-tscontroller', '--no-stylesheet')
         mock_input.assert_not_called()
         self.assertNotIn('key', self.read(self.app_folder, 'widgets', 'plain_card', 'plain_card.py'))
 
     def test_create_widget__writes_single_use_widget__when_repeating_question_is_left_blank(self):
         with patch('builtins.input', side_effect=['']):
-            self.create_widget('like_button', '--tscontroller=true', '--stylesheet=false')
+            self.create_widget('like_button', '--tscontroller', '--no-stylesheet')
 
         folder = os.path.join(self.app_folder, 'widgets', 'like_button')
         self.assertIn('def __init__(self):', self.read(folder, 'like_button.py'))
@@ -237,7 +236,7 @@ class WwCreateWidgetTestCase(ComponentTestCase):
     def test_create_widget__lists_files_without_main_ts_notes__when_main_ts_is_missing(self):
         os.remove(os.path.join(self.app_folder, 'ts', 'main.ts'))
 
-        output = self.create_widget('like_button', '--tscontroller=true', '--stylesheet=true')
+        output = self.create_widget('like_button', '--tscontroller', '--stylesheet')
 
         self.assertIn('  like_button.ts     LikeButtonController\n', output)
         self.assertIn('  like_button.scss\n', output)

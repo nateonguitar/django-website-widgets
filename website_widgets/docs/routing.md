@@ -9,7 +9,8 @@ Primary code:
   ordering key, `check_for_ties()`
 - `website_widgets.management.commands.ww_show_routes` — the order and reachability
   report
-- `website_widgets.web_page` — `WebPage.as_view()`, which both kinds of route call
+- `website_widgets.web_page` — `AsyncWebPage.as_view()` and `SyncWebPage.as_view()`, which both
+  kinds of route call
 
 ## Two ways to route a page
 
@@ -36,8 +37,8 @@ class ForumPostPage(AppPage): ...
 class ForumCreatePostPage(AppPage): ...
 ```
 
-`ww_create_page` writes a page's first `@register_url`, from its `page.py.tmpl`
-(`creating_pages_and_widgets.md`). `urls.py` then includes every decorated page in one line, the way the admin is included:
+`ww_create_page` writes a page's first `@register_url`, from its `page__async.py.tmpl` or
+`page__sync.py.tmpl` (`creating_pages_and_widgets.md`). `urls.py` then includes every decorated page in one line, the way the admin is included:
 
 ```python
 from website_widgets import PageRoutes
@@ -53,8 +54,8 @@ The two mix freely. A decorated route is an ordinary `path()`, so `reverse()`, `
 decorator is never routed automatically, which is what keeps base classes such as a project's
 `AppPage` off the URL list.
 
-The decorator checks when the class is defined: it raises `TypeError` on a class that isn't a
-`WebPage`, and `ImproperlyConfigured` on a route name already registered. Its `kwargs` reach the
+The decorator checks when the class is defined: it raises `TypeError` on a class that is neither
+an `AsyncWebPage` nor a `SyncWebPage`, and `ImproperlyConfigured` on a route name already registered. Its `kwargs` reach the
 page's constructor alongside the URL's parameters, through `as_view()`, so one class can serve
 variants of a route without wrapper functions.
 

@@ -7,7 +7,7 @@ is defined in, so every template a test writes goes beside this one, through
 import asyncio
 import os
 
-from website_widgets.web_page import WebPage
+from website_widgets.web_page import AsyncWebPage, SyncWebPage
 from website_widgets.widget import Widget
 
 
@@ -36,15 +36,15 @@ class SubfolderWidget(BaseFolderWidget):
     pass
 
 
-class UnsetDocumentPage(WebPage):
+class UnsetDocumentPage(AsyncWebPage):
     pass
 
 
-class ClassLevelDocumentPage(WebPage):
+class ClassLevelDocumentPage(AsyncWebPage):
     document_template_path = '../templates/document_template.html'
 
 
-class DocumentPage(WebPage):
+class DocumentPage(AsyncWebPage):
     """A page whose test sets both its templates, with a child for its own template to place."""
 
     def __init__(self, document_template_filename: str, template_filename: str, child_template_filename: str):
@@ -53,9 +53,23 @@ class DocumentPage(WebPage):
         self.template_filename = template_filename
         self.child_template_filename = child_template_filename
 
+    async def set_context(self):
+        self.context.data['word'] = 'async'
+        self.context.children['child'] = WordWidget('child', self.child_template_filename)
+
+
+class SyncDocumentPage(SyncWebPage):
+    """`DocumentPage` as a SyncWebPage, whose child the test may make async."""
+
+    def __init__(self, document_template_filename: str, template_filename: str, child: Widget):
+        super().__init__()
+        self.document_template_path = document_template_filename
+        self.template_filename = template_filename
+        self.child = child
+
     def set_context(self):
         self.context.data['word'] = 'sync'
-        self.context.children['child'] = WordWidget('child', self.child_template_filename)
+        self.context.children['child'] = self.child
 
 
 class SyncContextWidget(Widget):

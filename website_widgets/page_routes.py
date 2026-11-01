@@ -13,7 +13,7 @@ from django.urls import URLPattern, get_resolver, path
 from django.urls.converters import get_converters
 
 from website_widgets.config import get_config
-from website_widgets.web_page import WebPage
+from website_widgets.web_page import _WebPage
 
 
 PATH_PARAMETER_RE = re.compile(r'<(?:(?P<converter>[^>:]+):)?(?P<parameter>[^>]+)>')
@@ -25,7 +25,7 @@ class PageRoute:
 
     route: str
     name: str
-    page_class: type[WebPage]
+    page_class: type[_WebPage]
     kwargs: dict = field(default_factory=dict)
 
     # A converter missing here, such as a project's own, ranks with `str`.
@@ -176,10 +176,10 @@ class PageRoutes:
         under the website app's `pages/` folder are found.
         """
         def decorator(page_class):
-            if not (isinstance(page_class, type) and issubclass(page_class, WebPage)):
+            if not (isinstance(page_class, type) and issubclass(page_class, _WebPage)):
                 raise TypeError(
-                    f"@register_url('{route}') decorates {page_class!r}, which is not a WebPage "
-                    f"subclass.")
+                    f"@register_url('{route}') decorates {page_class!r}, which is neither an "
+                    f"AsyncWebPage nor a SyncWebPage.")
             route_name = name if name is not None else page_class.__name__
             existing = cls._routes.get(route_name)
             if existing is not None:

@@ -5,8 +5,8 @@ npm, SCSS and TypeScript set up for you: each page and widget keeps its template
 TypeScript controller in one folder, and webpack bundles them.
 
 A widget can also render on its own into the Django you already have: an ordinary view and
-template, an email, the admin. So a site can adopt widgets one piece at a time, with no `WebPage`
-and no build step.
+template, an email, the admin. So a site can adopt widgets one piece at a time, with no page
+class and no build step.
 
 ## Quick start
 
@@ -109,16 +109,16 @@ INSTALLED_APPS = [
 
 ```
 
-3. Create a `WebPage` subclass for every other page to extend, pointing at that template:
+3. Create an `AsyncWebPage` subclass for every other page to extend, pointing at that template:
 
 `website/app_page.py`
 ```python
 import os
 
-from website_widgets import WebPage
+from website_widgets import AsyncWebPage
 from website.widgets.appbar import Appbar
 
-class AppPage(WebPage):
+class AppPage(AsyncWebPage):
     # Absolute: a relative path resolves beside each concrete page, not beside this file.
     document_template_path = os.path.join(os.path.dirname(__file__), 'document_template.html')
 
@@ -252,15 +252,26 @@ Widgets:
   read `self.request.user` depends on the project's middleware: with Django's
   `AuthenticationMiddleware` it's lazy, and its first read queries the database, so load the
   user with `await self.request.auser()` instead (`docs/rendering_pipeline.md`)
-- Can be sync or async - use `async def set_context(self):` only when awaiting. A page renders
-  in an async view, so database access in a sync `set_context()` there raises
-  `SynchronousOnlyOperation`; use the async ORM. A widget rendered with `render()` from sync code
-  is the reverse: it must use `def`, and the sync ORM works
+- Can be sync or async - use `async def set_context(self):` only when awaiting. An
+  `AsyncWebPage` renders in an async view, so database access in a sync `set_context()` there
+  raises `SynchronousOnlyOperation`; use the async ORM. A widget rendered with `render()` from
+  sync code, or in a `SyncWebPage`, is the reverse: it must use `def`, and the sync ORM works
 
-### WebPage
+### AsyncWebPage and SyncWebPage
 
-Extends `Widget` and represents a full page answering a web request. (The name keeps it apart
-from Django's paginator `Page`.)
+Each extends `Widget` and represents a full page answering a web request. A page subclasses one of
+the two, so every page says which it is; neither is called plain `WebPage`, which would read as the
+default with the other as an extra.
+
+- **`AsyncWebPage`** is the one to use, and what the starter site and `ww_create_page` write. Its
+  `set_context()` is `async def` and awaits the ORM's async methods; its widgets may be either
+  kind.
+- **`SyncWebPage`** is for a page with no async work and a team that would rather write the ORM
+  as in any Django view. Its `set_context()` is `def`, it runs with no event loop, and every
+  widget in it must have a plain `set_context()` too.
+
+A page with the wrong kind of `set_context()`, `handle_request()` or `build_response()` raises
+`TypeError` when its class is defined, naming the fix.
 
 **Key Pattern:**
 - URL parameters passed to `__init__()` - store them on self
@@ -276,7 +287,6 @@ class ProfilePage(AppPage):
         self.username = username
 
     async def set_context(self):
-        await super().set_context()
         user = await User.objects.aget(username=self.username)
         self.context.page['title'] = f'Profile: {user.username}'
 
@@ -303,7 +313,7 @@ System renders widgets to HTML automatically. Lists iterate in templates via `{%
 
 ### Rendering a widget on its own
 
-A widget doesn't need a `WebPage`. `render()` returns its HTML as `SafeText`, so it drops into any
+A widget doesn't need a page. `render()` returns its HTML as `SafeText`, so it drops into any
 ordinary Django template, and a project can adopt widgets piece by piece without converting its
 views. Construct the widget, adjust it, and render it once:
 
@@ -413,7 +423,7 @@ reverse_template('project_list')   # '/projects', as reverse() returns it
 Placeholders take the route's own parameter names, and namespaces, `include()` prefixes and the
 script prefix apply as they do in `reverse()`. See
 [`docs/reverse_template.md`](https://github.com/nateonguitar/django-website-widgets/blob/main/website_widgets/docs/reverse_template.md)
-for `paramnames`, which a `re_path()` with unnamed groups needs.
+for `param_names`, which a `re_path()` with unnamed groups needs.
 
 ### Starting the frontend watcher with `runserver`
 
@@ -480,7 +490,7 @@ editor tab or a search result names its component without the folder. Give the v
 root element as the main template, so the component's styles still apply to it.
 
 A page's document template is the one template set by path: `document_template_path` names a file
-shared by every page, so it lives beside the shared `WebPage` subclass rather than beside any one page.
+shared by every page, so it lives beside the shared page base class rather than beside any one page.
 
 Override `get_template_path()` when the choice needs more than an attribute.
 
@@ -544,18 +554,18 @@ CompositionPage
 
 #### Adding Debug Labels
 
-For better debugging, add a `_debug_label` to your widgets:
+For better debugging, add a `debug_label` to your widgets:
 
 ```python
 class InfoCard(Widget):
     def __init__(self, title: str, content: str):
         super().__init__()
-        self._debug_label = title  # Shows as "InfoCard(My Title)" in debug tree
+        self.debug_label = title  # Shows as "InfoCard(My Title)" in debug tree
         self.title = title
         self.content = content
 ```
 
-Without `_debug_label`, widgets display only their class name (e.g., `InfoCard`). With the label, they display as `InfoCard(My Title)`, making it easier to identify specific widget instances in complex trees.
+Without `debug_label`, widgets display only their class name (e.g., `InfoCard`). With the label, they display as `InfoCard(My Title)`, making it easier to identify specific widget instances in complex trees.
 
 **Recommendation:** Only enable `show_debug_tree` in development environments, not in production.
 
@@ -607,11 +617,11 @@ pages aren't in `urls.py`, and warn when either managed folder is from another v
 [`docs/checking_the_setup.md`](https://github.com/nateonguitar/django-website-widgets/blob/main/website_widgets/docs/checking_the_setup.md).
 
 Create a page or widget, with an optional TypeScript controller and stylesheet registered in
-`ts/main.ts` (each asks when a flag is left out). A page is routed with `@register_url`, at a
+`ts/main.ts` (each asks when neither `--x` nor `--no-x` is given). A page is routed with `@register_url`, at a
 route made from its name unless `--route` gives one:
 ```bash
-python manage.py ww_create_widget like_button --tscontroller=true --stylesheet=true
-python manage.py ww_create_page profile_page --tscontroller=false --stylesheet=false --route=profile
+python manage.py ww_create_widget like_button --tscontroller --stylesheet
+python manage.py ww_create_page profile_page --no-tscontroller --no-stylesheet --route=profile
 ```
 They need the framework TypeScript in `ts/website_widgets/`, and for a page, the base class at
 `GenerateComponentConfig.app_page_class`. A project overrides any of their templates with its

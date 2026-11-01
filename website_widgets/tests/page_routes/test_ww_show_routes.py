@@ -4,7 +4,7 @@ from django.core.management import CommandError, call_command
 from django.urls import path
 
 from website_widgets import PageRoutes, register_url
-from website_widgets.web_page import WebPage
+from website_widgets.web_page import AsyncWebPage
 from website_widgets.tests.page_routes.page_routes_test_case import PageRoutesTestCase
 from website_widgets.tests.sample_widgets import UnsetDocumentPage
 
@@ -17,7 +17,7 @@ class WwShowRoutesTestCase(PageRoutesTestCase):
 
     def test_show_routes__shows_only_given_columns__when_columns_given(self):
         @register_url('forum/<int:post_id>', name='forum_post')
-        class ForumPostPage(WebPage):
+        class ForumPostPage(AsyncWebPage):
             pass
 
         self.use_urlconf([path('', PageRoutes.urls())])
@@ -29,7 +29,7 @@ class WwShowRoutesTestCase(PageRoutesTestCase):
 
     def test_show_routes__lists_unreachable_route__when_reaches_page_column_hidden(self):
         @register_url('profile/<str:username>', name='profile')
-        class ProfilePage(WebPage):
+        class ProfilePage(AsyncWebPage):
             pass
 
         self.use_urlconf([
@@ -45,7 +45,7 @@ class WwShowRoutesTestCase(PageRoutesTestCase):
 
     def test_show_routes__shows_converter_only__when_path_param_type_is_type(self):
         @register_url('forum/<int:post_id>', name='forum_post')
-        class ForumPostPage(WebPage):
+        class ForumPostPage(AsyncWebPage):
             pass
 
         self.use_urlconf([path('', PageRoutes.urls())])
@@ -56,7 +56,7 @@ class WwShowRoutesTestCase(PageRoutesTestCase):
 
     def test_show_routes__shows_sample_value__when_path_param_type_is_example(self):
         @register_url('forum/<int:post_id>', name='forum_post')
-        class ForumPostPage(WebPage):
+        class ForumPostPage(AsyncWebPage):
             pass
 
         self.use_urlconf([path('', PageRoutes.urls())])
@@ -67,11 +67,11 @@ class WwShowRoutesTestCase(PageRoutesTestCase):
 
     def test_show_routes__lists_fixed_segment_first__when_parameter_could_match_it(self):
         @register_url('profile/<str:username>', name='profile')
-        class ProfilePage(WebPage):
+        class ProfilePage(AsyncWebPage):
             pass
 
         @register_url('profile/settings', name='profile_settings')
-        class SettingsPage(WebPage):
+        class SettingsPage(AsyncWebPage):
             pass
 
         self.use_urlconf([path('', PageRoutes.urls())])
@@ -82,7 +82,7 @@ class WwShowRoutesTestCase(PageRoutesTestCase):
 
     def test_show_routes__fails__when_earlier_urlconf_route_takes_its_url(self):
         @register_url('profile/<str:username>', name='profile')
-        class ProfilePage(WebPage):
+        class ProfilePage(AsyncWebPage):
             pass
 
         self.use_urlconf([
@@ -95,7 +95,7 @@ class WwShowRoutesTestCase(PageRoutesTestCase):
 
     def test_show_routes__fails__when_page_routes_not_included(self):
         @register_url('profile/<str:username>', name='profile')
-        class ProfilePage(WebPage):
+        class ProfilePage(AsyncWebPage):
             pass
 
         self.use_urlconf([])

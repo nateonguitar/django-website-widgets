@@ -112,8 +112,8 @@ django-website-widgets/
     │                           # ww_create_app and ww_upgrade copy into a project
     ├── generator_templates/    # ww_create_page's and ww_create_widget's default templates (*.tmpl)
     ├── starter_site/           # The site ww_create_app writes, its build files included (*.tmpl)
-    ├── __init__.py             # Exports Widget, WebPage, WidgetContext, PageRoutes, register_url,
-    │                           # reverse_template, NpmWatch, start_npm_watch
+    ├── __init__.py             # Exports Widget, AsyncWebPage, SyncWebPage, WidgetContext,
+    │                           # PageRoutes, register_url, reverse_template, start_npm_watch
     ├── apps.py
     ├── config.py               # WebsiteWidgetsConfig, GenerateComponentConfig, get_config()
     ├── widget.py

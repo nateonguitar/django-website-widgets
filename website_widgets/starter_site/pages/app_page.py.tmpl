@@ -1,7 +1,7 @@
 import os
 
 from django.http import HttpRequest, HttpResponse
-from website_widgets import WebPage
+from website_widgets import AsyncWebPage
 
 from __app_label__.exceptions import (
     ForbiddenException,
@@ -12,7 +12,7 @@ from __app_label__.exceptions import (
 from __app_label__.widgets.app_urls import AppUrls
 
 
-class AppPage(WebPage):
+class AppPage(AsyncWebPage):
     """
     The base class of every page in this app, and the class `ww_create_page` generates pages
     from. It renders each page into `document_template.html`, adds the widgets every page's
@@ -29,8 +29,7 @@ class AppPage(WebPage):
 
     async def handle_request(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
         try:
-            # Calls the page's set_context(), whether it's a plain def or an async def.
-            await self._acall_set_context()
+            await self.set_context()
         except UnauthorizedException as exception:
             self.status_code = exception.status_code
             self.template_filename = 'app_page__unauthorized.html'

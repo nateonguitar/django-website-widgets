@@ -20,21 +20,37 @@ class WwCreatePageTestCase(ComponentTestCase):
         self.enterContext(override_settings(ROOT_URLCONF=urlconf))
 
     def test_create_page__extends_app_page_class__when_created(self):
-        self.create_page('home_page', '--tscontroller=false', '--stylesheet=false')
+        self.create_page('home_page', '--no-tscontroller', '--no-stylesheet')
 
         page_py = self.read(self.app_folder, 'pages', 'home_page', 'home_page.py')
-        self.assertIn('from website_widgets.web_page import WebPage', page_py)
-        self.assertIn('class HomePage(WebPage):', page_py)
+        self.assertIn('from website_widgets.web_page import AsyncWebPage', page_py)
+        self.assertIn('class HomePage(AsyncWebPage):', page_py)
 
     def test_create_page__writes_async_set_context_without_super__when_created(self):
-        self.create_page('home_page', '--tscontroller=false', '--stylesheet=false')
+        self.create_page('home_page', '--no-tscontroller', '--no-stylesheet')
 
         page_py = self.read(self.app_folder, 'pages', 'home_page', 'home_page.py')
         self.assertIn('    async def set_context(self):', page_py)
         self.assertNotIn('super()', page_py)
 
+    def test_create_page__writes_sync_set_context__when_app_page_class_is_sync(self):
+        self.config.generate_component.app_page_class = 'website_widgets.web_page.SyncWebPage'
+
+        self.create_page('home_page', '--no-tscontroller', '--no-stylesheet')
+
+        page_py = self.read(self.app_folder, 'pages', 'home_page', 'home_page.py')
+        self.assertIn('class HomePage(SyncWebPage):', page_py)
+        self.assertIn('    def set_context(self):', page_py)
+        self.assertNotIn('async def', page_py)
+
+    def test_create_page__fails__when_app_page_class_is_not_a_page(self):
+        self.config.generate_component.app_page_class = 'website_widgets.widget.Widget'
+
+        with self.assertRaisesMessage(CommandError, 'is neither a website_widgets.AsyncWebPage nor'):
+            self.create_page('home_page', '--no-tscontroller', '--no-stylesheet')
+
     def test_create_page__writes_main_root_with_heading__when_no_controller(self):
-        self.create_page('home_page', '--tscontroller=false', '--stylesheet=false')
+        self.create_page('home_page', '--no-tscontroller', '--no-stylesheet')
 
         html = self.read(self.app_folder, 'pages', 'home_page', 'home_page.html')
         self.assertIn('<main id="home-page"', html)
@@ -42,7 +58,7 @@ class WwCreatePageTestCase(ComponentTestCase):
         self.assertNotIn('<script', html)
 
     def test_create_page__starts_controller_on_main_root__when_controller_generated(self):
-        self.create_page('home_page', '--tscontroller=true', '--stylesheet=false')
+        self.create_page('home_page', '--tscontroller', '--no-stylesheet')
 
         html = self.read(self.app_folder, 'pages', 'home_page', 'home_page.html')
         self.assertIn('<main id="home-page"', html)
@@ -51,8 +67,8 @@ class WwCreatePageTestCase(ComponentTestCase):
     def test_create_page__uses_project_page_template_only_for_pages__when_templates_dir_has_one(self):
         self.write('<div class="app-page">{{ data.label }}</div>\n', self.templates_dir, 'page__nocontroller.html.tmpl')
 
-        self.create_page('home_page', '--tscontroller=false', '--stylesheet=false')
-        self.run_command('ww_create_widget', 'like_button', '--tscontroller=false', '--stylesheet=false')
+        self.create_page('home_page', '--no-tscontroller', '--no-stylesheet')
+        self.run_command('ww_create_widget', 'like_button', '--no-tscontroller', '--no-stylesheet')
 
         self.assertEqual(
             self.read(self.app_folder, 'pages', 'home_page', 'home_page.html'),
@@ -67,13 +83,13 @@ class WwCreatePageTestCase(ComponentTestCase):
         self.write('# the developer\'s\n', pages_init)
         os.utime(pages_init, (0, 0))
 
-        self.create_page('home_page', '--tscontroller=false', '--stylesheet=false')
+        self.create_page('home_page', '--no-tscontroller', '--no-stylesheet')
 
         self.assertGreater(os.path.getmtime(pages_init), 0)
         self.assertEqual(self.read(pages_init), '# the developer\'s\n')
 
     def test_create_page__registers_in_page_sections__when_both_generated(self):
-        self.create_page('home_page', '--tscontroller=true', '--stylesheet=true')
+        self.create_page('home_page', '--tscontroller', '--stylesheet')
 
         main_ts = self.read(self.app_folder, 'ts', 'main.ts')
         self.assertIn(
@@ -89,7 +105,7 @@ class WwCreatePageTestCase(ComponentTestCase):
         self.config.generate_component.app_page_class = 'website.pages.app_page.AppPage'
 
         with self.assertRaisesMessage(CommandError, 'website.pages.app_page.AppPage'):
-            self.create_page('home_page', '--tscontroller=false', '--stylesheet=false')
+            self.create_page('home_page', '--no-tscontroller', '--no-stylesheet')
 
         self.assertFalse(os.path.exists(os.path.join(self.app_folder, 'pages', 'home_page')))
 
@@ -97,28 +113,28 @@ class WwCreatePageTestCase(ComponentTestCase):
         self.config.generate_component.app_page_class = 'website_widgets.widget.Widget'
 
         with self.assertRaises(CommandError):
-            self.create_page('home_page', '--tscontroller=false', '--stylesheet=false')
+            self.create_page('home_page', '--no-tscontroller', '--no-stylesheet')
 
     def test_create_page__fails_writing_nothing__when_a_part_of_the_name_cannot_be_a_module(self):
         for name in ('Bad-Name', 'account/Settings', 'return', '../escape_page'):
             with self.subTest(name=name):
                 with self.assertRaisesMessage(CommandError, "can't be a component name"):
-                    self.create_page(name, '--tscontroller=false', '--stylesheet=false')
+                    self.create_page(name, '--no-tscontroller', '--no-stylesheet')
 
         self.assertFalse(os.path.exists(os.path.join(self.app_folder, 'pages')))
         self.assertFalse(os.path.exists(os.path.join(self.app_folder, 'escape_page')))
 
     def test_create_page__nests_the_page__when_name_has_a_folder(self):
-        self.create_page('account/settings_page', '--tscontroller=false', '--stylesheet=false')
+        self.create_page('account/settings_page', '--no-tscontroller', '--no-stylesheet')
 
         page_py = self.read(self.app_folder, 'pages', 'account', 'settings_page', 'settings_page.py')
-        self.assertIn('class SettingsPage(WebPage):', page_py)
+        self.assertIn('class SettingsPage(AsyncWebPage):', page_py)
 
     def test_create_page__fails__when_folder_exists(self):
         os.makedirs(os.path.join(self.app_folder, 'pages', 'home_page'))
 
         with self.assertRaisesMessage(CommandError, 'already exists'):
-            self.create_page('home_page', '--tscontroller=false', '--stylesheet=false')
+            self.create_page('home_page', '--no-tscontroller', '--no-stylesheet')
 
     def test_create_page__routes_to_route_made_from_name__when_no_route_is_given(self):
         for name, page_py_path, route in (
@@ -128,7 +144,7 @@ class WwCreatePageTestCase(ComponentTestCase):
             ('account/settings_page', ('account', 'settings_page', 'settings_page.py'), 'account/settings'),
         ):
             with self.subTest(name=name):
-                self.create_page(name, '--tscontroller=false', '--stylesheet=false')
+                self.create_page(name, '--no-tscontroller', '--no-stylesheet')
 
                 page_py = self.read(self.app_folder, 'pages', *page_py_path)
                 self.assertIn('from website_widgets import register_url\n', page_py)
@@ -141,44 +157,44 @@ class WwCreatePageTestCase(ComponentTestCase):
         ):
             with self.subTest(name=name):
                 with patch('builtins.input') as mock_input:
-                    self.create_page(name, '--tscontroller=false', '--stylesheet=false', f'--route={route}')
+                    self.create_page(name, '--no-tscontroller', '--no-stylesheet', f'--route={route}')
 
                 mock_input.assert_not_called()
                 page_py = self.read(self.app_folder, 'pages', name, f'{name}.py')
                 self.assertIn(f"@register_url('{route}')", page_py)
 
     def test_create_page__warns__when_route_ties_with_another_pages(self):
-        self.create_page('about_page', '--tscontroller=false', '--stylesheet=false', '--route=about/<int:id>')
+        self.create_page('about_page', '--no-tscontroller', '--no-stylesheet', '--route=about/<int:id>')
 
-        output = self.create_page('info_page', '--tscontroller=false', '--stylesheet=false', '--route=about/<int:pk>')
+        output = self.create_page('info_page', '--no-tscontroller', '--no-stylesheet', '--route=about/<int:pk>')
 
         self.assertIn("'about/<int:id>' (AboutPage) can match the same URLs as 'about/<int:pk>'", output)
         self.assertIn("@register_url('about/<int:pk>')", self.read(self.app_folder, 'pages', 'info_page', 'info_page.py'))
 
     def test_create_page__fails_writing_nothing__when_another_route_has_the_class_name(self):
-        self.create_page('account/settings_page', '--tscontroller=false', '--stylesheet=false')
+        self.create_page('account/settings_page', '--no-tscontroller', '--no-stylesheet')
 
         with self.assertRaisesMessage(CommandError, "A route is already named 'SettingsPage'"):
-            self.create_page('settings_page', '--tscontroller=false', '--stylesheet=false')
+            self.create_page('settings_page', '--no-tscontroller', '--no-stylesheet')
 
         self.assertFalse(os.path.exists(os.path.join(self.app_folder, 'pages', 'settings_page')))
 
     def test_create_page__fails_writing_nothing__when_route_has_an_unknown_converter(self):
         with self.assertRaisesMessage(CommandError, "invalid converter 'bogus'"):
-            self.create_page('login_page', '--tscontroller=false', '--stylesheet=false', '--route=<bogus:x>')
+            self.create_page('login_page', '--no-tscontroller', '--no-stylesheet', '--route=<bogus:x>')
 
         self.assertFalse(os.path.exists(os.path.join(self.app_folder, 'pages', 'login_page')))
 
     def test_create_page__lists_each_file_with_url_and_view_name__when_created(self):
         self.use_urlconf([path('', PageRoutes.urls())])
 
-        output = self.create_page('account/settings_page', '--tscontroller=true', '--stylesheet=true')
+        output = self.create_page('account/settings_page', '--tscontroller', '--stylesheet')
 
         page_folder = os.path.join(self.app_folder, 'pages', 'account', 'settings_page')
         self.assertIn(
             f'Created the page SettingsPage in {page_folder}/:\n'
             '  __init__.py\n'
-            '  settings_page.py     class SettingsPage(WebPage), routed to /account/settings, reversed as website:SettingsPage\n'
+            '  settings_page.py     class SettingsPage(AsyncWebPage), routed to /account/settings, reversed as website:SettingsPage\n'
             '  settings_page.html   root #settings-page\n'
             '  settings_page.ts     SettingsPageController, exported from ts/main.ts\n'
             '  settings_page.scss   imported in ts/main.ts\n',
@@ -187,25 +203,25 @@ class WwCreatePageTestCase(ComponentTestCase):
     def test_create_page__shows_url_after_prefix__when_routes_are_included_under_one(self):
         self.use_urlconf([path('site/', PageRoutes.urls())])
 
-        output = self.create_page('login_page', '--tscontroller=false', '--stylesheet=false')
+        output = self.create_page('login_page', '--no-tscontroller', '--no-stylesheet')
 
         self.assertIn('routed to /site/login, reversed as website:LoginPage', output)
 
     def test_create_page__says_route_waits_for_urls_py__when_routes_are_not_included(self):
         self.use_urlconf([])
 
-        output = self.create_page('login_page', '--tscontroller=false', '--stylesheet=false')
+        output = self.create_page('login_page', '--no-tscontroller', '--no-stylesheet')
 
         self.assertIn("routed to 'login' once urls.py includes PageRoutes.urls(), reversed as website:LoginPage", output)
 
     def test_create_page__writes_page_with_no_route_or_route_checks__when_project_page_py_template_has_no_route(self):
-        self.create_page('account/settings_page', '--tscontroller=false', '--stylesheet=false')
+        self.create_page('account/settings_page', '--no-tscontroller', '--no-stylesheet')
         self.write(
             'from __app_page_module__ import __AppPageClass__\n\n\nclass __ClassName__(__AppPageClass__):\n    pass\n',
             self.templates_dir,
-            'page.py.tmpl')
+            'page__async.py.tmpl')
 
-        self.create_page('settings_page', '--tscontroller=false', '--stylesheet=false')
+        self.create_page('settings_page', '--no-tscontroller', '--no-stylesheet')
 
         self.assertNotIn('register_url', self.read(self.app_folder, 'pages', 'settings_page', 'settings_page.py'))
 
@@ -213,12 +229,12 @@ class WwCreatePageTestCase(ComponentTestCase):
         self.write(
             'from __app_page_module__ import __AppPageClass__\n\n\nclass __ClassName__(__AppPageClass__):\n    pass\n',
             self.templates_dir,
-            'page.py.tmpl')
+            'page__async.py.tmpl')
 
-        output = self.create_page('account/settings_page', '--tscontroller=false', '--stylesheet=false')
+        output = self.create_page('account/settings_page', '--no-tscontroller', '--no-stylesheet')
 
         self.assertIn(
-            "settings_page.py     class SettingsPage(WebPage), not routed: the project's page.py.tmpl has "
+            "settings_page.py     class SettingsPage(AsyncWebPage), not routed: the project's page__async.py.tmpl has "
             "no @register_url('__route__')\n",
             output)
         self.assertIn(

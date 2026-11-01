@@ -1,4 +1,5 @@
 import os
+from argparse import BooleanOptionalAction
 from dataclasses import dataclass
 
 from django.core.exceptions import ImproperlyConfigured
@@ -11,7 +12,7 @@ from website_widgets.config import WebsiteWidgetsConfig, get_config
 from website_widgets.management.component_files import ComponentFiles, ComponentName, WrittenFile
 from website_widgets.management.framework_folder import FrameworkFolder, TypeScriptFolder
 from website_widgets.page_routes import PageRoute, PageRoutes
-from website_widgets.web_page import WebPage
+from website_widgets.web_page import AsyncWebPage, _WebPage
 
 
 @dataclass(frozen=True)
@@ -20,6 +21,11 @@ class PageBaseClass:
 
     module_path: str
     class_name: str
+    # An AsyncWebPage, so the page gets `async def set_context()`; otherwise a SyncWebPage.
+    renders_async: bool
+
+    def get_page_py_template(self) -> str:
+        return 'page__async.py.tmpl' if self.renders_async else 'page__sync.py.tmpl'
 
 
 class Command(BaseCommand):
@@ -34,19 +40,19 @@ class Command(BaseCommand):
             help='The page\'s folder and module name, such as "home_page" or "account/settings_page".')
         parser.add_argument(
             '--tscontroller',
-            choices=['true', 'false'],
+            action=BooleanOptionalAction,
             dest='generate_ts',
-            help='Generate a TypeScript controller. Asks when not given.')
+            help='Generate a TypeScript controller, or not with --no-tscontroller. Asks when neither is given.')
         parser.add_argument(
             '--stylesheet',
-            choices=['true', 'false'],
+            action=BooleanOptionalAction,
             dest='generate_styles',
-            help='Generate a stylesheet. Asks when not given.')
+            help='Generate a stylesheet, or not with --no-stylesheet. Asks when neither is given.')
         parser.add_argument(
             '--route',
             help=(
-                'The route page.py.tmpl\'s @register_url gets, such as "account/settings", or "" '
-                'for the site root. Defaults to one made from the name.'))
+                'The route the page template\'s @register_url gets, such as "account/settings", '
+                'or "" for the site root. Defaults to one made from the name.'))
 
     def handle(self, *args, **options):
         config = get_config()
@@ -66,8 +72,9 @@ class Command(BaseCommand):
         generate_ts = files.ask_yes_no(options['generate_ts'], 'Generate a TypeScript controller?')
         generate_styles = files.ask_yes_no(options['generate_styles'], 'Generate a stylesheet?')
         route = options['route'] if options['route'] is not None else name.get_default_route()
-        # A project's page.py.tmpl without the placeholder writes pages it routes some other way.
-        routed = files.template_has('page.py.tmpl', '__route__')
+        page_py_template = page_base_class.get_page_py_template()
+        # A project's page template without the placeholder writes pages it routes some other way.
+        routed = files.template_has(page_py_template, '__route__')
         if routed:
             self._check_route_is_free(route, name)
 
@@ -85,12 +92,12 @@ class Command(BaseCommand):
         written_files = []
         files.write_from_template(page_folder, '__init__.py', '__init__.py.tmpl', replacements)
         written_files.append(WrittenFile('__init__.py'))
-        files.write_from_template(page_folder, f'{name.module_name}.py', 'page.py.tmpl', replacements)
+        files.write_from_template(page_folder, f'{name.module_name}.py', page_py_template, replacements)
         page_py_note = f'class {name.class_name}({page_base_class.class_name})'
         if routed:
             page_py_note += f', {self._describe_route(route, name)}'
         else:
-            page_py_note += ", not routed: the project's page.py.tmpl has no @register_url('__route__')"
+            page_py_note += f", not routed: the project's {page_py_template} has no @register_url('__route__')"
         written_files.append(WrittenFile(f'{name.module_name}.py', page_py_note))
         html_template = 'page__controller.html.tmpl' if generate_ts else 'page__nocontroller.html.tmpl'
         files.write_from_template(page_folder, f'{name.module_name}.html', html_template, replacements)
@@ -170,7 +177,7 @@ class Command(BaseCommand):
         new_route = PageRoute(
             route=route,
             name=name.class_name,
-            page_class=WebPage)
+            page_class=_WebPage)
         try:
             # Raises on a converter Django doesn't have, which would otherwise fail on import.
             new_route.get_sample_kwargs()
@@ -191,7 +198,10 @@ class Command(BaseCommand):
 
     @staticmethod
     def _page_base_class(config: WebsiteWidgetsConfig) -> PageBaseClass:
-        """`app_page_class`, the class a generated page extends. Stops when nothing is there, or it isn't a `WebPage`."""
+        """
+        `app_page_class`, the class a generated page extends. Stops when nothing is there, or it
+        is neither an `AsyncWebPage` nor a `SyncWebPage`.
+        """
         dotted_path = config.generate_component.get_app_page_class(config.website_app_name)
         try:
             page_class = import_string(dotted_path)
@@ -199,10 +209,12 @@ class Command(BaseCommand):
             raise CommandError(
                 f'There is no page base class at {dotted_path}. Create it, or set '
                 f'WEBSITE_WIDGETS.generate_component.app_page_class to the dotted path of yours.')
-        if not isinstance(page_class, type) or not issubclass(page_class, WebPage):
+        if not isinstance(page_class, type) or not issubclass(page_class, _WebPage):
             raise CommandError(
-                f'{dotted_path} is not a subclass of website_widgets.WebPage.')
+                f'{dotted_path} is neither a website_widgets.AsyncWebPage nor a '
+                f'website_widgets.SyncWebPage.')
         module_path, class_name = dotted_path.rsplit('.', 1)
         return PageBaseClass(
             module_path=module_path,
-            class_name=class_name)
+            class_name=class_name,
+            renders_async=issubclass(page_class, AsyncWebPage))

@@ -13,8 +13,7 @@ class ForbiddenExamplePage(AppPage):
 
     page_title = 'Never shown'
 
-    def set_context(self):
-        super().set_context()
+    async def set_context(self):
         raise ForbiddenException(
             'ForbiddenExamplePage always raises ForbiddenException, so AppPage answers 403 '
             'with app_page__forbidden.html.')

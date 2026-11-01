@@ -1,4 +1,5 @@
 import os
+from argparse import BooleanOptionalAction
 
 from django.core.management.base import BaseCommand, CommandError
 
@@ -18,23 +19,24 @@ class Command(BaseCommand):
             help='The widget\'s folder and module name, such as "like_button" or "dialogs/login_dialog".')
         parser.add_argument(
             '--tscontroller',
-            choices=['true', 'false'],
+            action=BooleanOptionalAction,
             dest='generate_ts',
-            help='Generate a TypeScript controller. Asks when not given.')
+            help='Generate a TypeScript controller, or not with --no-tscontroller. Asks when neither is given.')
         parser.add_argument(
             '--stylesheet',
-            choices=['true', 'false'],
+            action=BooleanOptionalAction,
             dest='generate_styles',
-            help='Generate a stylesheet. Asks when not given.')
+            help='Generate a stylesheet, or not with --no-stylesheet. Asks when neither is given.')
         parser.add_argument(
             '--repeating',
-            choices=['true', 'false'],
+            action=BooleanOptionalAction,
             dest='repeating',
             help=(
                 'Shown more than once on a page: the class takes key=, which the root carries in '
-                'data-key, so each instance\'s selector finds its own root. Asks when not given '
-                'and there is a controller. A widget without one has only a class on its root, '
-                'which repeats as it is, so the flag changes nothing.'))
+                'data-key, so each instance\'s selector finds its own root. --no-repeating for a '
+                'widget shown once. Asks when neither is given and there is a controller. A widget '
+                'without one has only a class on its root, which repeats as it is, so the flag '
+                'changes nothing.'))
         set_context = parser.add_mutually_exclusive_group()
         set_context.add_argument(
             '--async',

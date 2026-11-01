@@ -10,8 +10,8 @@ from website_widgets.widget_context import WidgetContext
 
 class Widget:
     template_filename: str | None = None
-    # Shown beside the class name in the debug tree, to tell instances apart.
-    _debug_label: object | None = None
+    # Shown beside the class name in the debug tree, to tell instances apart: TabCard(42).
+    debug_label: object | None = None
     # Library base classes, whose folders hold no application templates.
     _LIBRARY_MODULES = ('website_widgets.widget', 'website_widgets.web_page')
 
@@ -166,8 +166,10 @@ class Widget:
     def _call_set_context(self):
         if inspect.iscoroutinefunction(self.set_context):
             raise TypeError(
-                f'{type(self).__name__}.set_context() is async, so render() cannot run it; '
-                f'await arender() instead, or write set_context() with def.')
+                f'{type(self).__name__}.set_context() is async, so a sync render cannot run it: '
+                f'render() and a SyncWebPage run every set_context() without an event loop. '
+                f'Await arender() or put it in an AsyncWebPage instead, or write set_context() '
+                f'with def.')
         self.set_context()
 
     async def _acall_set_context(self):
@@ -236,11 +238,11 @@ class Widget:
         self.context.children = rendered_children
 
     def _generate_debug_tree(self, indent: int = 0) -> str:
-        """This widget and its descendants as indented HTML lines, labelled by `_debug_label`."""
+        """This widget and its descendants as indented HTML lines, labelled by `debug_label`."""
         lines = []
 
-        if self._debug_label is not None:
-            display_name = f"{self.__class__.__name__}({str(self._debug_label)})"
+        if self.debug_label is not None:
+            display_name = f"{self.__class__.__name__}({str(self.debug_label)})"
         else:
             display_name = self.__class__.__name__
         lines.append(f"<div style='margin-left: {indent * 20}px; color: #000;'>{display_name}</div>")

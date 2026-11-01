@@ -5,7 +5,7 @@ from django.urls.resolvers import get_ns_resolver
 from django.utils.http import RFC3986_SUBDELIMS, escape_leading_slashes
 
 
-def reverse_template(viewname: str, paramnames: list[str] | None = None) -> str:
+def reverse_template(viewname: str, param_names: list[str] | None = None) -> str:
     """
     Reverses a URL name into a template whose parameters are `{name}` placeholders, for the
     frontend to fill in:
@@ -13,7 +13,7 @@ def reverse_template(viewname: str, paramnames: list[str] | None = None) -> str:
         reverse_template('post_comment_detail')
         # '/posts/{post_id}/comments/{comment_id}'
 
-    The placeholder names are the route's own parameter names. `paramnames` renames them, in the
+    The placeholder names are the route's own parameter names. `param_names` renames them, in the
     order they appear in the route, which an unnamed `re_path()` group needs. A URL with no
     parameters comes back as `reverse()` returns it.
     """
@@ -43,23 +43,23 @@ def reverse_template(viewname: str, paramnames: list[str] | None = None) -> str:
         for possibility, _pattern, _defaults, _converters in resolver.reverse_dict.getlist(view)
         for result, params in possibility
     ]
-    if paramnames is not None:
+    if param_names is not None:
         candidates = [
             (result, params)
             for result, params in candidates
-            if len(params) == len(paramnames)
+            if len(params) == len(param_names)
         ]
     if not candidates:
-        raise NoReverseMatch(f"Reverse for '{viewname}' with parameters {paramnames} not found.")
+        raise NoReverseMatch(f"Reverse for '{viewname}' with parameters {param_names} not found.")
     distinct_params = {tuple(params) for _result, params in candidates}
-    if paramnames is None and len(distinct_params) > 1:
+    if param_names is None and len(distinct_params) > 1:
         raise ValueError(
             f"'{viewname}' matches routes with different parameters {sorted(distinct_params)}; "
-            f"pass paramnames to choose one.")
+            f"pass param_names to choose one.")
 
     # Unlike reverse(), converters and the route's regex are skipped: no placeholder would pass them.
     result, params = candidates[0]
-    placeholder_names = paramnames if paramnames is not None else params
+    placeholder_names = param_names if param_names is not None else params
     placeholders = {param: '{' + name + '}' for param, name in zip(params, placeholder_names)}
     url_with_prefix = get_script_prefix().replace('%', '%%') + result
     url = quote(url_with_prefix % placeholders, safe=RFC3986_SUBDELIMS + '/~:@{}')
