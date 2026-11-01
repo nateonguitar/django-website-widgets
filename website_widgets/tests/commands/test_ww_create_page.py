@@ -124,6 +124,12 @@ class WwCreatePageTestCase(ComponentTestCase):
         self.assertFalse(os.path.exists(os.path.join(self.app_folder, 'pages')))
         self.assertFalse(os.path.exists(os.path.join(self.app_folder, 'escape_page')))
 
+    def test_create_page__writes_package_init_for_added_folder__when_name_has_a_folder(self):
+        output = self.create_page('account/settings_page', '--no-tscontroller', '--no-stylesheet')
+
+        self.assertEqual(self.read(self.app_folder, 'pages', 'account', '__init__.py'), '')
+        self.assertIn('website/pages/account/__init__.py, so its folder imports as a package.', output)
+
     def test_create_page__nests_the_page__when_name_has_a_folder(self):
         self.create_page('account/settings_page', '--no-tscontroller', '--no-stylesheet')
 

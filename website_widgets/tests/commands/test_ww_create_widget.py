@@ -62,6 +62,24 @@ class WwCreateWidgetTestCase(ComponentTestCase):
         with self.assertRaises(CommandError):
             self.create_widget('like_button', '--no-tscontroller', '--no-stylesheet', '--async', '--sync')
 
+    def test_create_widget__writes_package_init_for_each_added_folder__when_name_is_nested(self):
+        output = self.create_widget('emails/parts/email_document', '--no-tscontroller', '--no-stylesheet')
+
+        for folder in (('emails',), ('emails', 'parts')):
+            with self.subTest(folder=folder):
+                self.assertEqual(self.read(self.app_folder, 'widgets', *folder, '__init__.py'), '')
+        self.assertIn('website/widgets/emails/__init__.py, so its folder imports as a package.', output)
+        self.assertIn('website/widgets/emails/parts/__init__.py, so its folder imports as a package.', output)
+
+    def test_create_widget__leaves_existing_folder_as_is__when_name_is_nested_in_it(self):
+        os.makedirs(os.path.join(self.app_folder, 'widgets', 'emails'))
+        self.write('# Kept.\n', self.app_folder, 'widgets', 'emails', '__init__.py')
+
+        output = self.create_widget('emails/email_document', '--no-tscontroller', '--no-stylesheet')
+
+        self.assertEqual(self.read(self.app_folder, 'widgets', 'emails', '__init__.py'), '# Kept.\n')
+        self.assertNotIn('Also wrote', output)
+
     def test_create_widget__kebab_cases_root_from_last_part__when_name_is_nested(self):
         self.create_widget('dialogs/login_dialog', '--no-tscontroller', '--no-stylesheet')
 

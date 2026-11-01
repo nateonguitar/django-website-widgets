@@ -88,7 +88,7 @@ class Command(BaseCommand):
             '__AppPageClass__': page_base_class.class_name,
             '__route__': route,
         }
-        os.makedirs(page_folder)
+        package_inits = files.make_component_folder(os.path.join(app_folder, 'pages'), name)
         written_files = []
         files.write_from_template(page_folder, '__init__.py', '__init__.py.tmpl', replacements)
         written_files.append(WrittenFile('__init__.py'))
@@ -134,6 +134,8 @@ class Command(BaseCommand):
         self.stdout.write(self.style.SUCCESS(
             f'Created the page {name.class_name} in {FrameworkFolder.display_path(page_folder)}/:'))
         self.stdout.write(files.format_file_list(written_files))
+        for init_path in package_inits:
+            self.stdout.write(f'Also wrote {FrameworkFolder.display_path(init_path)}, so its folder imports as a package.')
         if not routed:
             page_module = '.'.join([files.website_app_module(config.website_app_name), 'pages', *name.path.split('/')])
             self.stdout.write(

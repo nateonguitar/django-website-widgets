@@ -77,19 +77,23 @@ step when one is added.
 
 A change reaches a project using the library only through a published version.
 
-1. Bump `version` in `pyproject.toml`. The `0.x` series allows breaking changes in any release.
-2. Run the tests, and check the GitHub Actions matrix is green.
-3. Build with `poetry build`, then check that nothing but the package ships: both commands must
+1. Bump `version` in `pyproject.toml`, following semantic versioning from 1.0 on: a breaking
+   change needs a new major version.
+2. Add the version's entry at the top of `CHANGELOG.md`: what changed, and for each breaking
+   change, what a project changes to upgrade. A release candidate's entry is written as the
+   final version's.
+3. Run the tests, and check the GitHub Actions matrix is green.
+4. Build with `poetry build`, then check that nothing but the package ships: both commands must
    print nothing.
    ```bash
    unzip -Z1 dist/*.whl | grep -vE '^website_widgets/|\.dist-info/' ; unzip -Z1 dist/*.whl | grep '/tests/'
    tar tzf dist/*.tar.gz | sed 's|^[^/]*/||' | grep -vE '^(website_widgets/|$|README.md|LICENSE|pyproject.toml|PKG-INFO)' ; tar tzf dist/*.tar.gz | grep -E '/tests/|/examples/'
    ```
    `exclude` in `[tool.poetry]` keeps `website_widgets/tests/` and `examples/` out.
-4. Publish with `poetry publish`. Publishing needs a PyPI token, set once with
+5. Publish with `poetry publish`. Publishing needs a PyPI token, set once with
    `poetry config pypi-token.pypi <token>`.
-5. Tag the release (`git tag v0.2.0`) and push the tag.
-6. Bump the requirement in the project using it.
+6. Tag the release (`git tag v1.0.0`) and push the tag.
+7. Bump the requirement in the project using it.
 
 `poetry build` writes the wheel and source archive to `dist/`, which is git-ignored.
 
@@ -103,6 +107,7 @@ django-website-widgets/
 ├── .github/workflows/          # The test matrix and the examples' tests
 ├── examples/                   # Runnable example projects, not shipped; see "Examples"
 ├── README.md                   # The introduction (shows on PyPI), linking to the docs
+├── CHANGELOG.md                # Each release from 1.0.0, with how to upgrade; not shipped
 ├── DEVELOPMENT.md              # This file
 ├── LICENSE
 └── website_widgets/            # The Python package, the only thing shipped (minus tests/)
@@ -116,8 +121,9 @@ django-website-widgets/
     │                           # PageRoutes, register_url, reverse_template, start_npm_watch
     ├── apps.py
     ├── config.py               # WebsiteWidgetsConfig, GenerateComponentConfig, get_config()
+    ├── py.typed                # Says the package's type hints are its public types (PEP 561)
     ├── widget.py
-    ├── web_page.py
+    ├── web_page.py             # AsyncWebPage and SyncWebPage, over their private _WebPage
     ├── page_routes.py          # @register_url, route discovery, the routing system checks
     ├── url_templates.py        # reverse_template()
     ├── npm_watch.py            # start_npm_watch(), for manage.py

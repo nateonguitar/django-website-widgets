@@ -86,7 +86,7 @@ class Command(BaseCommand):
             '__framework_path__': files.relative_import_path(framework_folder, widget_folder),
         }
         set_context = options['set_context'] or config.generate_component.widget_set_context
-        os.makedirs(widget_folder)
+        package_inits = files.make_component_folder(os.path.join(app_folder, 'widgets'), name)
         written_files = []
         files.write_from_template(widget_folder, '__init__.py', '__init__.py.tmpl', replacements)
         written_files.append(WrittenFile('__init__.py'))
@@ -133,5 +133,7 @@ class Command(BaseCommand):
         self.stdout.write(self.style.SUCCESS(
             f'Created the widget {name.class_name} in {FrameworkFolder.display_path(widget_folder)}/:'))
         self.stdout.write(files.format_file_list(written_files))
+        for init_path in package_inits:
+            self.stdout.write(f'Also wrote {FrameworkFolder.display_path(init_path)}, so its folder imports as a package.')
         if generate_ts or generate_styles:
             self.stdout.write('Run `npm run watch` (or `runserver`, with start_npm_watch()) to rebuild the bundle.')

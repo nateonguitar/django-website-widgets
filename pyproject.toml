@@ -40,6 +40,7 @@ keywords = ["django", "widgets", "components", "pages"]
 Homepage = "https://github.com/nateonguitar/django-website-widgets"
 Repository = "https://github.com/nateonguitar/django-website-widgets"
 Issues = "https://github.com/nateonguitar/django-website-widgets/issues"
+Changelog = "https://github.com/nateonguitar/django-website-widgets/blob/main/CHANGELOG.md"
 
 [tool.poetry]
 # The distribution name doesn't match the import name, so the package is named explicitly.

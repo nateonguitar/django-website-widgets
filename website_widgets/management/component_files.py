@@ -188,6 +188,32 @@ class ComponentFiles:
         return True
 
     @staticmethod
+    def make_component_folder(
+        base_folder: str,
+        name: 'ComponentName'
+    ) -> list[str]:
+        """
+        Creates the component's folder under `base_folder` (`pages/` or `widgets/`). Each folder
+        a nested name adds on the way, such as `emails/` for `emails/email_document`, gets an
+        empty `__init__.py`, so it imports as a package like every other rather than as a
+        namespace package. A folder that already exists is left as it is. Returns the paths of
+        the `__init__.py` files written.
+        """
+        written_inits = []
+        parent_parts = name.path.split('/')[:-1]
+        for depth in range(1, len(parent_parts) + 1):
+            folder = os.path.join(base_folder, *parent_parts[:depth])
+            if os.path.exists(folder):
+                continue
+            os.makedirs(folder)
+            init_path = os.path.join(folder, '__init__.py')
+            with open(init_path, 'w', encoding='utf-8'):
+                pass
+            written_inits.append(init_path)
+        os.makedirs(os.path.join(base_folder, name.path))
+        return written_inits
+
+    @staticmethod
     def format_file_list(written_files: list[WrittenFile]) -> str:
         """One indented line per file, its note lined up after the longest name."""
         name_width = max(len(written_file.filename) for written_file in written_files)
