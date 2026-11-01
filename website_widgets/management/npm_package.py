@@ -64,7 +64,7 @@ class NpmPackage:
     NAME = 'django-website-widgets'
     # The npm releases this Python release works with, a caret range. Raised when the Python side
     # starts relying on something only a newer npm release has, after that release is published.
-    RANGE = '^1.0.0-rc.1'
+    RANGE = '^1.0.0-rc.2'
 
     @classmethod
     def range_minimum(cls) -> NpmVersion:

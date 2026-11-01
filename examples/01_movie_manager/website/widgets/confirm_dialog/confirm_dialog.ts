@@ -1,4 +1,4 @@
-import { DialogController } from "../../ts/dialog-controller";
+import { DialogController } from "django-website-widgets";
 
 class Elements {
     message: HTMLElement | null = null;
@@ -17,9 +17,8 @@ class Elements {
  * Asks a yes-or-no question and answers with the click, or null when dismissed without one:
  * `const takeTheRest = await ConfirmDialogController.show({ message: 'Take the rest?' })`.
  *
- * DialogController.openFrame() clones the DialogFrame named confirm-dialog, with this widget's content
- * inside, into a <dialog> of its own for each question, so questions never share an element or an
- * answer.
+ * DialogController.openDialog() copies the ConfirmDialog widget's <template> into a <dialog> of
+ * its own for each question, so questions never share an element or an answer.
  */
 export class ConfirmDialogController extends DialogController<boolean | null> {
     private elements = new Elements();
@@ -45,7 +44,7 @@ export class ConfirmDialogController extends DialogController<boolean | null> {
         noLabel?: string;
     }): Promise<boolean | null> {
         const controller = new ConfirmDialogController(message, yesLabel, noLabel);
-        return DialogController.openFrame('confirm-dialog', controller);
+        return DialogController.openDialog(controller, '#confirm-dialog-template');
     }
 
     public async initState(): Promise<void> {

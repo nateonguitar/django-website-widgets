@@ -21,7 +21,6 @@ import '../widgets/account_menu/account_menu.scss';
 import '../widgets/appbar/appbar.scss';
 import '../widgets/confirm_dialog/confirm_dialog.scss';
 import '../widgets/copy_table/copy_table.scss';
-import '../widgets/dialog_frame/dialog_frame.scss';
 import '../widgets/movie_card/movie_card.scss';
 import '../widgets/movie_results/movie_results.scss';
 import '../widgets/rental_row/rental_row.scss';

@@ -20,6 +20,7 @@ disagree, and `python manage.py ww_upgrade` sets the range after a Python upgrad
 | `Controller` | The base class every page and widget controller extends |
 | `App` | `App.initController()`, which starts a controller on its element, and the singleton registry |
 | `Completer` | A promise resolved from outside, used to signal readiness |
+| `DialogController` | The base of a dialog its caller awaits: a bare `<dialog>` around a widget's `<template>`, resolving with the dialog's answer |
 
 ## Use
 

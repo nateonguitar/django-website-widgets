@@ -1,9 +1,17 @@
-{# No title, so the question names the dialog: DialogController.openFrame() reads data-dialog-label. #}
-<p class="confirm-dialog__message"
-   data-dialog-label></p>
-<div class="confirm-dialog__actions">
-  <button type="button"
-          class="confirm-dialog__no text-button"></button>
-  <button type="button"
-          class="confirm-dialog__yes"></button>
-</div>
+{% comment %}
+A <template> is parsed but never shown, and runs nothing. ConfirmDialogController.show() copies
+its content into a <dialog> of its own for each question, so nothing here carries an id, and
+nothing starts a controller until something asks. data-dialog-class is the <dialog>'s class.
+{% endcomment %}
+<template id="confirm-dialog-template"
+          data-dialog-class="confirm-dialog">
+  {# data-dialog-label: the question names the dialog for a screen reader. #}
+  <p class="confirm-dialog__message"
+     data-dialog-label></p>
+  <div class="confirm-dialog__actions">
+    <button type="button"
+            class="confirm-dialog__no text-button"></button>
+    <button type="button"
+            class="confirm-dialog__yes"></button>
+  </div>
+</template>

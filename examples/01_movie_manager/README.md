@@ -79,16 +79,14 @@ grew what this site needs.
   `const takeTheRest = await ConfirmDialogController.show(...)` top to bottom.
   The answer comes from a click that happens later, so `show()` hands back a `Completer`'s promise
   and the dialog's `close` event resolves it: a button stores its choice and closes the dialog,
-  and Escape or a click outside closes it with nothing stored. Each call clones the `<template>` the document
-  renders into a `<dialog>` of its own, with its own controller and Completer, so questions asked
-  back to back, or one over another, never get each other's answers. Two halves own a dialog.
-  `DialogFrame` (`website/widgets/dialog_frame/`) is the only widget that renders a `<dialog>`,
-  inside a `<template>`, around the dialog's own content widget:
-  `DialogFrame(name='confirm-dialog', content=ConfirmDialog())`. `DialogController`
-  (`website/ts/dialog-controller.ts`) is the base a dialog's controller extends: its `show()` is one
-  call to `openFrame('confirm-dialog', controller)`, which clones the frame and hands the controller the
-  clone as a typed `dialog`, and it says what it answers in `answer()`. The dialog, not its
-  caller, decides whether a click on the backdrop closes it.
+  and Escape or a click outside closes it with nothing stored. The `ConfirmDialog` widget renders
+  only a `<template>` holding the question's content, which the document template places on every
+  page. `ConfirmDialogController` extends the npm package's `DialogController`, and its `show()`
+  is one call, `openDialog(controller, '#confirm-dialog-template')`, which creates a bare
+  `<dialog>` around a copy of that content, gives it the template's `data-dialog-class`, and
+  hands the controller the dialog. Each call gets its own dialog, controller and Completer, so
+  questions asked back to back, or one over another, never get each other's answers. The dialog,
+  not its caller, decides whether a click on the backdrop closes it.
 - **The appbar is a singleton** (`static readonly singleton = true`, which `App.initController()`
   reads) other controllers reach with `AppbarController.instance()`, which waits on its
   `Completer`, to update the cart count.

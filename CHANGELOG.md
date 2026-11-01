@@ -124,6 +124,10 @@ These change a project's controllers.
 
 ### Added
 
+- **Dialogs a caller awaits,** from the npm package's `DialogController` (npm 1.0.0-rc.2, the
+  range this release requires): a dialog's widget renders a `<template>` of its content, and
+  `const answer = await MyDialogController.show(...)` opens a `<dialog>` around a copy of it.
+  `frontend_controllers.md` has the pattern.
 - **`SyncWebPage`,** for a page with no async work: its `set_context()` is `def`, it runs with no
   event loop, so the ORM works as in any Django view, and every widget in it is a `SyncWidget`.
   `AsyncWebPage` remains the one to use.
