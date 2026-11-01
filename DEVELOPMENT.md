@@ -79,7 +79,8 @@ step when one is added.
 A change reaches a project using the library only through a published version. The library is
 two packages with one name: `django-website-widgets` on PyPI (the Python package) and on npm
 (`frontend/`, the TypeScript a project's controllers import). **They are versioned separately**,
-and each is released only when it changed.
+and each is released only when it changed: one version number for both would mean releasing a
+package with nothing in it whenever the other changed.
 
 **The Python package declares the npm range it works with**, `NpmPackage.RANGE`
 (`website_widgets/management/npm_package.py`), which
@@ -123,7 +124,8 @@ Run these in `frontend/`, with Node and npm on the host.
 4. Check what would ship with `npm pack --dry-run`: `dist/` (built by the `prepare` script),
    `src/`, `README.md`, `CHANGELOG.md`, `LICENSE` and `package.json`, nothing else.
 5. Publish with `npm publish`, adding `--tag next` for a release candidate so it doesn't become
-   what a bare `npm install django-website-widgets` gets. npm asks for the two-factor code.
+   what a bare `npm install django-website-widgets` gets. npm asks for the two-factor code; from a
+   shell that can't wait for its browser login (an agent's), pass `--otp=<code>`.
 6. Tag the release with a prefix, so it can't be mistaken for a Python release
    (`git tag npm-v1.0.0`), and push the tag.
 7. If the Python package should require it, raise `NpmPackage.RANGE` and release the Python
@@ -213,7 +215,16 @@ scratch project, `npm install`, `npx tsc --noEmit -p .`, `npm run build`).
 **The framework TypeScript is the npm package in `frontend/`.** Gametabs and every other project
 depend on it from npm, at the range `NpmPackage.RANGE` declares; a change is made here and
 reaches them in an npm release. The examples depend on this folder directly
-(`file:../../../frontend`), so they always run both halves from the same commit.
+(`file:../../../frontend`), so they always run both halves from the same commit. It used to be
+copied into each project's `ts/website_widgets/` by `ww_upgrade`, where nothing stopped a project
+editing it and every upgrade overwrote the edit; as a dependency it is versioned, read-only, and
+upgraded by a range.
+
+**`DialogController` creates the `<dialog>` itself.** A Python frame widget rendering the
+`<dialog>` around a dialog's content was tried and dropped: the npm side owning the element
+types it by construction, and a project's dialog widget renders only a `<template>` of its
+content. A `<form method="dialog">` answering through `returnValue` strings was dropped too; a
+button stores a typed answer and closes the dialog, as a saved form does.
 
 **Every command is `ww_`-prefixed, and `ww_create_*` is the one verb for writing new files.**
 A new command follows both, so `manage.py help`'s list and a project's shell history say where a
