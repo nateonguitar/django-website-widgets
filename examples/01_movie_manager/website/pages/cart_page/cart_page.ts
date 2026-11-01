@@ -156,7 +156,7 @@ export class CartPageController extends Controller {
             return;
         }
         const titles = ranOut.map((item) => item.title).join(', ');
-        const takeTheRest = await ConfirmDialogController.ask({
+        const takeTheRest = await ConfirmDialogController.show({
             message: `${titles} ran out. Take the rest of your cart?`,
             yesLabel: 'Take the rest',
             noLabel: 'Not now',

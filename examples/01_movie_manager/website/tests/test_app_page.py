@@ -57,8 +57,9 @@ class AppPageTestCase(TestCase):
 
         soup = BeautifulSoup(response.content, 'html.parser')
         template = soup.select_one('template#confirm-dialog-template')
-        buttons = [button['value'] for button in template.select('form[method="dialog"] button')]
-        self.assertEqual(buttons, ['no', 'yes'])
+        dialog = template.select_one('dialog.confirm-dialog')
+        buttons = [button['class'][0] for button in dialog.select('button')]
+        self.assertEqual(buttons, ['confirm-dialog__no', 'confirm-dialog__yes'])
 
     def test_app_page__puts_theme_and_sign_out_in_the_account_dialog__when_signed_in(self):
         self.client.force_login(User.objects.get(username='alex'))

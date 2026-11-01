@@ -66,12 +66,22 @@ grew what this site needs.
   is recorded as taken, or the endpoint answers 409 naming what ran out and nothing is recorded,
   and the cart page asks whether to take the rest. A unique constraint on open rentals stops two
   checkouts taking the same disc.
-- **A dialog you `await`.** `ConfirmDialogController.ask()` (`website/widgets/confirm_dialog/`)
-  returns a promise of the answer, so the cart page reads `if (await ask(...))` top to bottom.
-  The answer comes from a click that happens later, so `ask()` hands back a `Completer`'s promise
-  and the dialog's `close` event resolves it. Each call clones the `<template>` the document
+- **A dialog you `await`.** `ConfirmDialogController.show()` (`website/widgets/confirm_dialog/`)
+  returns a promise of the answer (`true`, `false`, or `null` when dismissed without one, as a
+  click outside isn't a no), so the cart page reads
+  `const takeTheRest = await ConfirmDialogController.show(...)` top to bottom.
+  The answer comes from a click that happens later, so `show()` hands back a `Completer`'s promise
+  and the dialog's `close` event resolves it: a button stores its choice and closes the dialog,
+  and Escape or a click outside closes it with nothing stored. Each call clones the `<template>` the document
   renders into a `<dialog>` of its own, with its own controller and Completer, so questions asked
-  back to back, or one over another, never get each other's answers.
+  back to back, or one over another, never get each other's answers. Two halves own a dialog.
+  `DialogFrame` (`website/widgets/dialog_frame/`) is the only widget that renders a `<dialog>`,
+  inside a `<template>`, around the dialog's own content widget:
+  `DialogFrame(name='confirm-dialog', content=ConfirmDialog())`. `DialogController`
+  (`website/ts/dialog-controller.ts`) is the base a dialog's controller extends: its `show()` is one
+  call to `openFrame('confirm-dialog', controller)`, which clones the frame and hands the controller the
+  clone as a typed `dialog`, and it says what it answers in `answer()`. The dialog, not its
+  caller, decides whether a click on the backdrop closes it.
 - **The appbar is a singleton** (`static readonly singleton = true`, which `App.initController()`
   reads) other controllers reach with `AppbarController.instance()`, which waits on its
   `Completer`, to update the cart count.

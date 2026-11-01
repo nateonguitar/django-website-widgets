@@ -1,18 +1,9 @@
-{% comment %}
-A <template> is parsed but never shown, and runs nothing. ConfirmDialogController.ask() clones
-this <dialog> out of it for each question, so two questions never share an element or an answer.
-With no <script> here, nothing starts a controller until something asks.
-{% endcomment %}
-<template id="confirm-dialog-template">
-  <dialog class="confirm-dialog">
-    <p class="confirm-dialog__message"></p>
-    {# method="dialog": a button closes the dialog and leaves its value in dialog.returnValue. #}
-    <form class="confirm-dialog__actions"
-          method="dialog">
-      <button class="confirm-dialog__no text-button"
-              value="no"></button>
-      <button class="confirm-dialog__yes"
-              value="yes"></button>
-    </form>
-  </dialog>
-</template>
+{# No title, so the question names the dialog: DialogController.openFrame() reads data-dialog-label. #}
+<p class="confirm-dialog__message"
+   data-dialog-label></p>
+<div class="confirm-dialog__actions">
+  <button type="button"
+          class="confirm-dialog__no text-button"></button>
+  <button type="button"
+          class="confirm-dialog__yes"></button>
+</div>

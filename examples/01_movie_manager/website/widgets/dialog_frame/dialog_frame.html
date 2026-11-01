@@ -1,0 +1,19 @@
+{% comment %}
+A <template> is parsed but never shown, and runs nothing. DialogController.openFrame() clones this
+<dialog> for each call, so nothing inside carries an id, and nothing starts a controller until a
+dialog's show() does.
+{% endcomment %}
+<template id="{{ data.name }}-template">
+  <dialog class="dialog-frame {{ data.name }}">
+    {% if data.title %}
+      <div class="dialog-frame__title-row">
+        {# data-dialog-label: DialogController.openFrame() names the dialog after it. #}
+        <p class="dialog-frame__title"
+           data-dialog-label>{{ data.title }}</p>
+        <button type="button"
+                class="dialog-frame__close text-button">Close</button>
+      </div>
+    {% endif %}
+    {{ children.content }}
+  </dialog>
+</template>

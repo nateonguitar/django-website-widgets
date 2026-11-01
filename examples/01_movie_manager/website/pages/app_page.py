@@ -13,6 +13,7 @@ from website.exceptions import (
 from website.widgets.app_urls import AppUrls
 from website.widgets.appbar import Appbar
 from website.widgets.confirm_dialog import ConfirmDialog
+from website.widgets.dialog_frame import DialogFrame
 
 
 class AppPage(AsyncWebPage):
@@ -77,7 +78,8 @@ class AppPage(AsyncWebPage):
         # Rendered by the document template, so every page has them.
         self.context.children['app_urls'] = AppUrls()
         self.context.children['appbar'] = Appbar()
-        self.context.children['confirm_dialog'] = ConfirmDialog()
+        confirm_dialog = ConfirmDialog()
+        self.context.children['confirm_dialog'] = DialogFrame(name='confirm-dialog', content=confirm_dialog)
         return await self.build_response()
 
     def full_title(self) -> str:
