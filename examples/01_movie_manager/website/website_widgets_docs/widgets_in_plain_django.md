@@ -1,6 +1,6 @@
 # Widgets in plain Django
 
-A lesson: widgets used without a `WebPage`, in an ordinary Django view and template, and in a
+A lesson: widgets used without a page class, in an ordinary Django view and template, and in a
 custom admin page. This is how a site that already exists adopts widgets one piece at a time.
 Read this before putting a widget into a view that isn't a page. `rendering_pipeline.md` explains
 `render()` itself; this shows where it fits.
@@ -56,7 +56,7 @@ What a page's document template normally does, the plain template does itself:
 
 ## A custom admin page
 
-A tool page beside the model admins is a plain admin view, not a `WebPage`: the admin's templates
+A tool page beside the model admins is a plain admin view, not a page class: the admin's templates
 need `admin_site.each_context()`, and a widget template sees only its four keys. The admin site
 adds the view through `get_urls()`, and the view renders the widget into the admin's template:
 

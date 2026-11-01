@@ -2,7 +2,7 @@ import os
 
 from django.http import HttpRequest, HttpResponse
 from django.middleware.csrf import get_token
-from website_widgets import WebPage
+from website_widgets import AsyncWebPage
 
 from website.exceptions import (
     ForbiddenException,
@@ -15,7 +15,7 @@ from website.widgets.appbar import Appbar
 from website.widgets.confirm_dialog import ConfirmDialog
 
 
-class AppPage(WebPage):
+class AppPage(AsyncWebPage):
     """
     The base class of every page in this app, and the class `ww_create_page` generates pages
     from. It renders each page into `document_template.html`, adds the widgets every page's
@@ -48,8 +48,7 @@ class AppPage(WebPage):
         theme = request.COOKIES.get(self.THEME_COOKIE)
         self.context.page['theme'] = theme if theme in self.THEMES else 'system'
         try:
-            # Calls the page's set_context(), whether it's a plain def or an async def.
-            await self._acall_set_context()
+            await self.set_context()
         except UnauthorizedException as exception:
             self.status_code = exception.status_code
             self.template_filename = 'app_page__unauthorized.html'

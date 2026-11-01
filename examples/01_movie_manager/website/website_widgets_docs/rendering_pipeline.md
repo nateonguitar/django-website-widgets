@@ -1,31 +1,51 @@
 # The Rendering Pipeline
 
-What happens between a request arriving at a `WebPage` and HTML going back out: the order the widget
+What happens between a request arriving at a page and HTML going back out: the order the widget
 tree is built and rendered in, what a template can see, and where the async boundary sits. The
 package's [README](https://github.com/nateonguitar/django-website-widgets#readme) covers the
-shapes of `Widget`, `WebPage` and `WidgetContext`; this covers the order things run in, which is
-where the surprises are. Read this before overriding `handle_request()` or `build_response()`,
-or when a widget renders but its content is missing.
+shapes of `Widget`, `AsyncWebPage`, `SyncWebPage` and `WidgetContext`; this covers the order
+things run in, which is where the surprises are. Read this before overriding `handle_request()` or
+`build_response()`, or when a widget renders but its content is missing.
 
 Primary code:
-- `website_widgets.web_page` — `WebPage.as_view()`, `handle_request()`, `build_response()`
+- `website_widgets.web_page` — `AsyncWebPage` and `SyncWebPage`, each with its `as_view()`,
+  `handle_request()` and `build_response()`, and `_WebPage`, the private base they share
 - `website_widgets.widget` — `_initialize_widget_tree()` and `_ainitialize_widget_tree()`,
   `_render_children_to_html()`, `get_template_path()`, `_context_dict()`, `_render_template()`,
   `render()` and `arender()`
 - `website_widgets.widget_context` — `WidgetContext`
 - `website_widgets.config` — `WebsiteWidgetsConfig`, `get_config()`
 
+## Async and sync pages
+
+A page subclasses one of two classes, and nothing is called plain `WebPage`, so every page says
+which it is:
+
+- **`AsyncWebPage`**, the one to use, and what the starter site and `ww_create_page` write. Its
+  `set_context()`, `handle_request()` and `build_response()` are `async def`, its view is an
+  `async def` view, and it awaits the ORM's async methods (`await Movie.objects.aget(...)`). Its
+  widgets may be either kind: an `async def set_context()` is awaited, a plain one called.
+- **`SyncWebPage`**, for a page with no async work and a team that would rather write the ORM as
+  in any Django view. The same three methods are plain `def`, its view is a plain view, and it
+  runs with no event loop. Every widget in it must have a plain `set_context()`; an async one
+  raises `TypeError` when the page renders.
+
+Each class checks its subclasses when they're defined (`__init_subclass__`): an `AsyncWebPage`
+with a `def set_context()`, or a `SyncWebPage` with an `async def` one, raises `TypeError` at
+import, naming the method and the fix. That check is what lets an override call `set_context()`
+directly. Subclassing the shared base, `_WebPage`, directly raises too.
+
 ## One instance per request
 
-`WebPage.as_view()` is a factory, not Django's class-based view. It returns an `async def` view that,
-for each request, constructs a **fresh page instance**, assigns `_request` (read as
-`self.request`), and calls `handle_request()`, awaiting it if it is a coroutine.
+`as_view()` is a factory, not Django's class-based view. It returns a view (`async def` for an
+`AsyncWebPage`, plain for a `SyncWebPage`) that, for each request, constructs a **fresh page
+instance**, assigns `_request` (read as `self.request`), and calls `handle_request()`.
 
 URL parameters are passed to **both** the constructor and `handle_request()`. That is what lets a
 page keep them as instance attributes:
 
 ```python
-class ProfilePage(WebPage):
+class ProfilePage(AsyncWebPage):
     def __init__(self, username: str):
         super().__init__()
         self.username = username
@@ -38,14 +58,15 @@ Because the instance is per-request, instance state is safe. Class-level mutable
 is shared across every request in the process.
 
 The default `handle_request()` calls the page's own `set_context()`, then `build_response()`. Every
-other widget's `set_context()` runs later, inside `build_response()`. An override calls
-`await self._acall_set_context()` rather than `set_context()` directly, so a sync or async
-`set_context()` both work.
+other widget's `set_context()` runs later, inside `build_response()`. An override calls them
+directly, `await self.set_context()` on an `AsyncWebPage` and `self.set_context()` on a
+`SyncWebPage`.
 
 ## `build_response()` runs the tree in four passes
 
 ```
 1. await self._ainitialize_widget_tree()   every descendant's set_context()
+   (self._initialize_widget_tree() on a SyncWebPage)
 2. self._generate_debug_tree()             only if show_debug_tree is on
 3. self._render_children_to_html()         every descendant's _render_template()
 4. self._render_template(), twice         the page's own template, then the document template
@@ -78,7 +99,7 @@ A list is iterated in the template with `{% for item in children.items %}`.
 
 Pass 2 sits between 1 and 3 because it needs both: the tree must be fully constructed to be worth
 drawing, and the children must still *be* widgets, since the debug tree reports class names and
-each widget's optional `_debug_label`.
+each widget's optional `debug_label`.
 
 ## Rendering a widget outside a page
 
@@ -142,14 +163,16 @@ real path, resolved against the concrete class's folder unless absolute. The pag
 is chosen like any widget's, by module name or `template_filename` (below). An error state that
 replaces a page's body is a variant template, not a separate mechanism.
 
-`document_template_path` is `None` on `WebPage` itself, and `get_document_template_path()` raises
-`NotImplementedError` until a subclass sets it. The usual pattern is one intermediate subclass per
-project that sets the app's document template, kept beside it, with individual pages inheriting
-it. Pages that need a different document entirely, such as an admin area with its own `<head>`,
-get a second intermediate subclass pointing at a second document template.
+`document_template_path` is `None` on `AsyncWebPage` and `SyncWebPage` themselves, and
+`get_document_template_path()` raises `NotImplementedError` until a subclass sets it. The usual
+pattern is one intermediate subclass per project that sets the app's document template, kept
+beside it, with individual pages inheriting it. Pages that need a different document entirely,
+such as an admin area with its own `<head>`, get a second intermediate subclass pointing at a
+second document template.
 
 The response is `HttpResponse(html, status=self.status_code)`. `status_code` is a plain class
-attribute on `WebPage`, defaulting to `200`; assign it before `build_response()` to change it.
+attribute on both page classes, defaulting to `200`; assign it before `build_response()` to
+change it.
 
 ## Templates bypass Django's loader
 
@@ -190,7 +213,7 @@ not-found state keeps `project_page__not_found.html` beside `project_page.html` 
 there. The package's README suggests that `<module>__<variant>.html` naming.
 
 **The lookup walks the class hierarchy, the concrete class first.** `get_template_path()` checks
-the folder of each class in the MRO, skipping the library's own `Widget` and `WebPage`, and returns
+the folder of each class in the MRO, skipping the library's own `Widget` and page classes, and returns
 the first folder holding the file. A base class's variant, kept beside the base class's module,
 therefore works for every subclass, wherever the subclass lives; a subclass with a file of the same
 name shadows it. A name found nowhere raises `FileNotFoundError` listing the folders searched.
@@ -206,16 +229,16 @@ markup.
 undefined, so a `{% if %}` guarding a block is false and the block never renders, with nothing
 logged. This is the most common cause of "my widget renders but its content is missing".
 
-**A sync `set_context()` still runs inside the async view.** A page's whole pipeline runs in the
-event loop `as_view()`'s view executes in, as does `arender()`'s, and sync or async is only
-detected per widget with `inspect.iscoroutinefunction`. A plain `def set_context()` making a
-synchronous ORM call there raises `SynchronousOnlyOperation`. So does a lazy queryset put in
-`context.data` and first evaluated by the template, because every `_render_template()` call
+**A widget's sync `set_context()` still runs inside an `AsyncWebPage`'s async view.** That page's
+whole pipeline runs in the event loop its view executes in, as does `arender()`'s, and sync or
+async is only detected per widget with `inspect.iscoroutinefunction`. A plain `def set_context()`
+making a synchronous ORM call there raises `SynchronousOnlyOperation`. So does a lazy queryset put
+in `context.data` and first evaluated by the template, because every `_render_template()` call
 happens inside the same async pipeline. Fetch with the async ORM (`aget`, `async for`, and so on)
 in an `async def set_context()`, and hand templates evaluated data. A test harness that sets
-`DJANGO_ALLOW_ASYNC_UNSAFE` hides this. `render()` is the exception: called from sync code, it
-runs no event loop, so the sync ORM works in its widgets. `loading_data.md` shows how to write
-the widgets so it never comes up.
+`DJANGO_ALLOW_ASYNC_UNSAFE` hides this. `render()` and a `SyncWebPage` are the exceptions: they run
+no event loop, so the sync ORM works in their widgets. `loading_data.md` shows how to write the
+widgets so it never comes up.
 
 **What `request.user` holds is up to the project's middleware**, so whether a page can read it
 depends on that middleware, not on the package:
@@ -239,7 +262,7 @@ the user puts it in `context.page` once, the way its middleware allows, and ever
 `page.user`. With Django's middleware:
 
 ```python
-class AppPage(WebPage):
+class AppPage(AsyncWebPage):
     async def handle_request(self, request, *args, **kwargs):
         self.context.page['user'] = await request.auser()
         return await super().handle_request(request, *args, **kwargs)

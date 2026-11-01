@@ -36,10 +36,10 @@ literal `/1` in the route, eleven or more parameters (`/1` matching inside `/10`
 converters that reject digits. Reading the route costs about what `reverse()` does, 7 to 15 µs
 a URL.
 
-`paramnames` is still accepted, to rename the placeholders in route order. A `re_path()` with
+`param_names` is still accepted, to rename the placeholders in route order. A `re_path()` with
 unnamed groups needs it, having no names to read: `reverse_template('legacy', ['legacy_id'])`.
 When the routes for one name take different parameters, which a `re_path()` with an optional
-group does, it raises `ValueError` unless `paramnames` picks one by count.
+group does, it raises `ValueError` unless `param_names` picks one by count.
 
 ## Why it isn't called `reverse`
 

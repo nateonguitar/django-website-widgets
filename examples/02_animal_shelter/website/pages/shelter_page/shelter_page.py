@@ -1,6 +1,6 @@
 import os
 
-from website_widgets import WebPage, register_url
+from website_widgets import AsyncWebPage, register_url
 
 from website.models import Animal, AnimalType
 from website.widgets.animal_filter.animal_filter import AnimalFilter
@@ -8,7 +8,7 @@ from website.widgets.animal_list.animal_list import AnimalList
 
 
 @register_url('')
-class ShelterPage(WebPage):
+class ShelterPage(AsyncWebPage):
     """
     The site's only page. It loads the animals and hands them down: the list gets every animal,
     and builds a card for each.

@@ -14,7 +14,7 @@ class MoviePage(AppPage):
 
     def __init__(self, movie_id: int):
         super().__init__()
-        # The route's <int:movie_id>, which WebPage.as_view() passes to the constructor.
+        # The route's <int:movie_id>, which AsyncWebPage.as_view() passes to the constructor.
         self.movie_id = movie_id
 
     async def set_context(self):

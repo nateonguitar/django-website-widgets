@@ -126,7 +126,7 @@ its own files; see `frontend_controllers.md`.
 
 The copied docs are written for the project's tree, not the package repo's: a TypeScript file by
 its name in `ts/website_widgets/`, a doc by its bare filename, and Python code by its dotted name
-(`website_widgets.web_page.WebPage`), since the Python half is installed rather than copied.
+(`website_widgets.web_page.AsyncWebPage`), since the Python half is installed rather than copied.
 They're in the project because an installed package may live only inside a container, and an AI
 assistant or a person should be able to read them without starting one.
 

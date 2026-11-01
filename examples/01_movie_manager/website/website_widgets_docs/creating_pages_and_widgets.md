@@ -14,7 +14,7 @@ Primary code:
 ## What it writes
 
 ```
-python manage.py ww_create_widget like_button --tscontroller=true --stylesheet=true
+python manage.py ww_create_widget like_button --tscontroller --stylesheet
 ```
 
 writes `<website app>/widgets/like_button/` (`ww_create_page` writes into `pages/`):
@@ -38,12 +38,12 @@ name breaks that rule or the folder already exists. It ends by listing the files
 with what it holds: the class, the root's selector, whether `main.ts` took the controller and the
 stylesheet, and for a page its URL and the name it reverses by.
 
-**A page is routed by its template.** The package's `page.py.tmpl` starts the class with
+**A page is routed by its template.** The package's page templates start the class with
 `@register_url('__route__')`, named after the class (`routing.md`), and the command fills in a
 route made from the name: the path in kebab case with a trailing `_page` dropped, so `login_page`
 routes to `login`, `manage_auth_tokens_page` to `manage-auth-tokens` and `account/settings_page`
 to `account/settings`. `--route=<route>` gives another, and `--route=` is the site root. A
-project that routes its pages some other way leaves the decorator out of its own `page.py.tmpl`
+project that routes its pages some other way leaves the decorator out of its own page templates
 (below), and its pages are written without one; the command then says the page isn't routed and
 prints the `@register_url` to add, or the import and `path()` for `urls.py`.
 
@@ -63,7 +63,9 @@ reaches a controller: `set_context()` puts it in `context.data`, the template wr
 writes it in `setState()`.
 
 **A widget with a controller is written for single use or for repeating**, which the command asks
-(`Shown more than once on a page? [y/N]`) and `--repeating=true|false` answers. A repeating widget,
+(`Shown more than once on a page? [y/N]`) and `--repeating` or `--no-repeating` answers. Every
+yes/no option is such a pair, `--tscontroller`/`--no-tscontroller` and
+`--stylesheet`/`--no-stylesheet` too, and giving neither asks. A repeating widget,
 such as one card per search result, has no id: every instance shares the class, and each root
 carries its own key in `data-key`, which the selector finds it by, so each gets its own
 controller. Its class takes the key as a keyword-only argument, `MovieCard(key=movie.id)`, and its
@@ -90,9 +92,11 @@ sync `def set_context()` runs on the page's event loop, where a sync query raise
 `SynchronousOnlyOperation`. Sync is right for a widget rendered with `render()` from sync code (a
 plain Django view, an email, the admin), which refuses an `async def`. `--async` or `--sync`
 chooses for one widget; `GenerateComponentConfig.widget_set_context` (`'async'` or `'sync'`) sets
-the project's default. A page is always async, since a page only renders through the async
-pipeline, and calls no `super().set_context()`, since `WebPage`'s does nothing; a project whose
-page base class does work there adds the call in its own `page.py.tmpl`.
+the project's default. A page has no flag: its `set_context()` must match its class, so the
+command reads it from the page base class, writing `page__async.py.tmpl`'s `async def` under an
+`AsyncWebPage` and `page__sync.py.tmpl`'s `def` under a `SyncWebPage`. It calls no
+`super().set_context()`, since the base's does nothing; a project whose page base class does work
+there adds the call in its own page template.
 
 **`ts/main.ts` gets the new lines between its marker pairs**, each section kept sorted:
 `// {{ WIDGET STYLES START }}` / `END`, `PAGE STYLES`, `WIDGET CONTROLLERS` and
@@ -110,8 +114,8 @@ which line to add by hand.
 - **A page base class, for a page.** A generated page subclasses the class at
   `GenerateComponentConfig.app_page_class`, which defaults to
   `<website_app_name>.pages.app_page.AppPage`, where `ww_create_app`'s starter site puts it
-  (`starter_site.md`). When nothing is at that path, or it isn't a `WebPage`,
-  the command stops before writing anything, rather than writing a page that fails on import.
+  (`starter_site.md`). When nothing is at that path, or it is neither an `AsyncWebPage` nor a
+  `SyncWebPage`, the command stops before writing anything, rather than writing a page that fails on import.
 
 ## A project's own templates
 
@@ -125,7 +129,7 @@ without wrapping every widget in it:
 | Template | Writes |
 | --- | --- |
 | `__init__.py.tmpl` | `__init__.py` |
-| `page.py.tmpl` | a page's class, with its `@register_url` |
+| `page__async.py.tmpl`, `page__sync.py.tmpl` | a page's class, with its `@register_url` and `async def` or `def set_context()`, for an `AsyncWebPage` or `SyncWebPage` base |
 | `widget__async__single.py.tmpl`, `widget__sync__single.py.tmpl` | a widget's class, with `async def` or `def set_context()` |
 | `widget__async__repeating.py.tmpl`, `widget__sync__repeating.py.tmpl` | a repeating widget's class, taking `key=` |
 | `page__nocontroller.html.tmpl`, `widget__nocontroller.html.tmpl` | the template, with no controller |
@@ -153,7 +157,7 @@ something in an HTML template and `${...}` in TypeScript:
 | `__module_name__` | `like_button` |
 | `__css_name__` | `like-button`, the root element's id and class |
 | `__framework_path__` | the relative import path to `ts/website_widgets`, such as `../../ts/website_widgets` |
-| `__app_page_module__`, `__AppPageClass__` | the two halves of `app_page_class`, in `page.py.tmpl` |
-| `__route__` | the page's route, in `page.py.tmpl`'s `@register_url('__route__')` |
+| `__app_page_module__`, `__AppPageClass__` | the two halves of `app_page_class`, in the page templates |
+| `__route__` | the page's route, in the page templates' `@register_url('__route__')` |
 
 Copy the package's template to start an override, so it keeps the placeholders the command fills.

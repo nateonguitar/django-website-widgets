@@ -57,7 +57,7 @@ grew what this site needs.
   its controller. The endpoint waits half a second (`SEARCH_DELAY_SECONDS`) before answering, so
   the spinner that takes the results' place while a search runs is visible on a local machine.
 - **A widget repeated on a page** (`MovieCard`, `RentalRow`) takes a keyword-only `key`, as
-  `ww_create_widget --repeating=true` writes it, and each caller passes the row's id,
+  `ww_create_widget --repeating` writes it, and each caller passes the row's id,
   `MovieCard(movie=movie, key=movie.id)`. The root carries it in `data-key`, which its selector
   finds it by, `.movie-card[data-key="{{ data.key }}"]`, beside the `data-movie-id` its
   controller reads. The controller looks its elements up inside that root.

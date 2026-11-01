@@ -24,7 +24,7 @@ again: `ww_upgrade` keeps only its two managed folders up to date, and checks th
 ├── endpoints/
 │   └── greeting_endpoint.py   GreetingEndpoint, a plain Django view returning JSON
 ├── pages/
-│   ├── app_page.py         AppPage(WebPage), the base of every page
+│   ├── app_page.py         AppPage(AsyncWebPage), the base of every page
 │   ├── app_page__unauthorized.html, app_page__forbidden.html, app_page__not_found.html
 │   ├── document_template.html  the document every page renders into
 │   ├── home_page/          HomePage at '/', with a controller and a stylesheet
