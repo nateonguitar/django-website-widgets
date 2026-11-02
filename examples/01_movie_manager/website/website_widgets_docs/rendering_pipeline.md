@@ -1,18 +1,16 @@
 # The Rendering Pipeline
 
 What happens between a request arriving at a page and HTML going back out: the order the widget
-tree is built and rendered in, what a template can see, and where the async boundary sits. The
-package's [README](https://github.com/nateonguitar/django-website-widgets#readme) covers the
-shapes of the widget and page classes and `WidgetContext`; this covers the order
-things run in, which is where the surprises are. Read this before overriding `handle_request()` or
-`build_response()`, or when a widget renders but its content is missing.
+tree is built and rendered in, and where the async boundary sits. Read this before overriding
+`handle_request()` or `build_response()`, or when data doesn't reach a widget. What a template
+sees and how its file is found are in `templates.md`; `render()` and `arender()` outside a page
+are in `rendering_a_widget_alone.md`.
 
 Primary code:
 - `website_widgets.web_page` — `AsyncWebPage` and `SyncWebPage`, each with its `as_view()`,
   `handle_request()` and `build_response()`, and `_WebPage`, the private base they share
 - `website_widgets.widget` — `_initialize_widget_tree()` and `_ainitialize_widget_tree()`,
-  `_render_children_to_html()`, `get_template_path()`, `_context_dict()`, `_render_template()`,
-  `render()` and `arender()`
+  `_render_children_to_html()`
 - `website_widgets.widget_context` — `WidgetContext`
 - `website_widgets.config` — `WebsiteWidgetsConfig`, `get_config()`
 
@@ -131,53 +129,6 @@ Getting it wrong fails with an explanation rather than silently:
 - **A page placed in `context.children`**, directly, in a list, or however it got there, raises
   `TypeError` naming the key: a page is only ever the root, rendered by its view.
 
-## Rendering a widget outside a page
-
-A widget can be rendered on its own: into an ordinary Django template, an email body or an admin
-page from sync code, as an HTML fragment from an async endpoint (an infinite scroller, a "load
-more" button), or in a test. The widget is constructed, adjusted if needed (a value put in
-`context.page` beforehand reaches every descendant), then rendered once:
-
-| Method | Runs | For |
-|---|---|---|
-| `widget.render(request=None)` | a synchronous tree walk, no event loop | sync code: a Django view, an admin hook, an email |
-| `await widget.arender(request=None)` | the async pass 1 a page uses | async code: an endpoint returning HTML |
-| `widget.render__test(user=None)` / `await widget.arender__test(user=None)` | the same, against a mock `GET /` whose `request.user` is `user` or `AnonymousUser` | tests only |
-
-Each runs the widget's own `set_context()`, then passes 1 and 3 above, then the widget's
-template. There is no debug tree and no document template.
-
-**`render()` never touches an event loop.** It calls each plain `def set_context()` directly, so
-synchronous ORM calls work there, and raises `TypeError` naming the widget when it meets an
-`async def set_context()`, which it can't await. A widget meant for sync contexts is written with
-`def`. `arender()` awaits async `set_context()`s and calls sync ones, exactly as a page does, so
-the async ORM gotcha below applies to it and not to `render()`.
-
-**Without a request, nothing is mocked.** `self.request` raises, so a widget that needs a request
-fails loudly and production code can't end up with a fake one by omission. Templates see
-`request` as `None`. Only the `__test` methods build a mock request.
-
-This is the line between a widget and a page: a widget renders a fragment, and only a page wraps
-one in a whole HTML document, since the document belongs to the response the page returns.
-
-**A whole document that answers no request is a widget whose template is the document.** An HTML
-email is one: an `EmailDocument` widget whose template holds the `<head>`, header and footer
-every email shares, taking the email's own part as a child widget in its constructor
-(`EmailDocument(subject='Welcome', content=WelcomeMessage(user=user)).render()`). Nothing about a
-widget's template limits it to a fragment.
-
-**Scripts in an inserted fragment run only if it's inserted the right way.** A widget whose
-template starts its controller from a `<script>` keeps doing so in `arender()`'s HTML, but a
-`<script>` set through `innerHTML` never runs. The frontend inserts the fragment with
-`element.replaceChildren(document.createRange().createContextualFragment(html))` (or
-`append()`), whose scripts do run.
-
-**A widget renders once.** Pass 3 replaces its children with their HTML, so a second render
-raises `RuntimeError`; construct a new instance instead.
-
-`_render_template()`, which only fills a template with the context already present, is private:
-called on a fresh widget it would render an empty template without running `set_context()`.
-
 ## The page's own rendering
 
 **A page renders two templates against the same context.** `self._render_template()` renders the
@@ -204,60 +155,7 @@ The response is `HttpResponse(html, status=self.status_code)`. `status_code` is 
 attribute on both page classes, defaulting to `200`; assign it before `build_response()` to
 change it.
 
-## Templates bypass Django's loader
-
-`_render_template()` opens the template file with `open()`, builds a `Template` from the string, and
-renders it against a bare `Context`. Three consequences, all easy to get wrong:
-
-**No template context processors run.** The context is exactly four keys, assembled in
-`_context_dict()`:
-
-| Key | Value |
-|---|---|
-| `request` | the request, or `None` when `render()`/`arender()` was given none |
-| `page` | `self.context.page`, shared by reference down the whole tree |
-| `data` | `self.context.data`, this widget only |
-| `children` | `self.context.children`, this widget only |
-
-Anything a project expects from a context processor (`user`, `csrf_token`, `MEDIA_URL`, `debug`,
-settings exposed globally) **is not there** and resolves to empty with no error. `{% load %}`, custom tags
-and filters, `{% url %}` and `{% static %}` all work normally; only the automatic context is
-absent. The document template additionally receives `page_content_html`, through
-`_render_template()`'s `extra_context` argument; application code puts values in
-`self.context.data`.
-
-**`data` and `children` are per-widget, `page` is shared.** A child cannot see its parent's `data`.
-Anything every widget must reach goes in `context.page`, which is passed down by reference during
-pass 1, so a widget writing to `context.page` writes to the page's own dict, visible to everything
-initialized after it.
-
-**The template file is named after the class's module** unless `template_filename` says otherwise.
-`get_template_path()` takes the file the widget class is defined in and swaps `.py` for `.html`: a
-class in `info_card/info_card.py` renders `info_card/info_card.html`. **A file called
-`template.html` is never found**; it fails with `FileNotFoundError` at render time.
-
-`template_filename` names another file, and only a bare file name: anything with a `/`, a `\` or
-`..` raises `ValueError`. It is read in pass 3 or 4, after every `set_context()` has run, so a
-widget can assign it in `set_context()` to choose between templates at runtime: a page with a
-not-found state keeps `project_page__not_found.html` beside `project_page.html` and switches to it
-there. The package's README suggests that `<module>__<variant>.html` naming.
-
-**The lookup walks the class hierarchy, the concrete class first.** `get_template_path()` checks
-the folder of each class in the MRO, skipping the library's own widget and page classes, and returns
-the first folder holding the file. A base class's variant, kept beside the base class's module,
-therefore works for every subclass, wherever the subclass lives; a subclass with a file of the same
-name shadows it. A name found nowhere raises `FileNotFoundError` listing the folders searched.
-The module-named default is not searched for: it is always beside the concrete class.
-
-Since files are opened directly rather than resolved through `TEMPLATES` dirs, `{% include %}` of
-another component's template is not part of the model: compose with child widgets, or duplicate the
-markup.
-
 ## Gotchas
-
-**A missing namespace prefix fails silently.** `{{ title }}` is not `{{ data.title }}`; it is simply
-undefined, so a `{% if %}` guarding a block is false and the block never renders, with nothing
-logged. This is the most common cause of "my widget renders but its content is missing".
 
 **A widget's sync `set_context()` still runs inside an `AsyncWebPage`'s async view.** That page's
 whole pipeline runs in the event loop its view executes in, as does `arender()`'s, and sync or
@@ -270,26 +168,20 @@ in an `async def set_context()`, and hand templates evaluated data. A test harne
 no event loop, so the sync ORM works in their widgets. `loading_data.md` shows how to write the
 widgets so it never comes up.
 
-**What `request.user` holds is up to the project's middleware**, so whether a page can read it
-depends on that middleware, not on the package:
+**What `request.user` holds is up to the project's middleware**, so the template context has no
+`user` key:
 
-- **Django's `AuthenticationMiddleware`**, which `startproject` installs, sets it to a lazy object
-  that loads the user from the session on its first read. Read in a page, in Python or as
-  `{{ request.user }}`, that first read queries the database inside the async pipeline and
-  raises `SynchronousOnlyOperation`, for a visitor with a session cookie only, which hides it in
-  tests. Whether the middleware runs sync or async doesn't change this: it stores the lazy object
-  either way, and the query runs wherever the object is first read. The middleware also sets
-  `request.auser()`, the async way to load the same user.
-- **A middleware that sets `request.user` to a user it has already loaded** leaves nothing lazy,
-  so reading it in a page is safe. A sync middleware does its database work in the worker thread
-  Django adapts it to, where the sync ORM is allowed. So does one that only reads a lazy
-  `request.user`, which loads it there. In such a project `request.auser()`, if Django's
-  middleware is installed too, still reads the session, so it can return a different user than
-  `request.user`.
+- **Django's `AuthenticationMiddleware`** sets a lazy object whose first read queries the
+  session. Read in an async page, in Python or as `{{ request.user }}`, that raises
+  `SynchronousOnlyOperation`, and only for a visitor with a session cookie, which hides it in
+  tests. Load it with `await request.auser()` instead.
+- **A middleware that sets an already-loaded user** (a sync one, which runs in a worker thread,
+  or one that reads the lazy user there) leaves nothing lazy, so reading `request.user` is safe.
+  If Django's middleware is installed too, `request.auser()` still reads the session and may
+  return a different user.
 
-The package can't know which a project has, so the context has no `user` key. A page that wants
-the user puts it in `context.page` once, the way its middleware allows, and every widget reads
-`page.user`. With Django's middleware:
+A page puts the user in `context.page` once, the way its middleware allows, and every widget
+reads `page.user`. With Django's middleware:
 
 ```python
 class AppPage(AsyncWebPage):

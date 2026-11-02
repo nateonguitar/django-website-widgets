@@ -2,7 +2,7 @@
 
 A lesson: widgets used without a page class, in an ordinary Django view and template, and in a
 custom admin page. This is how a site that already exists adopts widgets one piece at a time.
-Read this before putting a widget into a view that isn't a page. `rendering_pipeline.md` explains
+Read this before putting a widget into a view that isn't a page. `rendering_a_widget_alone.md` explains
 `render()` itself; this shows where it fits.
 
 ## A widget in an ordinary view

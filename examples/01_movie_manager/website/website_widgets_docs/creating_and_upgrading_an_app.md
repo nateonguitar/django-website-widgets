@@ -61,17 +61,15 @@ as a 404, and `ww_doctor` reports the rest; see `checking_the_setup.md`.
 
 ## `ww_upgrade`
 
-Run it after every upgrade of the package, and once on an app that never ran `ww_create_app`,
-such as one a site already had. The app has to be installed; the command stops with an error
-naming the label when it isn't. It runs no system checks first, since it is the fix for the
-stale-folder warning below, and a page module that fails to import mustn't stop it. It rewrites the managed folder, reports what changed, sets the npm
-package's range and checks the build files (below), and offers the docs pointer.
+Run it after every upgrade of the package, and once on an app that never ran `ww_create_app`.
+The app has to be installed. It runs no system checks first, since it is the fix for the
+stale-folder warning below and a page module that fails to import mustn't stop it. It rewrites
+the managed folder, sets the npm package's range, checks the build files (below), and offers the
+docs pointer.
 
-**It never creates or touches any other starter file.** `document_template.html`, `AppPage`,
-`exceptions.py`, `main.ts`, `app-state.ts`, `app-urls.ts`, the starter pages and the endpoint are
-written once by `ww_create_app` and are the developer's from then on, so a site adopting the
-package gets no demo files from an upgrade. To start from one, copy it from a fresh
-`ww_create_app` in a scratch project.
+**It never creates or touches any other starter file.** The starter's pages, templates,
+TypeScript and endpoint are written once by `ww_create_app` and are the developer's from then on;
+to start from one later, copy it from a fresh `ww_create_app` in a scratch project.
 
 ## The build files
 
@@ -106,36 +104,17 @@ folder or `node_modules/` doesn't exist, since a site may use only the Python ha
 ```
 
 `website_widgets_docs/` is a flat copy of the package's own `docs/` folder, `AGENTS.md`
-included, so a doc names another by its bare filename in both places.
-
-**The framework TypeScript is no longer copied.** Before 1.0.0rc3, `ww_upgrade` also wrote
-`App`, `Controller` and `Completer` into `ts/website_widgets/`. They are the npm package now, and
-an app that still has that folder keeps it until the developer deletes it: nothing manages it any
-more, and imports of it move to `django-website-widgets` (the changelog has the steps).
+included, so a doc names another by its bare filename in both places. It is in the project
+because an installed package may live only inside a container, and an AI assistant or a person
+should be able to read the docs without starting one. Don't edit the copies.
 
 **Each file the package ships is overwritten, and nothing else in the folder is touched.** The
-README lists every file the package wrote. On the next run, a file on that list that the new
-version no longer ships, such as a renamed doc, is deleted. A file that was never on the list,
-such as one a developer added, is left alone, and so is a listed path that would reach outside
-the folder.
-
-`ww_upgrade` reports every file as added, changed or removed (the unchanged ones as a count),
-and suggests committing the folder. A file that differs only in its line endings, as a Windows
-checkout with git's `autocrlf` leaves it, counts as unchanged and isn't rewritten. Committed, an upgrade shows up as a git diff of exactly what
-changed, and a developer who edited a copy anyway sees what was replaced.
-
-**Don't edit the copies.** A project changes the framework's behaviour by subclassing
-`Controller` or `App` in its own files, never by editing the npm package in `node_modules/`; see
-`frontend_controllers.md`.
-
-## The docs read from where they land
-
-The copied docs are written for the project's tree, not the package repo's: the framework
-TypeScript by what the npm package exports (`import { Controller } from "django-website-widgets"`),
-a doc by its bare filename, and Python code by its dotted name
-(`website_widgets.web_page.AsyncWebPage`), since both halves are installed rather than copied.
-They're in the project because an installed package may live only inside a container, and an AI
-assistant or a person should be able to read them without starting one.
+README lists every file the package wrote; on the next run, a listed file the new version no
+longer ships (a renamed doc) is deleted, while a file never on the list (one a developer added)
+is left alone, as is a listed path that would reach outside the folder. `ww_upgrade` reports
+every file as added, changed or removed and suggests committing the folder, so an upgrade shows
+up as a git diff of exactly what changed. A file differing only in line endings (git's
+`autocrlf`) counts as unchanged.
 
 ## The docs pointer
 
@@ -148,26 +127,22 @@ and others), all relative to the project root, and ask once per file found:
 - `website/website_widgets_docs/AGENTS.md` — how django-website-widgets works; read before changing pages, widgets or controllers
 ```
 
-The path in the line is relative to the project root in every one of them, `.claude/CLAUDE.md`
-included, since that's how paths in these files are read. Neither asks when the file already
-names that path. A file still naming the pre-0.8.0 path, `<app>/ts/website_widgets/AGENTS.md`,
-is asked instead whether to update it, which changes that path to the new one wherever the file
-names it and adds no second line. A `CLAUDE.md` linked to `AGENTS.md` is one file, asked about
-once. When none of the three exists, they offer to create `AGENTS.md` holding just that line. The
-default answer is no. This is the only time either writes outside the app, and only on a yes.
-
-The project root is `settings.BASE_DIR`, or the current directory without one; `--project-root`
-names another.
+The path is relative to the project root in every file, `.claude/CLAUDE.md` included. Neither
+asks when the file already names it; a file naming the pre-0.8.0 path,
+`<app>/ts/website_widgets/AGENTS.md`, is offered an update in place instead. A `CLAUDE.md`
+linked to `AGENTS.md` is asked about once. When none of the three exists, they offer to create
+`AGENTS.md` holding just that line. The default answer is no, and this is the only time either
+writes outside the app.
 
 ## Options
 
-- `--noinput` (or `--no-input`): `ww_create_app` writes without asking; neither adds a docs
-  pointer, saying where one is missing. `ww_upgrade` still writes the docs folder, since its
-  files are the package's, and the npm package's range, and keeps a build config that differs. Without `--noinput` and with no input
-  to read, as in a script that forgot the flag, every question takes its default answer.
-- `--project-root`: where `ww_create_app` creates the app, and where both look for `CLAUDE.md`,
-  `.claude/CLAUDE.md` and `AGENTS.md`.
+- `--noinput` (or `--no-input`): `ww_create_app` writes without asking. Neither adds a docs
+  pointer, saying where one is missing. `ww_upgrade` still writes the docs folder and the npm
+  range, and keeps a build config that differs. With no input to read and no flag, as in a
+  script, every question takes its default.
+- `--project-root`: where `ww_create_app` creates the app and both look for `CLAUDE.md`,
+  `.claude/CLAUDE.md` and `AGENTS.md`; `settings.BASE_DIR` by default, else the current
+  directory.
 
-The package takes no position on how a project runs its commands. Files they write belong to
-whoever ran them, so a container running as root writes root-owned files; that's the project's
-to handle.
+Files the commands write belong to whoever ran them, so a container running as root writes
+root-owned files; that's the project's to handle.

@@ -34,10 +34,10 @@ it lands. A folder the name adds, `dialogs/` here, gets an empty `__init__.py`, 
 package like every other, and the summary says so; a folder that already exists is left as it is.
 Each part of the name becomes a Python package or module, which route discovery
 imports, so each must be a lowercase identifier (`login_dialog`, not `LoginDialog`,
-`login-dialog` or `class`), and `..` can't climb out of `pages/` or `widgets/`. Without
-`--tscontroller`, `--stylesheet` or, for a widget with a controller, `--repeating`, the command
-asks. It stops without writing anything when the
-name breaks that rule or the folder already exists. It ends by listing the files it wrote, each
+`login-dialog` or `class`), and `..` can't climb out of `pages/` or `widgets/`. Each yes/no
+option is a pair (`--tscontroller`/`--no-tscontroller`, `--stylesheet`/`--no-stylesheet`,
+`--repeating`/`--no-repeating`), and giving neither asks. It stops without writing anything when
+the name breaks that rule or the folder already exists. It ends by listing the files it wrote, each
 with what it holds: the class, the root's selector, whether `main.ts` took the controller and the
 stylesheet, and for a page its URL and the name it reverses by.
 
@@ -63,22 +63,16 @@ warning, since the `website_widgets.E001` check then fails until one of them cha
 
 **The root element's id and class are the module name in kebab case** (`like-button`), and a
 page's root is a `<main>` holding an `<h1>`. A widget without a controller has only the class,
-since nothing looks its root up, and so repeats as it is. The generated `<script>` starts the controller on
-that root, `await App.initController(new LikeButtonController(), '#like-button')`, and the
-controller's `Elements` finds its elements inside that root, in `findIn()`. The one example value, `label`, shows how data
-reaches a controller: `set_context()` puts it in `context.data`, the template writes it in a
-`data-` attribute on the root, and the controller reads it from `this.rootElement.dataset` and
-writes it in `setState()`.
+since nothing looks its root up, and so repeats as it is. The one example value, `label`, shows
+how data reaches a controller: `set_context()` puts it in `context.data`, the template writes it
+in a `data-` attribute on the root, and the controller reads it from `this.rootElement.dataset`
+and writes it in `setState()`.
 
-**A widget with a controller is written for single use or for repeating**, which the command asks
-(`Shown more than once on a page? [y/N]`) and `--repeating` or `--no-repeating` answers. Every
-yes/no option is such a pair, `--tscontroller`/`--no-tscontroller` and
-`--stylesheet`/`--no-stylesheet` too, and giving neither asks. A repeating widget,
-such as one card per search result, has no id: every instance shares the class, and each root
-carries its own key in `data-key`, which the selector finds it by, so each gets its own
-controller. Its class takes the key as a keyword-only argument, `MovieCard(key=movie.id)`, and its
-constructor puts it straight into `context.data['key']`, which `super().__init__()` has just
-created, so `set_context()` has nothing to copy. Its template writes:
+**A widget with a controller is written for single use or for repeating**: the command asks
+(`Shown more than once on a page? [y/N]`), `--repeating` or `--no-repeating` answers. A repeating
+widget, such as one card per search result, has no id. Its class takes a keyword-only `key`
+(`MovieCard(key=movie.id)`), which the constructor puts straight into `context.data['key']`, and
+its template carries it in `data-key` and selects on it:
 
 ```html
 <div class="movie-card"
@@ -87,31 +81,21 @@ created, so `set_context()` has nothing to copy. Its template writes:
 await App.initController(new MovieCardController(), '.movie-card[data-key="{{ data.key }}"]');
 ```
 
-The controller can read the key from `dataset.key`; a value the controller needs under its own
-name, such as the movie manager card's `data-movie-id`, sits beside it even when it holds the same
-id. The key goes inside a quoted attribute selector, so anything without a double quote works; a primary key
-or a slug is usual. A widget without a controller isn't asked: nothing selects its root, which
-has only its class, so the same template serves one instance or many, and `--repeating` changes
-nothing.
+The key sits inside a quoted attribute selector, so anything without a double quote works; a
+primary key or a slug is usual. A value the controller needs under its own name, such as the
+movie manager card's `data-movie-id`, sits beside it even when it holds the same id. A widget
+without a controller isn't asked, since nothing selects its root.
 
-**A widget is an `AsyncWidget` unless the command is told `--sync`.** Its class is its kind, the
-way a page's is. `AsyncWidget`, with `async def set_context()`, is right for a widget in an
-`AsyncWebPage` or behind `arender()`, where a database query is awaited; a sync query on that
-event loop raises `SynchronousOnlyOperation`. `SyncWidget`, with `def set_context()`, is right
-for a widget rendered with `render()` from sync code (a plain Django view, an email, the admin) or
-in a `SyncWebPage`, which refuse an `AsyncWidget`. `--async` (the default) or `--sync` chooses
-`widget__async__*.py.tmpl` or `widget__sync__*.py.tmpl`. A page has no flag: its `set_context()` must match its class, so the
-command reads it from the page base class, writing `page__async.py.tmpl`'s `async def` under an
-`AsyncWebPage` and `page__sync.py.tmpl`'s `def` under a `SyncWebPage`. It calls no
+**A widget is an `AsyncWidget` unless the command is told `--sync`.** `AsyncWidget` is for a
+widget in an `AsyncWebPage` or behind `arender()`; `SyncWidget` for one rendered with `render()`
+from sync code (a plain Django view, an email, the admin) or in a `SyncWebPage`
+(`rendering_pipeline.md`). A page has no flag: the command reads the kind from the page base
+class and writes `page__async.py.tmpl` or `page__sync.py.tmpl`. Neither calls
 `super().set_context()`, since the base's does nothing; a project whose page base class does work
 there adds the call in its own page template.
 
-**The constructor keeps its arguments; `set_context()` does the rest.** The generated
-`__init__()` stores what it's given, since a constructor runs before rendering: it can't await,
-`self.request` isn't set, and a child's `context.page` isn't the page's yet. `set_context()`,
-marked by the generated comment, runs once rendering starts, so queries, the request, the user,
-`context.page` and children built from loaded data go there. Doing those in the constructor
-raises an error saying where they go instead (`rendering_pipeline.md`).
+**The generated constructor only stores its arguments; `set_context()`, marked by the generated
+comment, does the rest** (`rendering_pipeline.md` says why, and what fails loudly otherwise).
 
 **`ts/main.ts` gets the new lines between its marker pairs**, each section kept sorted:
 `// {{ WIDGET STYLES START }}` / `END`, `PAGE STYLES`, `WIDGET CONTROLLERS` and
@@ -137,7 +121,7 @@ confirm_dialog.ts     class ConfirmDialogController extends DialogController<voi
 confirm_dialog.scss   empty                                                     (--stylesheet)
 ```
 
-The pieces are those `frontend_controllers.md` describes under "Dialogs": the template holds a
+The pieces are those `dialogs.md` describes: the template holds a
 title marked `data-dialog-label` and a Close button marked `data-dialog-close`, and the
 controller's static `show()` calls `DialogController.openDialog()` with the template's id. The
 name is used as given, as `ww_create_widget` uses it, with no `_dialog` added or dropped, and a
@@ -159,7 +143,7 @@ under the class in `data-dialog-class`.
 
 **The generated dialog answers nothing** (`DialogController<void>`). A dialog that answers a
 value changes `void` to its type, keeps the answer in a typed field set before
-`this.dialog.close()`, and returns the field from `answer()` (`frontend_controllers.md`).
+`this.dialog.close()`, and returns the field from `answer()` (`dialogs.md`).
 
 **Using it takes two steps,** which the command prints when it finishes: place the widget as a
 child of the page or widget the dialog opens from (or of the document template, when every page
