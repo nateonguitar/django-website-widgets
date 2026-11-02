@@ -55,11 +55,10 @@ step when one is added.
   copies out as the start of someone's site. Each depends on the package by relative path,
   `django-website-widgets = {path = "../..", develop = true}`, so it runs the code in this
   checkout, and a package change shows up in every example at once.
-- **The movie manager starts from the package's own commands.** `startproject`, `ww_create_app`,
-  then `ww_create_page` and `ww_create_widget` for each page and widget, committed exactly as
-  they came out before any hand work, so its history diffs what the package generates against
-  what a developer writes. Something every generated file needs corrected by hand is a bug in a
-  command, fixed here.
+- **The movie manager starts from the package's own commands.** `startproject` and
+  `ww_create_app`, committed as they came out before any hand work, so its history starts from
+  the generated starter; then a `ww_create_*` command for each page, widget and dialog.
+  Something every generated file needs corrected by hand is a bug in a command, fixed here.
 - **They run on models and SQLite**, seeded by a data migration, so `migrate` alone gives a
   working site and every test starts from the same rows. `db.sqlite3` is git-ignored.
 - **Run one:** `cd examples/02_animal_shelter`, `poetry install`,
@@ -225,6 +224,12 @@ upgraded by a range.
 types it by construction, and a project's dialog widget renders only a `<template>` of its
 content. A `<form method="dialog">` answering through `returnValue` strings was dropped too; a
 button stores a typed answer and closes the dialog, as a saved form does.
+
+**`Controller` has no logging or network helpers.** `logInfo`/`logWarn`/`logError` were tried
+and removed: they chose the logger for the project, and labelled messages with
+`this.constructor.name`, which a production build minifies to a letter or two. A
+`Controller.fetch()` was moved out for the same reason, since the HTTP client is the project's
+choice.
 
 **Every command is `ww_`-prefixed, and `ww_create_*` is the one verb for writing new files.**
 A new command follows both, so `manage.py help`'s list and a project's shell history say where a

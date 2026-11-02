@@ -14,11 +14,9 @@ in the doc.
   `template_filename` to a bare file name.
 - **Data flows down, through constructors.** A widget's `set_context()` builds its children, and
   a parent never reads a child's context. What every widget needs goes in `context.page`.
-- **A template sees four keys:** `request`, `page`, `data`, `children`. No context processors
-  run, and there's no `user`: a page puts the user in `context.page` itself, since whether
-  reading `request.user` in a page is safe depends on the project's middleware. With Django's
-  `AuthenticationMiddleware` it's lazy and raises `SynchronousOnlyOperation`, so load it with
-  `await self.request.auser()` (`rendering_pipeline.md`).
+- **A template sees four keys:** `request`, `page`, `data`, `children`, with no context
+  processors and no `user`; a page puts the user in `context.page` itself, loaded with
+  `await self.request.auser()` under Django's auth middleware (`rendering_pipeline.md`).
 - **A page reaches a URL by `@register_url` on its class,** in a module under the website app's
   `pages/` folder, or by hand in `urls.py` with its class's `as_view()`.
 - **Outside a page, a widget renders with `render()`** from sync code or `await arender()` from
@@ -27,29 +25,32 @@ in the doc.
   request.
 - **A widget's frontend is a `Controller` subclass,** started by
   `App.initController(new MyController(), '#root')` from the widget's `<script>`. The framework
-  TypeScript (`App`, `Controller`, `Completer`) is the npm package `django-website-widgets`,
+  TypeScript (`App`, `Controller`, `Completer`, `DialogController`) is the npm package `django-website-widgets`,
   imported by that name; **never edit it in `node_modules/`**, subclass `Controller` or `App`
   instead, and keep project state in the project's own classes.
 
 ## Docs
 
-- `rendering_pipeline.md` — what happens between a request and HTML: async and sync pages, one page instance per request, the four passes of `build_response()`, what goes in the constructor and what in `set_context()` (and the errors for getting it wrong), `render()` and `arender()` outside a page, a whole document with no request (email) as a widget, the four-key template context and why it has no `user`, template lookup, and the async ORM trap
-- `routing.md` — routing a page by hand or with `@register_url`: discovery under `pages/` (and `runserver` reloading on a new page), the namespace and default names, most-specific-first ordering, the tie check, `ww_show_routes`
-- `frontend_controllers.md` — the framework TypeScript, the npm package: why it is a dependency and never edited, one copy per bundle, a controller's lifecycle and its selector, `setState()`, a controller's shape (`Elements` and its `findIn()`, extending a base controller's, `data-` attributes), element lookups, singletons and `Completer`, dialogs (`DialogController`: a widget's `<template>`, `show()` and `openDialog()`, opening one from a controller or a template's `<script>`, store-then-close and `answer()`, `null` on dismissal, the `data-dialog-*` attributes, who decides dismissal), what `Controller` leaves to the project
-- `reverse_template.md` — `reverse_template()`: URL names into `/posts/{post_id}` templates for the frontend, why it reads the route, `param_names`, why it isn't called `reverse`
-- `creating_pages_and_widgets.md` — `ww_create_page`, `ww_create_widget` and `ww_create_dialog`: the files they write, routing a new page (`__route__`, `--route`), single-use or repeating widgets (`--repeating`, `key=`), the root element and its selector, `AsyncWidget` or `SyncWidget` (`--async`/`--sync`), registering in `main.ts`, a dialog's files and why it has fewer options, what they need first, `app_page_class`, overriding their templates with `templates_dir`, the placeholders
-- `creating_and_upgrading_an_app.md` — `ww_create_app` and `ww_upgrade`: why the app's name comes only from settings, what each writes, the next steps, the build files an upgrade asks about, sets or checks, the npm package's range and how it is versioned, the managed folder (these docs in `website_widgets_docs/`) and the retired `ts/website_widgets/`, the version and file list in its README, what an upgrade deletes, the out-of-date warnings, the docs pointer
-- `starter_site.md` — the site `ww_create_app` writes: each file's job, `AppPage` and its refusal exceptions, `AppState` vs `data-` attributes, `AppUrls` and why static URLs go through it, the REST-agnostic endpoint, the build files as the developer's to change
-- `checking_the_setup.md` — the package's system checks (E001–E003, W001, W002) and their fixes, `ww_doctor`'s checklist, the `package.json` check
-- `npm_watch.md` — `start_npm_watch()` in `manage.py`: when it starts `npm run watch`, how it avoids a second watcher, why it sets Django up early
-- `node_and_package_managers.md` — installing Node; building without it in a docker or podman container, and why each option of the command; `node_modules` built for Linux on macOS and Windows; yarn, pnpm and the rest, with `start_npm_watch()` as the model for their own watcher
+- `rendering_pipeline.md` — what runs between a request and HTML: async vs sync pages, one page instance per request, the passes of `build_response()`, constructor vs `set_context()`, the user and the async ORM trap
+- `rendering_a_widget_alone.md` — `render()` and `arender()` outside a page: sync vs async, no request, a whole document (email) as a widget, inserting a fragment so its scripts run
+- `templates.md` — what a template sees (the four keys, the silent missing-`data.` trap), how its file is found, variant templates, no `{% include %}`
+- `routing.md` — `@register_url` or by hand: discovery under `pages/`, names and the namespace, most-specific-first order, the tie check, `ww_show_routes`
+- `frontend_controllers.md` — the framework TypeScript: a controller's lifecycle, selector and shape (`Elements`, `findIn()`, `setState()`), singletons and `Completer`, what it leaves to the project
+- `dialogs.md` — a dialog its caller awaits: the widget's `<template>`, `DialogController`'s `show()` and `answer()`, the `data-dialog-*` attributes, dismissal
+- `reverse_template.md` — `reverse_template()`: URL names into `/posts/{post_id}` templates for the frontend
+- `creating_pages_and_widgets.md` — `ww_create_page`, `ww_create_widget` and `ww_create_dialog`: what they write and their options, routing a new page, repeating widgets, `main.ts`, overriding their templates
+- `creating_and_upgrading_an_app.md` — `ww_create_app` and `ww_upgrade`: the app's name, what each writes, the build files, the npm range, the managed docs folder, the docs pointer
+- `starter_site.md` — the site `ww_create_app` writes: each file's job, `AppPage` and refusals, `AppState` vs `data-` attributes, `AppUrls`, the endpoint
+- `checking_the_setup.md` — the system checks (E001–E003, W001, W002) and their fixes, `ww_doctor`
+- `npm_watch.md` — `start_npm_watch()` in `manage.py`: when it starts `npm run watch` and how it avoids a second watcher
+- `node_and_package_managers.md` — installing Node, building in a container instead, `node_modules` across OSes, yarn, pnpm and the rest
 
 ## Lessons
 
 Techniques shown with worked code, for the cases the docs above explain but don't walk through.
 
-- `loading_data.md` — querying in `async def set_context()`, `select_related` for what templates follow, one widget after another vs gathering slow calls in a parent, why gathered database queries gain nothing
-- `widgets_in_plain_django.md` — `render()` in an ordinary `TemplateView`, a widget with a controller in a plain template, a custom admin page holding a widget
-- `html_emails.md` — an email as an `EmailDocument` widget around each email's content widget: sync `set_context()`, no request, absolute links, the plain-text version
-- `etags_and_304s.md` — answering 304 from `handle_request()` before the tree is built, what goes in the ETag, `Vary: Cookie`
-- `deploying_the_frontend.md` — the production build and what it writes, building in the deploy rather than in git, cache busting with `ManifestStaticFilesStorage`, `{% static %}` and `AppUrls`, why chunks carry their own hash
+- `loading_data.md` — querying in `async def set_context()`, `select_related`, when gathering slow calls in a parent helps
+- `widgets_in_plain_django.md` — widgets in an ordinary view, a plain template, the admin, a form field
+- `html_emails.md` — an email as an `EmailDocument` widget: no request, absolute links, the plain-text version
+- `etags_and_304s.md` — answering 304 from `handle_request()` before the tree is built, the ETag, `Vary: Cookie`
+- `deploying_the_frontend.md` — the production build, building in the deploy, cache busting with `ManifestStaticFilesStorage`

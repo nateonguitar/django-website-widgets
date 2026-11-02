@@ -35,9 +35,12 @@ This README introduces the library. How each part works, and why, is in the docs
 inside the package, indexed by
 [`website_widgets/docs/AGENTS.md`](https://github.com/nateonguitar/django-website-widgets/blob/main/website_widgets/docs/AGENTS.md):
 
-- [`rendering_pipeline.md`](https://github.com/nateonguitar/django-website-widgets/blob/main/website_widgets/docs/rendering_pipeline.md): how a request becomes HTML, and rendering a widget outside a page
+- [`rendering_pipeline.md`](https://github.com/nateonguitar/django-website-widgets/blob/main/website_widgets/docs/rendering_pipeline.md): how a request becomes HTML
+- [`rendering_a_widget_alone.md`](https://github.com/nateonguitar/django-website-widgets/blob/main/website_widgets/docs/rendering_a_widget_alone.md): `render()` and `arender()` outside a page
+- [`templates.md`](https://github.com/nateonguitar/django-website-widgets/blob/main/website_widgets/docs/templates.md): what a template sees, how its file is found, variant templates
 - [`routing.md`](https://github.com/nateonguitar/django-website-widgets/blob/main/website_widgets/docs/routing.md): `@register_url`, route discovery and ordering
 - [`frontend_controllers.md`](https://github.com/nateonguitar/django-website-widgets/blob/main/website_widgets/docs/frontend_controllers.md): the TypeScript `Controller`, `App` and `Completer`
+- [`dialogs.md`](https://github.com/nateonguitar/django-website-widgets/blob/main/website_widgets/docs/dialogs.md): a dialog its caller awaits, on `DialogController`
 - [`reverse_template.md`](https://github.com/nateonguitar/django-website-widgets/blob/main/website_widgets/docs/reverse_template.md): URL templates for the frontend
 - [`creating_and_upgrading_an_app.md`](https://github.com/nateonguitar/django-website-widgets/blob/main/website_widgets/docs/creating_and_upgrading_an_app.md): `ww_create_app` and `ww_upgrade`, these docs copied into a project, and the npm package's range
 - [`starter_site.md`](https://github.com/nateonguitar/django-website-widgets/blob/main/website_widgets/docs/starter_site.md): the working site `ww_create_app` writes, and the conventions it shows
@@ -511,6 +514,8 @@ do not run. The context holds only `request`, `page`, `data` and `children`. The
 what `request.user` holds depends on the project's middleware, and with Django's default, reading
 it inside an async page queries the database where Django forbids it. A page puts the user in
 `context.page` itself, the way its middleware allows. See
+[`docs/templates.md`](https://github.com/nateonguitar/django-website-widgets/blob/main/website_widgets/docs/templates.md)
+for what a template sees and how its file is found, and
 [`docs/rendering_pipeline.md`](https://github.com/nateonguitar/django-website-widgets/blob/main/website_widgets/docs/rendering_pipeline.md)
 for the full render order.
 

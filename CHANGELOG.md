@@ -127,7 +127,7 @@ These change a project's controllers.
 - **Dialogs a caller awaits,** from the npm package's `DialogController` (npm 1.0.0-rc.2, the
   range this release requires): a dialog's widget renders a `<template>` of its content, and
   `const answer = await MyDialogController.show(...)` opens a `<dialog>` around a copy of it.
-  `frontend_controllers.md` has the pattern.
+  `dialogs.md` has the pattern.
 - **`ww_create_dialog <name>`** writes a dialog into `widgets/`: a `SyncWidget` rendering its
   `<template>`, and a `DialogController<void>` whose static `show()` opens it, exported from
   `main.ts`, with the stylesheet asked about or `--stylesheet`. Its templates are

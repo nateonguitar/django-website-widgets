@@ -2,7 +2,7 @@
 
 A lesson: an HTML email built from widgets. The email's whole document is one widget, its own
 part another, rendered with `render()` and no request. Read this before writing a site's emails.
-Why an email is a widget and never a page is in `rendering_pipeline.md`.
+Why an email is a widget and never a page is in `rendering_a_widget_alone.md`.
 
 ## The document widget
 
