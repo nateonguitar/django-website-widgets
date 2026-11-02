@@ -154,6 +154,21 @@ const takeTheRest = await ConfirmDialogController.show({ message: 'Take the rest
 if (!takeTheRest) return;
 ```
 
+`python manage.py ww_create_dialog <name>` writes a new dialog's widget, template and controller
+(`creating_pages_and_widgets.md`). A controller opens a dialog from its own code, as above. A
+page or widget without a controller opens one from a module `<script>` in its template, which
+imports the dialog's controller from the bundle like any other:
+
+```django
+{% load static %}
+{{ children.welcome_dialog }}
+
+<script type="module">
+    import { WelcomeDialogController } from '{% static "main.js" %}';
+    await WelcomeDialogController.show();
+</script>
+```
+
 **The dialog's widget renders only a `<template>` holding its content,** with no `<dialog>`,
 no ids and no `<script>`. A `<template>` is parsed but never shown and runs nothing, so it costs
 nothing on a page that never opens it. It is placed like any other child: in the page that can

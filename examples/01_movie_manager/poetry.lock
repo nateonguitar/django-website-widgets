@@ -90,7 +90,7 @@ pydantic = ">=2.0,<3.0.0"
 
 [[package]]
 name = "django-website-widgets"
-version = "1.0.0rc4"
+version = "1.0.0rc5"
 description = "Server-rendered pages built from composable widgets, for Django"
 optional = false
 python-versions = ">=3.12"

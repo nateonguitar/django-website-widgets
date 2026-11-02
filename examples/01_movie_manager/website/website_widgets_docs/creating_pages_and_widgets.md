@@ -1,13 +1,14 @@
-# Creating a page or widget
+# Creating a page, widget or dialog
 
-`python manage.py ww_create_page <name>` and `python manage.py ww_create_widget <name>` write a new
-component's files into the website app and register its controller and stylesheet in
-`ts/main.ts`; `ww_create_page` also routes the page. Read this before adding a component by hand,
-or before changing what the commands write for a project.
+`python manage.py ww_create_page <name>`, `python manage.py ww_create_widget <name>` and
+`python manage.py ww_create_dialog <name>` write a new component's files into the website app and
+register its controller and stylesheet in `ts/main.ts`; `ww_create_page` also routes the page.
+Read this before adding a component by hand, or before changing what the commands write for a
+project.
 
 Primary code:
-- `website_widgets.management.commands.ww_create_page` and `website_widgets.management.commands.ww_create_widget` — the commands
-- `website_widgets.management.component_files.ComponentFiles` — the file work both call: a file from a template, a line in `main.ts`
+- `website_widgets.management.commands.ww_create_page`, `website_widgets.management.commands.ww_create_widget` and `website_widgets.management.commands.ww_create_dialog` — the commands
+- `website_widgets.management.component_files.ComponentFiles` — the file work they all call: a file from a template, a line in `main.ts`
 - `website_widgets.config.GenerateComponentConfig` — their two settings
 - the package's `generator_templates/` — the default templates, listed below
 
@@ -120,6 +121,50 @@ which is what lets a template `import { LikeButtonController } from '{% static "
 When `main.ts` or a marker pair is missing, the files are still written and the command says
 which line to add by hand.
 
+## Creating a dialog
+
+```
+python manage.py ww_create_dialog confirm_dialog --stylesheet
+```
+
+writes `<website app>/widgets/confirm_dialog/`, since a dialog is a widget:
+
+```
+__init__.py           from .confirm_dialog import ConfirmDialog
+confirm_dialog.py     class ConfirmDialog(SyncWidget), putting the title in context.data
+confirm_dialog.html   <template id="confirm-dialog-template" data-dialog-class="confirm-dialog">
+confirm_dialog.ts     class ConfirmDialogController extends DialogController<void>, with show()
+confirm_dialog.scss   empty                                                     (--stylesheet)
+```
+
+The pieces are those `frontend_controllers.md` describes under "Dialogs": the template holds a
+title marked `data-dialog-label` and a Close button marked `data-dialog-close`, and the
+controller's static `show()` calls `DialogController.openDialog()` with the template's id. The
+name is used as given, as `ww_create_widget` uses it, with no `_dialog` added or dropped, and a
+nested name, a bad name or an existing folder are treated the same way.
+
+**A dialog has fewer options than a widget,** because its shape leaves nothing to choose:
+
+- **No `--async`/`--sync`.** Its widget renders a `<template>` and loads nothing, so it is
+  always a `SyncWidget`, and renders in an async or a sync page alike.
+- **No `--tscontroller`.** `show()` is the only way to open a dialog, so the controller is
+  always written and exported from `main.ts`.
+- **No `--repeating`.** The widget is placed once wherever the dialog can open, and each
+  `show()` copies the template into a `<dialog>` of its own, so nothing inside it has an id
+  and no key is needed.
+
+Only the stylesheet is asked about, `--stylesheet` or `--no-stylesheet` answering. The `<dialog>`
+the package creates is bare, so a dialog usually wants one, at least for its width and padding,
+under the class in `data-dialog-class`.
+
+**The generated dialog answers nothing** (`DialogController<void>`). A dialog that answers a
+value changes `void` to its type, keeps the answer in a typed field set before
+`this.dialog.close()`, and returns the field from `answer()` (`frontend_controllers.md`).
+
+**Using it takes two steps,** which the command prints when it finishes: place the widget as a
+child of the page or widget the dialog opens from (or of the document template, when every page
+can open it), and open it with `await ConfirmDialogController.show()`.
+
 ## What it needs first
 
 - **The npm package, to build.** A generated controller imports `Controller` from
@@ -150,7 +195,10 @@ without wrapping every widget in it:
 | `page__controller.html.tmpl`, `widget__controller__single.html.tmpl` | the template, starting the controller |
 | `widget__controller__repeating.html.tmpl` | a repeating widget's template, its key in the root's `data-key` |
 | `controller.ts.tmpl` | the controller, for pages and widgets |
-| `component.scss.tmpl` | the stylesheet, for pages and widgets |
+| `dialog.py.tmpl` | a dialog's class, a `SyncWidget` |
+| `dialog.html.tmpl` | a dialog's `<template>` |
+| `dialog_controller.ts.tmpl` | a dialog's controller, a `DialogController` with `show()` |
+| `component.scss.tmpl` | the stylesheet, for pages, widgets and dialogs |
 
 ```python
 from website_widgets.config import GenerateComponentConfig, WebsiteWidgetsConfig
