@@ -25,4 +25,5 @@ class AppUrls(SyncWidget):
             'endpoint_add_copies': reverse_template('api:add_copies'),
             'endpoint_checkout': reverse_template('api:checkout'),
             'endpoint_return_rental': reverse_template('api:return_rental'),
+            'endpoint_report_copy': reverse_template('api:report_copy'),
         }

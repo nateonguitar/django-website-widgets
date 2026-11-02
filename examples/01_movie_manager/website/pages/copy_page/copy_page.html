@@ -1,0 +1,45 @@
+{% load static %}
+<main id="copy-page"
+      class="copy-page"
+      data-label="{{ data.copy.label }}">
+  <div class="copy-page__card">
+    {{ children.card }}
+  </div>
+
+  <h1>Copy <code>{{ data.copy.label }}</code></h1>
+  <p class="copy-page__where">
+    {% if data.copy.retired_at %}
+      Out of rotation since {{ children.retired }}
+    {% elif not data.rental %}
+      On the shelf
+    {% elif data.is_out_with_viewer %}
+      Out with you for {{ children.out_for }}
+    {% elif page.user.is_authenticated %}
+      Out with {{ data.rental.user.username }} for {{ children.out_for }}
+    {% else %}
+      Out
+    {% endif %}
+  </p>
+  {% if data.can_report %}
+    <button type="button"
+            class="copy-page__report">Report a problem</button>
+  {% endif %}
+
+  <h2>Reported problems</h2>
+  {% if children.reports %}
+    <ul class="copy-page__reports">
+      {% for report in children.reports %}
+        {{ report }}
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p>None so far.</p>
+  {% endif %}
+</main>
+
+{{ children.report_dialog }}
+
+<script type="module">
+  import { App, CopyPageController } from '{% static "main.js" %}';
+  await App.initController(new CopyPageController(), '#copy-page');
+</script>

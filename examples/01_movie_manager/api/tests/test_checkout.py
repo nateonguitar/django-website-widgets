@@ -4,6 +4,7 @@ from bs4 import BeautifulSoup
 from django.core import mail
 from django.db import IntegrityError, transaction
 from django.test import TestCase
+from django.utils import timezone
 
 from api.models import Copy, Movie, Rental, User
 
@@ -53,6 +54,15 @@ class CheckoutTestCase(TestCase):
         self.assertEqual(response.status_code, 409)
         self.assertEqual(response.json()['unavailable_movie_ids'], [spirited_away.id])
         self.assertFalse(Rental.objects.filter(user=self.alex, returned_at__isnull=True).exists())
+
+    def test_checkout__fails__when_every_copy_is_retired(self):
+        toy_story = self.movie('Toy Story')
+        Copy.objects.filter(movie=toy_story).update(retired_at=timezone.now())
+
+        response = self.checkout([toy_story.id])
+
+        self.assertEqual(response.status_code, 409)
+        self.assertEqual(response.json()['unavailable_movie_ids'], [toy_story.id])
 
     def test_checkout__fails__when_cart_is_empty(self):
         response = self.checkout([])

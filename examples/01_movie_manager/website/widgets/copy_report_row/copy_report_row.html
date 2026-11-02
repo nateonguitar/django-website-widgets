@@ -1,0 +1,10 @@
+<li class="copy-report-row">
+  <p class="copy-report-row__summary">
+    <strong>{{ data.report.get_kind_display }}</strong>,
+    reported by {{ data.report.user.username }} {{ children.reported }}
+    {% if data.report.unrecoverable %}
+      <span class="copy-report-row__retired">(took it out of rotation)</span>
+    {% endif %}
+  </p>
+  <p class="copy-report-row__notes">{{ data.report.notes }}</p>
+</li>

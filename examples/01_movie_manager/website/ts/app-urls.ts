@@ -11,4 +11,5 @@ export class AppUrls {
     static endpoint_add_copies: string;
     static endpoint_checkout: string;
     static endpoint_return_rental: string;
+    static endpoint_report_copy: string;
 }

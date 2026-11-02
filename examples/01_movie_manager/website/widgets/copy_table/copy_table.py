@@ -23,6 +23,6 @@ class CopyTable(SyncWidget):
 
     def set_context(self):
         self.context.children['rows'] = [
-            CopyTableRow(copy=copy, number=number, show_who=self.show_who, viewer_id=self.viewer_id)
-            for number, copy in enumerate(self.copies, start=1)
+            CopyTableRow(copy=copy, show_who=self.show_who, viewer_id=self.viewer_id)
+            for copy in self.copies
         ]

@@ -1,7 +1,7 @@
 from bs4 import BeautifulSoup
 from django.test import TestCase
 
-from api.models import Copy, Movie, Rental, User
+from api.models import Copy, CopyReport, Movie, Rental, User
 
 
 class AdminTestCase(TestCase):
@@ -10,9 +10,32 @@ class AdminTestCase(TestCase):
 
     def test_admin__lists_every_model__when_signed_in_as_staff(self):
         # A column or filter naming something that doesn't exist only fails when the page renders.
-        for path in ['/admin/api/movie/', '/admin/api/copy/', '/admin/api/rental/', '/admin/api/user/']:
+        for path in ['/admin/api/movie/', '/admin/api/copy/', '/admin/api/rental/', '/admin/api/user/', '/admin/api/copyreport/']:
             with self.subTest(path=path):
                 self.assertEqual(self.client.get(path).status_code, 200)
+
+    def test_admin__finds_a_copy_by_its_label_with_its_reports__when_searched(self):
+        copy = Rental.objects.get(user__username='jordan', returned_at__isnull=True).copy
+        CopyReport.objects.create(copy=copy, user=User.objects.get(username='jordan'), kind='lost', notes='Gone.')
+
+        listing = self.client.get(f'/admin/api/copy/?q={copy.label}')
+        change_page = self.client.get(f'/admin/api/copy/{copy.id}/change/')
+
+        rows = BeautifulSoup(listing.content, 'html.parser').select('#result_list tbody tr')
+        self.assertEqual(len(rows), 1)
+        self.assertIn(copy.label, rows[0].get_text())
+        reports = BeautifulSoup(change_page.content, 'html.parser').select('#reports-group tbody tr.has_original')
+        self.assertEqual(len(reports), 1)
+
+    def test_admin__lists_only_retired_copies__when_filtered_to_out_of_rotation(self):
+        response = self.client.get('/admin/api/copy/?in_rotation=no')
+
+        rows = BeautifulSoup(response.content, 'html.parser').select('#result_list tbody tr')
+        retired = Copy.objects.filter(retired_at__isnull=False).values_list('label', flat=True)
+        # The seeded lost copy of Finding Nemo.
+        self.assertEqual(len(rows), len(retired))
+        self.assertEqual(len(rows), 1)
+        self.assertIn(retired[0], rows[0].get_text())
 
     def test_admin__opens_a_movie_with_its_copies__when_one_is_chosen(self):
         die_hard = Movie.objects.get(title='Die Hard')

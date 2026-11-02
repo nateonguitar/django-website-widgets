@@ -1,8 +1,10 @@
 <tr>
-  <td>{{ data.number }}</td>
+  <td><a href="{% url 'website:CopyPage' label=data.label %}"><code>{{ data.label }}</code></a></td>
   <td>{{ children.arrived }}</td>
   <td>
-    {% if not data.rental %}
+    {% if data.retired %}
+      Out of rotation
+    {% elif not data.rental %}
       On the shelf
     {% elif data.show_who %}
       Out with {% if data.is_viewers %}you{% else %}{{ data.rental.user.username }}{% endif %}

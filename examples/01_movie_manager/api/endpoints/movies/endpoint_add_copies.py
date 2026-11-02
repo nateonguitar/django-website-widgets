@@ -1,3 +1,4 @@
+from asgiref.sync import sync_to_async
 from django.http import HttpRequest
 from ninja import Schema, Status
 from ninja.security import django_auth
@@ -40,8 +41,7 @@ async def add_copies(
         errors = FieldErrorsResponseDto(errors={'copies': 'Between 1 and 20 copies.'})
         return Status(status_code=400, value=errors)
 
-    new_copies = [Copy(movie=movie) for _ in range(dto.copies)]
-    await Copy.objects.abulk_create(new_copies)
+    await sync_to_async(Copy.objects.create_copies)(movie, dto.copies)
     total = await movie.copies.acount()
     added = AddCopiesResponseDto(title=movie.title, total_copies=total)
     return Status(status_code=201, value=added)

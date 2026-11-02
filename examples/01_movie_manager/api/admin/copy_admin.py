@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.db.models import Exists, OuterRef
 
-from api.models import Copy, Rental
+from api.models import Copy, CopyReport, Rental
 
 
 class OnTheShelfFilter(admin.SimpleListFilter):
@@ -21,14 +21,44 @@ class OnTheShelfFilter(admin.SimpleListFilter):
         return queryset
 
 
+class InRotationFilter(admin.SimpleListFilter):
+    title = 'in rotation'
+    parameter_name = 'in_rotation'
+
+    def lookups(self, request, model_admin):
+        return [('yes', 'Yes'), ('no', 'No, retired')]
+
+    def queryset(self, request, queryset):
+        if self.value() == 'yes':
+            return queryset.filter(retired_at__isnull=True)
+        if self.value() == 'no':
+            return queryset.filter(retired_at__isnull=False)
+        return queryset
+
+
+class CopyReportInline(admin.TabularInline):
+    """The copy's reports, as history: added from the site, never here."""
+
+    model = CopyReport
+    fields = ['reported_at', 'user', 'kind', 'notes', 'unrecoverable']
+    readonly_fields = fields
+    extra = 0
+    can_delete = False
+
+    def has_add_permission(self, request, obj=None):
+        return False
+
+
 @admin.register(Copy)
 class CopyAdmin(admin.ModelAdmin):
-    list_display = ['__str__', 'movie', 'added_at', 'on_the_shelf']
-    list_filter = [OnTheShelfFilter]
+    list_display = ['label', 'movie', 'added_at', 'on_the_shelf', 'in_rotation']
+    list_filter = [OnTheShelfFilter, InRotationFilter]
     list_select_related = ['movie']
-    search_fields = ['movie__title']
+    search_fields = ['label', 'movie__title']
     autocomplete_fields = ['movie']
+    readonly_fields = ['label', 'retired_at']
     date_hierarchy = 'added_at'
+    inlines = [CopyReportInline]
 
     def get_queryset(self, request):
         open_rental = Rental.objects.filter(copy=OuterRef('pk'), returned_at__isnull=True)
@@ -37,3 +67,7 @@ class CopyAdmin(admin.ModelAdmin):
     @admin.display(description='On the shelf', boolean=True, ordering='is_out')
     def on_the_shelf(self, copy):
         return not copy.is_out
+
+    @admin.display(description='In rotation', boolean=True, ordering='retired_at')
+    def in_rotation(self, copy):
+        return copy.retired_at is None

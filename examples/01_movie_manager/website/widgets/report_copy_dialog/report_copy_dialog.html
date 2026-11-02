@@ -1,0 +1,45 @@
+<template id="report-copy-dialog-template"
+          data-dialog-class="report-copy-dialog">
+  {# Filled per copy by the controller: "What's wrong with asdf-1234?" #}
+  <h2 class="report-copy-dialog__title"
+      data-dialog-label></h2>
+  <form class="report-copy-dialog__form"
+        novalidate>
+    <fieldset>
+      <legend>What happened</legend>
+      {% for value, label in data.kinds %}
+        <label>
+          <input type="radio"
+                 name="kind"
+                 value="{{ value }}">
+          {{ label }}
+        </label>
+      {% endfor %}
+    </fieldset>
+    <p class="report-copy-dialog__field-error"
+       data-field="kind"></p>
+    {# Labels wrap their inputs: a copied template carries no ids for a for= to name. #}
+    <label>
+      Notes
+      <textarea name="notes"
+                rows="4"
+                maxlength="{{ data.notes_max_length }}"></textarea>
+    </label>
+    <p class="report-copy-dialog__field-error"
+       data-field="notes"></p>
+    <label class="report-copy-dialog__unrecoverable">
+      <input type="checkbox"
+             name="unrecoverable">
+      It can't be fixed: take this copy out of rotation
+    </label>
+    <p class="report-copy-dialog__message"
+       role="alert"></p>
+    <div class="report-copy-dialog__actions">
+      <button type="button"
+              class="text-button"
+              data-dialog-close>Cancel</button>
+      <button type="submit"
+              class="report-copy-dialog__send">Send report</button>
+    </div>
+  </form>
+</template>

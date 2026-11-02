@@ -27,8 +27,8 @@ class RentalAdmin(admin.ModelAdmin):
     list_display = ['movie', 'copy', 'user', 'taken_at', 'returned_at', 'is_out']
     list_select_related = ['copy__movie', 'user']
     list_filter = [StillOutFilter, 'user', 'copy__movie__genre']
-    search_fields = ['copy__movie__title', 'user__username']
-    # Copies are many and alike ("Die Hard, copy 12"), so the copy is picked by id from its own
+    search_fields = ['copy__movie__title', 'copy__label', 'user__username']
+    # Copies are many and alike ("Die Hard, copy asdf-1234"), so the copy is picked from its own
     # list, where the shelf column shows which are free.
     raw_id_fields = ['copy']
     autocomplete_fields = ['user']

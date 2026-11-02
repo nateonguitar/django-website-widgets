@@ -41,7 +41,7 @@ grew what this site needs.
 
 | What | Where |
 | --- | --- |
-| The models: `Movie`, one `Copy` per disc, a `Rental` per time someone takes one | `api/models.py` |
+| The models: `Movie`, one labelled `Copy` per disc, a `Rental` per time someone takes one, a `CopyReport` per problem reported | `api/models.py` |
 | The API, one endpoint per file, its request and response schemas above it, every status in `response={...}` and returned as `Status(code, schema)`; documented at `/api/docs` | `api/endpoints/` |
 | The admin, at `/admin/`, a file per model: copies on the shelf, a "still out" filter, a "mark returned" action, the movie page's `CopyTable` widget on each movie, the site's `RatingPicker` as the rating field, and a Return button on each rental still out | `api/admin/` |
 | Emails, built from widgets and printed to `runserver`'s console rather than sent | `website/emails/`, `website/widgets/emails/` |
@@ -66,33 +66,32 @@ grew what this site needs.
 - **A widget repeated on a page** (`MovieCard`, `RentalRow`) takes a keyword-only `key`, as
   `ww_create_widget --repeating` writes it, and each caller passes the row's id,
   `MovieCard(movie=movie, key=movie.id)`. The root carries it in `data-key`, which its selector
-  finds it by, `.movie-card[data-key="{{ data.key }}"]`, beside the `data-movie-id` its
-  controller reads. The controller looks its elements up inside that root.
+  finds it by in the template's `App.initController()` call,
+  `.movie-card[data-key="{{ data.key }}"]`, beside the `data-movie-id` its controller reads.
 - **The cart is in `localStorage`** (`website/ts/cart.ts`), one per user, so it survives reloads
   and two people on one computer don't share it. Checkout is one transaction: either every movie
   is recorded as taken, or the endpoint answers 409 naming what ran out and nothing is recorded,
   and the cart page asks whether to take the rest. A unique constraint on open rentals stops two
   checkouts taking the same disc.
-- **A dialog you `await`.** `ConfirmDialogController.show()` (`website/widgets/confirm_dialog/`)
-  returns a promise of the answer (`true`, `false`, or `null` when dismissed without one, as a
-  click outside isn't a no), so the cart page reads
-  `const takeTheRest = await ConfirmDialogController.show(...)` top to bottom.
-  The answer comes from a click that happens later, so `show()` hands back a `Completer`'s promise
-  and the dialog's `close` event resolves it: a button stores its choice and closes the dialog,
-  and Escape or a click outside closes it with nothing stored. The `ConfirmDialog` widget renders
-  only a `<template>` holding the question's content, which the document template places on every
-  page. `ConfirmDialogController` extends the npm package's `DialogController`, and its `show()`
-  is one call, `openDialog(controller, '#confirm-dialog-template')`, which creates a bare
-  `<dialog>` around a copy of that content, gives it the template's `data-dialog-class`, and
-  hands the controller the dialog. Each call gets its own dialog, controller and Completer, so
-  questions asked back to back, or one over another, never get each other's answers. The dialog,
-  not its caller, decides whether a click on the backdrop closes it.
+- **A dialog you `await`.** The cart page reads
+  `const takeTheRest = await ConfirmDialogController.show(...)` top to bottom, getting `true`,
+  `false`, or `null` when dismissed. `ConfirmDialog` (`website/widgets/confirm_dialog/`) renders
+  only its `<template>`, which the document template places on every page; the package's
+  `dialogs.md` explains the mechanism.
+- **A form in a dialog.** Every copy has a label, as if a label maker had stuck `asdf-1234` on
+  the case, and its own page (`website/pages/copy_page/`, `/copies/<label>`) with its reports.
+  Whoever has it out, or staff, can report a problem there in `ReportCopyDialog`
+  (`website/widgets/report_copy_dialog/`, started with `ww_create_dialog`): a click outside
+  doesn't close it (`closesOnBackdropClick = false`), Escape and Cancel are held off while it
+  sends (`saving`), each field's error from a 400 shows beside its field, and it answers the
+  saved report, or `null` when cancelled. A report marked unrecoverable retires the copy
+  (`Copy.retired_at`), which then counts in no availability and can't be checked out.
+- **Labels nobody has.** `Copy.objects.create_copies()` generates a batch of labels, asks the
+  database which are taken in one query and regenerates those, since a field's `default` can't
+  query from the async code that builds copies.
 - **The appbar is a singleton** (`static readonly singleton = true`, which `App.initController()`
   reads) other controllers reach with `AppbarController.instance()`, which waits on its
   `Completer`, to update the cart count.
-- **Every controller is started by its template's `<script>`**,
-  `await App.initController(new MovieCardController(), '.movie-card[data-key="{{ data.key }}"]')`, so
-  the selector sits beside the root it names and no controller has a static starter of its own.
 - **One service per API router** (`website/ts/api/`): `AuthApiService`, `MovieApiService` and
   `RentalApiService`, each a singleton reached through `.instance`, with a method per endpoint.
   Their base, `ApiService`, sends every request, so the CSRF header (from `AppState`, since the

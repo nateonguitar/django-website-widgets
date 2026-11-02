@@ -1,0 +1,52 @@
+// The <dialog> the npm package creates, from data-dialog-class on the template.
+.report-copy-dialog {
+  width: min(28rem, calc(100vw - 2rem));
+  padding: 1.25rem;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: var(--background-color);
+  color: var(--text-color);
+
+  &::backdrop {
+    background: var(--backdrop-color);
+  }
+
+  h2 {
+    margin: 0 0 1rem;
+    font-size: 1.1rem;
+  }
+
+  fieldset {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    margin: 0;
+    border: 0;
+    padding: 0;
+  }
+
+  legend {
+    margin-bottom: 0.4rem;
+    font-weight: 600;
+  }
+
+  textarea {
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
+    margin-top: 0.25rem;
+  }
+}
+
+.report-copy-dialog__field-error,
+.report-copy-dialog__message {
+  min-height: 1.25rem;
+  margin: 0.25rem 0 0.75rem;
+  color: var(--error-color);
+}
+
+.report-copy-dialog__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+}

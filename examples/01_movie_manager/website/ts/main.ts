@@ -20,16 +20,19 @@ customElements.define(LoadingSpinner.htmlTag, LoadingSpinner);
 import '../widgets/account_menu/account_menu.scss';
 import '../widgets/appbar/appbar.scss';
 import '../widgets/confirm_dialog/confirm_dialog.scss';
+import '../widgets/copy_report_row/copy_report_row.scss';
 import '../widgets/copy_table/copy_table.scss';
 import '../widgets/movie_card/movie_card.scss';
 import '../widgets/movie_results/movie_results.scss';
 import '../widgets/rental_row/rental_row.scss';
+import '../widgets/report_copy_dialog/report_copy_dialog.scss';
 // {{ WIDGET STYLES END }}
 
 // Managed by ww_create_page. Do not manually edit this section.
 // {{ PAGE STYLES START }}
 import '../pages/add_movie_page/add_movie_page.scss';
 import '../pages/cart_page/cart_page.scss';
+import '../pages/copy_page/copy_page.scss';
 import '../pages/find_movie_page/find_movie_page.scss';
 import '../pages/home_page/home_page.scss';
 import '../pages/movie_page/movie_page.scss';
@@ -47,12 +50,14 @@ export { ConfirmDialogController } from '../widgets/confirm_dialog/confirm_dialo
 export { MovieCardController } from '../widgets/movie_card/movie_card';
 export { RatingPickerController } from '../widgets/rating_picker/rating_picker';
 export { RentalRowController } from '../widgets/rental_row/rental_row';
+export { ReportCopyDialogController } from '../widgets/report_copy_dialog/report_copy_dialog';
 // {{ WIDGET CONTROLLERS END }}
 
 // Managed by ww_create_page. Do not manually edit this section.
 // {{ PAGE CONTROLLERS START }}
 export { AddMoviePageController } from '../pages/add_movie_page/add_movie_page';
 export { CartPageController } from '../pages/cart_page/cart_page';
+export { CopyPageController } from '../pages/copy_page/copy_page';
 export { FindMoviePageController } from '../pages/find_movie_page/find_movie_page';
 export { MyHistoryPageController } from '../pages/my_history_page/my_history_page';
 export { SignInPageController } from '../pages/sign_in_page/sign_in_page';

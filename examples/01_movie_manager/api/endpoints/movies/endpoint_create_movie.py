@@ -72,5 +72,5 @@ def _create_movie_with_copies(dto: CreateMovieRequestDto, title: str) -> Movie:
             year=dto.year,
             genre=dto.genre,
             rating=dto.rating)
-        Copy.objects.bulk_create([Copy(movie=movie) for _ in range(dto.copies)])
+        Copy.objects.create_copies(movie, dto.copies)
     return movie

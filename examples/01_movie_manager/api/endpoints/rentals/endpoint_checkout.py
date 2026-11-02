@@ -75,7 +75,7 @@ def _take_a_copy_of_each(user: User, movie_ids: list[int]) -> CheckoutOutcome:
     is_out = Exists(Rental.objects.filter(copy=OuterRef('pk'), returned_at__isnull=True))
     with transaction.atomic():
         for movie_id in movie_ids:
-            copy = Copy.objects.filter(~is_out, movie_id=movie_id).first()
+            copy = Copy.objects.filter(~is_out, movie_id=movie_id, retired_at__isnull=True).first()
             if copy is None:
                 outcome.unavailable_movie_ids.append(movie_id)
                 continue

@@ -72,13 +72,22 @@ label {
   font-weight: 600;
 }
 
+// A radio or checkbox sits beside its text, not above it.
+label:has(> input[type="radio"], > input[type="checkbox"]) {
+  flex-direction: row;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: normal;
+}
+
 input,
 select,
 button {
   font: inherit;
 }
 
-input,
+// Text fields only: a radio or checkbox given this padding and border draws as a stretched oval.
+input:not([type="radio"], [type="checkbox"]),
 select {
   padding: 0.4rem 0.5rem;
   border: 1px solid var(--input-border-color);
