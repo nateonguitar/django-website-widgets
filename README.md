@@ -15,7 +15,7 @@ class and no build step.
 3. `python manage.py ww_create_app` writes a working site into a new `website` app, with its npm,
    SCSS and TypeScript setup, and prints the next steps.
 4. Make your first page and widget with `python manage.py ww_create_page` and
-   `python manage.py ww_create_widget`.
+   `python manage.py ww_create_widget`, and a dialog with `python manage.py ww_create_dialog`.
 
 ## Examples
 
@@ -42,7 +42,7 @@ inside the package, indexed by
 - [`creating_and_upgrading_an_app.md`](https://github.com/nateonguitar/django-website-widgets/blob/main/website_widgets/docs/creating_and_upgrading_an_app.md): `ww_create_app` and `ww_upgrade`, these docs copied into a project, and the npm package's range
 - [`starter_site.md`](https://github.com/nateonguitar/django-website-widgets/blob/main/website_widgets/docs/starter_site.md): the working site `ww_create_app` writes, and the conventions it shows
 - [`checking_the_setup.md`](https://github.com/nateonguitar/django-website-widgets/blob/main/website_widgets/docs/checking_the_setup.md): the system checks and `ww_doctor`
-- [`creating_pages_and_widgets.md`](https://github.com/nateonguitar/django-website-widgets/blob/main/website_widgets/docs/creating_pages_and_widgets.md): `ww_create_page` and `ww_create_widget`, and overriding their templates
+- [`creating_pages_and_widgets.md`](https://github.com/nateonguitar/django-website-widgets/blob/main/website_widgets/docs/creating_pages_and_widgets.md): `ww_create_page`, `ww_create_widget` and `ww_create_dialog`, and overriding their templates
 - [`npm_watch.md`](https://github.com/nateonguitar/django-website-widgets/blob/main/website_widgets/docs/npm_watch.md): starting `npm run watch` with `runserver`
 - [`node_and_package_managers.md`](https://github.com/nateonguitar/django-website-widgets/blob/main/website_widgets/docs/node_and_package_managers.md): installing Node, building without it in a container, and yarn, pnpm and the rest
 
@@ -632,7 +632,12 @@ route made from its name unless `--route` gives one:
 python manage.py ww_create_widget like_button --tscontroller --stylesheet
 python manage.py ww_create_page profile_page --no-tscontroller --no-stylesheet --route=profile
 ```
-A generated controller imports `Controller` from the npm package; a page needs the base class at
+Create a dialog: a `SyncWidget` rendering its `<template>` and a `DialogController` whose
+`show()` opens it, always with a controller, the stylesheet asked about:
+```bash
+python manage.py ww_create_dialog confirm_dialog --stylesheet
+```
+A generated controller imports `Controller` (a dialog's, `DialogController`) from the npm package; a page needs the base class at
 `GenerateComponentConfig.app_page_class`. A project overrides any of their templates with its
 own, in `templates_dir`. See
 [`docs/creating_pages_and_widgets.md`](https://github.com/nateonguitar/django-website-widgets/blob/main/website_widgets/docs/creating_pages_and_widgets.md).

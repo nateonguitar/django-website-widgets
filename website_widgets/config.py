@@ -3,7 +3,7 @@ import os
 
 class GenerateComponentConfig:
     """
-    Settings read only by `ww_create_page` and `ww_create_widget`, passed to
+    Settings read only by `ww_create_page`, `ww_create_widget` and `ww_create_dialog`, passed to
     `WebsiteWidgetsConfig` as `generate_component`. All have defaults, so a project keeping
     `ww_create_app`'s layout needs none.
     """

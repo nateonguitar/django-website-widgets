@@ -54,7 +54,7 @@ leaves to the developer, since it never edits a file it didn't create:
 5. `runserver`, and the home page.
 
 It ends with the package's other commands, one line each: `ww_create_page`, `ww_create_widget`,
-`ww_show_routes`, `ww_doctor` and `ww_upgrade`.
+`ww_create_dialog`, `ww_show_routes`, `ww_doctor` and `ww_upgrade`.
 
 A skipped first or second step fails a system check at the next command, rather than showing up
 as a 404, and `ww_doctor` reports the rest; see `checking_the_setup.md`.

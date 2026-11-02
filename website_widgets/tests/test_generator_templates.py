@@ -65,6 +65,41 @@ class GeneratorTemplatesTestCase(SimpleTestCase):
                 self.assertIn('def __init__(self, *, key):', widget_py)
                 self.assertIn("        super().__init__()\n        self.context.data['key'] = key\n", widget_py)
 
+    def test_dialog_html_template__renders_only_a_template_with_the_dialog_attributes__when_shipped(self):
+        with open(os.path.join(TEMPLATES_DIR, 'dialog.html.tmpl'), encoding='utf-8') as file:
+            html = file.read()
+
+        self.assertTrue(html.startswith('<template id="__css_name__-template"'))
+        self.assertTrue(html.rstrip().endswith('</template>'))
+        self.assertIn('data-dialog-class="__css_name__"', html)
+        self.assertIn('data-dialog-label>{{ data.title }}', html)
+        self.assertIn('data-dialog-close', html)
+        # Each show() copies the content, so an id inside would repeat.
+        self.assertEqual(html.count('id='), 1)
+        self.assertNotIn('<script', html)
+
+    def test_dialog_controller_template__opens_the_dialog_template__when_shipped(self):
+        with open(os.path.join(TEMPLATES_DIR, 'dialog_controller.ts.tmpl'), encoding='utf-8') as file:
+            controller_ts = file.read()
+
+        for expected in (
+            'import { DialogController } from "django-website-widgets";',
+            'export class __ClassName__Controller extends DialogController<void> {',
+            'public static show(): Promise<void> {',
+            'new __ClassName__Controller(),\n            "#__css_name__-template",',
+            'protected answer(): void {}',
+        ):
+            with self.subTest(expected=expected):
+                self.assertIn(expected, controller_ts)
+
+    def test_dialog_py_template__is_a_sync_widget__when_shipped(self):
+        with open(os.path.join(TEMPLATES_DIR, 'dialog.py.tmpl'), encoding='utf-8') as file:
+            dialog_py = file.read()
+
+        self.assertIn('class __ClassName__(SyncWidget):', dialog_py)
+        self.assertIn("self.context.data['title'] = '__ClassName__'", dialog_py)
+        self.assertNotIn('async', dialog_py)
+
     def test_starter_site__holds_no_nonce_or_gametabs_code__when_shipped(self):
         # The starter shows conventions, so it may fetch and keep state, but a CSP is the site's call.
         for path, content in StarterSite('website').files().items():

@@ -1,0 +1,12 @@
+import { DialogController } from "django-website-widgets";
+
+export class __ClassName__Controller extends DialogController<void> {
+    public static show(): Promise<void> {
+        return DialogController.openDialog(
+            new __ClassName__Controller(),
+            "#__css_name__-template",
+        );
+    }
+
+    protected answer(): void {}
+}

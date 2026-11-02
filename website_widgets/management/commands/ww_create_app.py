@@ -132,6 +132,7 @@ class Command(BaseCommand):
             'Other helpful management commands:\n'
             '  ww_create_page <name>     write a new page\'s files and add it to ts/main.ts\n'
             '  ww_create_widget <name>   write a new widget\'s files and add it to ts/main.ts\n'
+            '  ww_create_dialog <name>   write a new dialog\'s files and add it to ts/main.ts\n'
             '  ww_show_routes            list every page\'s URL, in the order Django tries them\n'
             '  ww_doctor                 check the setup and print a fix for each problem\n'
             f'  ww_upgrade                update {shown_folder}/website_widgets_docs/ and the npm '

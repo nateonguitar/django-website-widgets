@@ -31,7 +31,7 @@ import '../widgets/zebra/zebra.scss';
 class ComponentTestCase(SimpleTestCase):
     """
     A temp website app that `ww_upgrade` has populated, with a main.ts holding the four marker
-    pairs and an empty `templates_dir`, for `ww_create_page` and `ww_create_widget`. The app is
+    pairs and an empty `templates_dir`, for `ww_create_page`, `ww_create_widget` and `ww_create_dialog`. The app is
     importable as `website` and route discovery reads it, with an empty route registry. A question
     a test doesn't answer takes its default, as when a script gives no input.
     """
@@ -62,7 +62,7 @@ class ComponentTestCase(SimpleTestCase):
             generate_component=GenerateComponentConfig(
                 app_page_class='website_widgets.web_page.AsyncWebPage',
                 templates_dir=self.templates_dir))
-        for command in ('ww_create_page', 'ww_create_widget'):
+        for command in ('ww_create_page', 'ww_create_widget', 'ww_create_dialog'):
             self.enterContext(patch(
                 f'website_widgets.management.commands.{command}.get_config',
                 side_effect=lambda: self.config))

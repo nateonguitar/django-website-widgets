@@ -61,7 +61,7 @@ class WrittenFile:
 
 class ComponentFiles:
     """
-    The file work `ww_create_page` and `ww_create_widget` both do, called by name from each:
+    The file work `ww_create_page`, `ww_create_widget` and `ww_create_dialog` share, called by name from each:
     writing a file from a generator template, adding a line to `ts/main.ts`, and the questions
     and paths around them. It knows nothing about pages or widgets; each command decides what to
     write where.

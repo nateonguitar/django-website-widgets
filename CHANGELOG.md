@@ -128,6 +128,11 @@ These change a project's controllers.
   range this release requires): a dialog's widget renders a `<template>` of its content, and
   `const answer = await MyDialogController.show(...)` opens a `<dialog>` around a copy of it.
   `frontend_controllers.md` has the pattern.
+- **`ww_create_dialog <name>`** writes a dialog into `widgets/`: a `SyncWidget` rendering its
+  `<template>`, and a `DialogController<void>` whose static `show()` opens it, exported from
+  `main.ts`, with the stylesheet asked about or `--stylesheet`. Its templates are
+  `dialog.py.tmpl`, `dialog.html.tmpl` and `dialog_controller.ts.tmpl`, overridable in
+  `templates_dir` like the others.
 - **`SyncWebPage`,** for a page with no async work: its `set_context()` is `def`, it runs with no
   event loop, so the ORM works as in any Django view, and every widget in it is a `SyncWidget`.
   `AsyncWebPage` remains the one to use.

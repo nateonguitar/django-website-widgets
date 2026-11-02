@@ -152,7 +152,7 @@ django-website-widgets/
 └── website_widgets/            # The Python package, the only thing shipped (minus tests/)
     ├── docs/                   # How each part works, and why, indexed by docs/AGENTS.md
     ├── docs_folder_README.md   # The README of a project's copy of docs/
-    ├── generator_templates/    # ww_create_page's and ww_create_widget's default templates (*.tmpl)
+    ├── generator_templates/    # ww_create_page's, ww_create_widget's and ww_create_dialog's default templates (*.tmpl)
     ├── starter_site/           # The site ww_create_app writes, its build files included (*.tmpl)
     ├── __init__.py             # Exports AsyncWidget, SyncWidget, AsyncWebPage, SyncWebPage,
     │                           # WidgetContext, PageRoutes, register_url, reverse_template,
@@ -172,14 +172,14 @@ django-website-widgets/
         │                       # (<app>/website_widgets_docs/), and its out-of-date check
         ├── npm_package.py      # NpmPackage: the npm package's name and RANGE, the versions this
         │                       # release works with, and its installed-version check; NpmVersion
-        ├── component_files.py  # ComponentFiles: the file work ww_create_page and ww_create_widget
-        │                       # both call; each command's own handle() reads top to bottom
+        ├── component_files.py  # ComponentFiles: the file work ww_create_page, ww_create_widget and
+        │                       # ww_create_dialog call; each command's own handle() reads top to bottom
         ├── starter_site.py     # StarterSite: fills starter_site/ in for an app
         ├── build_files.py      # BuildFiles: ww_upgrade's handling of the build configs and package.json
         ├── package_json_check.py  # PackageJsonCheck: package.json against the starter's, for
         │                       # ww_upgrade and ww_doctor
         └── commands/           # ww_create_app, ww_upgrade, ww_create_page, ww_create_widget,
-                                # ww_show_routes, ww_doctor
+                                # ww_create_dialog, ww_show_routes, ww_doctor
 ```
 
 ## Docs

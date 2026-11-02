@@ -88,7 +88,7 @@ class WwCreateAppTestCase(SimpleTestCase):
         self.assertIn('start_npm_watch()', output)
         self.assertIn('npm install', output)
         self.assertIn('Other helpful management commands:', output)
-        for command in ('ww_create_page', 'ww_create_widget', 'ww_show_routes', 'ww_doctor', 'ww_upgrade'):
+        for command in ('ww_create_page', 'ww_create_widget', 'ww_create_dialog', 'ww_show_routes', 'ww_doctor', 'ww_upgrade'):
             self.assertIn(f'  {command}', output)
 
     def test_create_app__writes_starter_site_with_app_label_filled_in__when_configured(self):
