@@ -32,7 +32,9 @@ logged. This is the most common cause of "my widget renders but its content is m
 
 **`data` and `children` are per-widget, `page` is shared.** A child cannot see its parent's
 `data`. Anything every widget must reach goes in `context.page`. A child in `children` may be a
-widget, a list of widgets (iterated with `{% for item in children.items %}`) or `None`.
+widget, a list of widgets (iterated with `{% for item in children.items %}`) or `None`. A
+template can't pair a list child with a parallel list in `data`, so per-item values (an id, a
+`data-` attribute) go into the item widget's constructor and its own template.
 
 ## Which file
 
