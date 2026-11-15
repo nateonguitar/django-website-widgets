@@ -42,5 +42,9 @@ class PageClassesTestCase(SimpleTestCase):
         class SyncAboutPage(SyncWebPage):
             pass
 
-        self.assertTrue(inspect.iscoroutinefunction(AsyncAboutPage.as_view()))
-        self.assertFalse(inspect.iscoroutinefunction(SyncAboutPage.as_view()))
+        async_view = AsyncAboutPage.as_view()
+        sync_view = SyncAboutPage.as_view()
+        async_view_is_coroutine = inspect.iscoroutinefunction(async_view)
+        sync_view_is_coroutine = inspect.iscoroutinefunction(sync_view)
+        self.assertTrue(async_view_is_coroutine)
+        self.assertFalse(sync_view_is_coroutine)

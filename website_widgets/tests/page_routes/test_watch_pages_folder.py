@@ -14,7 +14,8 @@ class WatchPagesFolderTestCase(PageRoutesTestCase):
 
         PageRoutes.watch_pages_folder(sender=reloader)
 
-        reloader.watch_dir.assert_called_once_with(Path(self.pages_folder), '**/*.py')
+        pages_folder = Path(self.pages_folder)
+        reloader.watch_dir.assert_called_once_with(pages_folder, '**/*.py')
 
     def test_watch_pages_folder__watches_nothing__when_website_app_is_not_installed(self):
         self.mock_apps.get_app_config.side_effect = LookupError
@@ -38,4 +39,6 @@ class WatchPagesFolderTestCase(PageRoutesTestCase):
 
         autoreload_started.send(sender=reloader)
 
-        self.assertIn('**/*.py', reloader.directory_globs[Path(self.pages_folder).absolute()])
+        pages_folder = Path(self.pages_folder).absolute()
+        pages_folder_globs = reloader.directory_globs[pages_folder]
+        self.assertIn('**/*.py', pages_folder_globs)

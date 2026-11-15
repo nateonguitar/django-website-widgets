@@ -48,8 +48,11 @@ class PageRoutesTestCase(SimpleTestCase):
         importlib.invalidate_caches()
 
     def get_routes_in_url_order(self) -> list[str]:
-        url_patterns = PageRoutes.urls().url_patterns
-        return [str(url_pattern.pattern) for url_pattern in url_patterns]
+        page_urls = PageRoutes.urls()
+        return [
+            str(url_pattern.pattern)
+            for url_pattern in page_urls.url_patterns
+        ]
 
     def use_urlconf(self, urlpatterns: list):
         urlconf = ModuleType('page_routes_test_urlconf')

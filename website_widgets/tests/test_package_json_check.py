@@ -1,3 +1,4 @@
+import copy
 import json
 import os
 import tempfile
@@ -16,10 +17,13 @@ class PackageJsonCheckTestCase(SimpleTestCase):
         temp_dir = tempfile.TemporaryDirectory()
         self.addCleanup(temp_dir.cleanup)
         self.app_folder = temp_dir.name
-        self.starter = json.loads(StarterSite('website').file('package.json'))
+        starter_site = StarterSite('website')
+        starter_package_json = starter_site.file('package.json')
+        self.starter = json.loads(starter_package_json)
 
     def run_check(self, content: str):
-        with open(os.path.join(self.app_folder, 'package.json'), 'w', encoding='utf-8') as file:
+        package_json_path = os.path.join(self.app_folder, 'package.json')
+        with open(package_json_path, 'w', encoding='utf-8') as file:
             file.write(content)
         package_json_check = PackageJsonCheck(
             app_folder=self.app_folder,
@@ -27,37 +31,47 @@ class PackageJsonCheckTestCase(SimpleTestCase):
         return package_json_check.run()
 
     def test_run__finds_nothing_to_fix__when_file_is_the_starters(self):
-        fixes = self.run_check(json.dumps(self.starter))
+        content = json.dumps(self.starter)
 
-        self.assertTrue(fixes.is_empty())
+        fixes = self.run_check(content)
+
+        nothing_to_fix = fixes.is_empty()
+        self.assertTrue(nothing_to_fix)
 
     def test_run__accepts_a_build_tool__when_it_is_under_dependencies_instead(self):
         webpack_range = self.starter['devDependencies'].pop('webpack')
         self.starter['dependencies']['webpack'] = webpack_range
+        content = json.dumps(self.starter)
 
-        fixes = self.run_check(json.dumps(self.starter))
+        fixes = self.run_check(content)
 
-        self.assertTrue(fixes.is_empty())
+        nothing_to_fix = fixes.is_empty()
+        self.assertTrue(nothing_to_fix)
 
     def test_run__says_to_install_the_npm_package__when_it_is_missing_or_below_the_range(self):
+        install_command = NpmPackage.install_command()
         for spec in (None, '^0.9.0'):
             with self.subTest(spec=spec):
-                starter = json.loads(json.dumps(self.starter))
+                starter = copy.deepcopy(self.starter)
                 if spec is None:
                     del starter['dependencies'][NpmPackage.NAME]
                 else:
                     starter['dependencies'][NpmPackage.NAME] = spec
+                content = json.dumps(starter)
 
-                fixes = self.run_check(json.dumps(starter))
+                fixes = self.run_check(content)
 
-                self.assertEqual(fixes.fix_lines('website'), [f'In website/, run: {NpmPackage.install_command()}'])
+                fix_lines = fixes.fix_lines('website')
+                self.assertEqual(fix_lines, [f'In website/, run: {install_command}'])
 
     def test_run__accepts_the_npm_package__when_it_is_a_local_folder(self):
         self.starter['dependencies'][NpmPackage.NAME] = 'file:../../../frontend'
+        content = json.dumps(self.starter)
 
-        fixes = self.run_check(json.dumps(self.starter))
+        fixes = self.run_check(content)
 
-        self.assertTrue(fixes.is_empty())
+        nothing_to_fix = fixes.is_empty()
+        self.assertTrue(nothing_to_fix)
 
     def test_run__reports_an_error__when_file_is_not_a_json_object(self):
         for content in ('[]', '"website"', 'null'):
@@ -74,18 +88,23 @@ class PackageJsonCheckTestCase(SimpleTestCase):
     def test_run__reports_every_tool_and_script__when_their_sections_are_not_objects(self):
         fixes = self.run_check('{"devDependencies": null, "dependencies": [], "scripts": "webpack"}')
 
+        expected_packages = [
+            f'{name}@{version_range}'
+            for name, version_range in self.starter['devDependencies'].items()
+        ]
+        missing_scripts = list(fixes.missing_scripts)
         self.assertIsNone(fixes.error)
-        self.assertEqual(
-            fixes.packages_to_install,
-            [f'{name}@{version_range}' for name, version_range in self.starter['devDependencies'].items()])
-        self.assertEqual(list(fixes.missing_scripts), ['build', 'watch'])
+        self.assertEqual(fixes.packages_to_install, expected_packages)
+        self.assertEqual(missing_scripts, ['build', 'watch'])
 
     def test_run__accepts_a_version__when_it_is_not_a_string(self):
         self.starter['devDependencies']['webpack'] = 5
+        content = json.dumps(self.starter)
 
-        fixes = self.run_check(json.dumps(self.starter))
+        fixes = self.run_check(content)
 
-        self.assertTrue(fixes.is_empty())
+        nothing_to_fix = fixes.is_empty()
+        self.assertTrue(nothing_to_fix)
 
 
 class MinimumVersionTestCase(SimpleTestCase):
@@ -99,9 +118,13 @@ class MinimumVersionTestCase(SimpleTestCase):
         }
         for version_range, expected in cases.items():
             with self.subTest(version_range=version_range):
-                self.assertEqual(PackageJsonCheck.minimum_version(version_range), expected)
+                minimum = PackageJsonCheck.minimum_version(version_range)
+
+                self.assertEqual(minimum, expected)
 
     def test_minimum_version__returns_none__when_range_names_no_version(self):
         for version_range in ('latest', '*', 'github:user/repo', 'file:../lib', 5, None):
             with self.subTest(version_range=version_range):
-                self.assertIsNone(PackageJsonCheck.minimum_version(version_range))
+                minimum = PackageJsonCheck.minimum_version(version_range)
+
+                self.assertIsNone(minimum)

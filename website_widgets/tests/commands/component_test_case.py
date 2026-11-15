@@ -42,7 +42,8 @@ class ComponentTestCase(SimpleTestCase):
         self.project_root = temp_dir.name
         self.app_folder = os.path.join(self.project_root, 'website')
         self.templates_dir = os.path.join(self.project_root, 'generator_templates')
-        os.makedirs(os.path.join(self.app_folder, 'ts'))
+        ts_folder = os.path.join(self.app_folder, 'ts')
+        os.makedirs(ts_folder)
         os.makedirs(self.templates_dir)
         self.write(MAIN_TS, self.app_folder, 'ts', 'main.ts')
         sys.path.insert(0, self.project_root)
@@ -58,10 +59,10 @@ class ComponentTestCase(SimpleTestCase):
         for module in ('management.commands.ww_upgrade', 'management.component_files', 'page_routes'):
             mock_apps = self.enterContext(patch(f'website_widgets.{module}.apps'))
             mock_apps.get_app_config.return_value = app_config
-        self.config = WebsiteWidgetsConfig(
-            generate_component=GenerateComponentConfig(
-                app_page_class='website_widgets.web_page.AsyncWebPage',
-                templates_dir=self.templates_dir))
+        generate_component = GenerateComponentConfig(
+            app_page_class='website_widgets.web_page.AsyncWebPage',
+            templates_dir=self.templates_dir)
+        self.config = WebsiteWidgetsConfig(generate_component=generate_component)
         for command in ('ww_create_page', 'ww_create_widget', 'ww_create_dialog'):
             self.enterContext(patch(
                 f'website_widgets.management.commands.{command}.get_config',
@@ -88,9 +89,11 @@ class ComponentTestCase(SimpleTestCase):
         return output.getvalue()
 
     def read(self, *path_parts: str) -> str:
-        with open(os.path.join(*path_parts), encoding='utf-8') as file:
+        file_path = os.path.join(*path_parts)
+        with open(file_path, encoding='utf-8') as file:
             return file.read()
 
     def write(self, content: str, *path_parts: str):
-        with open(os.path.join(*path_parts), 'w', encoding='utf-8') as file:
+        file_path = os.path.join(*path_parts)
+        with open(file_path, 'w', encoding='utf-8') as file:
             file.write(content)

@@ -7,17 +7,18 @@ class WebsiteWidgetsConfigTestCase(SimpleTestCase):
     def test_generate_component__defaults_app_page_class_under_website_app__when_not_given(self):
         config = WebsiteWidgetsConfig(website_app_name='storefront')
 
-        self.assertEqual(
-            config.generate_component.get_app_page_class(config.website_app_name),
-            'storefront.pages.app_page.AppPage')
+        app_page_class = config.generate_component.get_app_page_class(config.website_app_name)
+        self.assertEqual(app_page_class, 'storefront.pages.app_page.AppPage')
         self.assertIsNone(config.generate_component.templates_dir)
 
     def test_generate_component__returns_given_settings__when_given(self):
-        config = WebsiteWidgetsConfig(generate_component=GenerateComponentConfig(
+        generate_component = GenerateComponentConfig(
             app_page_class='mysite.pages.base.BasePage',
-            templates_dir='/srv/generator_templates'))
+            templates_dir='/srv/generator_templates')
+        config = WebsiteWidgetsConfig(generate_component=generate_component)
 
-        self.assertEqual(config.generate_component.get_app_page_class('website'), 'mysite.pages.base.BasePage')
+        app_page_class = config.generate_component.get_app_page_class('website')
+        self.assertEqual(app_page_class, 'mysite.pages.base.BasePage')
         self.assertEqual(config.generate_component.templates_dir, '/srv/generator_templates')
 
     def test_test_build_command__returns_npm_run_build__when_not_given(self):
@@ -40,7 +41,9 @@ class WebsiteWidgetsConfigTestCase(SimpleTestCase):
         self.assertIn("['npm', 'run', 'build']", message)
 
     def test_website_app_name__returns_website__when_not_given(self):
-        self.assertEqual(WebsiteWidgetsConfig().website_app_name, 'website')
+        config = WebsiteWidgetsConfig()
+
+        self.assertEqual(config.website_app_name, 'website')
 
     def test_website_app_name__returns_given_label__when_given(self):
         config = WebsiteWidgetsConfig(website_app_name='storefront')

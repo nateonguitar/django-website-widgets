@@ -16,8 +16,9 @@ class CheckVersionStampTestCase(SimpleTestCase):
         temp_dir = tempfile.TemporaryDirectory()
         self.addCleanup(temp_dir.cleanup)
         self.app_folder = temp_dir.name
+        app_config = SimpleNamespace(path=self.app_folder)
         self.mock_apps = self.enterContext(patch('website_widgets.management.framework_folder.apps'))
-        self.mock_apps.get_app_config.return_value = SimpleNamespace(path=self.app_folder)
+        self.mock_apps.get_app_config.return_value = app_config
         self.installed = importlib.metadata.version('django-website-widgets')
 
     def write_readme(
@@ -27,7 +28,8 @@ class CheckVersionStampTestCase(SimpleTestCase):
     ):
         folder = os.path.join(self.app_folder, folder_class.RELATIVE_PATH)
         os.makedirs(folder, exist_ok=True)
-        with open(os.path.join(folder, 'README.md'), 'w', encoding='utf-8') as file:
+        readme_path = os.path.join(folder, 'README.md')
+        with open(readme_path, 'w', encoding='utf-8') as file:
             file.write(f'# A managed folder\n\nCopied from django-website-widgets {version} by `ww_upgrade`.\n')
 
     def test_check_version_stamp__warns_naming_both_versions__when_folder_is_from_another_version(self):
@@ -35,7 +37,11 @@ class CheckVersionStampTestCase(SimpleTestCase):
 
         warnings = FrameworkFolder.check_version_stamp()
 
-        self.assertEqual([warning.id for warning in warnings], ['website_widgets.W001'])
+        warning_ids = [
+            warning.id
+            for warning in warnings
+        ]
+        self.assertEqual(warning_ids, ['website_widgets.W001'])
         self.assertIn('website_widgets_docs/', warnings[0].msg)
         self.assertIn('0.0.1', warnings[0].msg)
         self.assertIn(self.installed, warnings[0].msg)
@@ -44,12 +50,18 @@ class CheckVersionStampTestCase(SimpleTestCase):
     def test_check_version_stamp__passes__when_folder_matches_the_installed_version(self):
         self.write_readme(DocsFolder, self.installed)
 
-        self.assertEqual(FrameworkFolder.check_version_stamp(), [])
+        warnings = FrameworkFolder.check_version_stamp()
+
+        self.assertEqual(warnings, [])
 
     def test_check_version_stamp__passes__when_there_are_no_managed_folders(self):
-        self.assertEqual(FrameworkFolder.check_version_stamp(), [])
+        warnings = FrameworkFolder.check_version_stamp()
+
+        self.assertEqual(warnings, [])
 
     def test_check_version_stamp__passes__when_website_app_is_not_installed(self):
         self.mock_apps.get_app_config.side_effect = LookupError
 
-        self.assertEqual(FrameworkFolder.check_version_stamp(), [])
+        warnings = FrameworkFolder.check_version_stamp()
+
+        self.assertEqual(warnings, [])

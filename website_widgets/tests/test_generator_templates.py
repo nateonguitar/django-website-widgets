@@ -5,23 +5,30 @@ from django.test import SimpleTestCase
 from website_widgets.management.starter_site import StarterSite
 
 
-TEMPLATES_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'generator_templates')
+PACKAGE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+TEMPLATES_DIR = os.path.join(PACKAGE_DIR, 'generator_templates')
 
 
 class GeneratorTemplatesTestCase(SimpleTestCase):
+    def read_template(self, filename: str) -> str:
+        template_path = os.path.join(TEMPLATES_DIR, filename)
+        with open(template_path, encoding='utf-8') as file:
+            return file.read()
+
     def test_generator_templates__hold_no_project_opinions__when_shipped(self):
-        for filename in os.listdir(TEMPLATES_DIR):
-            with open(os.path.join(TEMPLATES_DIR, filename), encoding='utf-8') as file:
-                content = file.read().lower()
+        filenames = os.listdir(TEMPLATES_DIR)
+
+        for filename in filenames:
+            template_text = self.read_template(filename)
+            content = template_text.lower()
             for opinion in ('nonce', 'logger', 'loglabel', 'gametabs', 'fetch('):
                 with self.subTest(template=filename, opinion=opinion):
                     self.assertNotIn(opinion, content)
 
     def test_controller_template__has_the_controller_shape__when_shipped(self):
-        with open(os.path.join(TEMPLATES_DIR, 'controller.ts.tmpl'), encoding='utf-8') as file:
-            controller_ts = file.read()
+        controller_ts = self.read_template('controller.ts.tmpl')
 
-        for expected in (
+        expected_lines = (
             'class Elements {\n    label: HTMLElement | null = null;\n',
             'public findIn(root: HTMLElement | null): void',
             "this.label = root.querySelector('.__css_name____label');",
@@ -30,7 +37,8 @@ class GeneratorTemplatesTestCase(SimpleTestCase):
             'this.rootElement?.dataset.label',
             'this.elements.label.textContent = this.label;',
             'protected initializeListeners(): void',
-        ):
+        )
+        for expected in expected_lines:
             with self.subTest(expected=expected):
                 self.assertIn(expected, controller_ts)
         self.assertNotIn('super.', controller_ts)
@@ -38,63 +46,68 @@ class GeneratorTemplatesTestCase(SimpleTestCase):
         self.assertNotIn('static', controller_ts)
 
     def test_controller_html_templates__start_the_controller_on_their_root__when_shipped(self):
-        for filename, root_attribute, selector in (
+        cases = (
             ('page__controller.html.tmpl', 'id="__css_name__"', '#__css_name__'),
             ('widget__controller__single.html.tmpl', 'id="__css_name__"', '#__css_name__'),
             ('widget__controller__repeating.html.tmpl', 'data-key="{{ data.key }}"', '.__css_name__[data-key="{{ data.key }}"]'),
-        ):
-            with open(os.path.join(TEMPLATES_DIR, filename), encoding='utf-8') as file:
-                html = file.read()
+        )
+        for filename, root_attribute, selector in cases:
+            html = self.read_template(filename)
+            expected_start = f"await App.initController(new __ClassName__Controller(), '{selector}');"
             with self.subTest(template=filename):
                 self.assertIn(root_attribute, html)
                 self.assertIn('data-label="{{ data.label }}"', html)
                 self.assertIn("import { App, __ClassName__Controller } from", html)
-                self.assertIn(f"await App.initController(new __ClassName__Controller(), '{selector}');", html)
+                self.assertIn(expected_start, html)
 
     def test_repeating_widget_template__has_no_id__when_shipped(self):
-        with open(os.path.join(TEMPLATES_DIR, 'widget__controller__repeating.html.tmpl'), encoding='utf-8') as file:
-            html = file.read()
+        html = self.read_template('widget__controller__repeating.html.tmpl')
 
         self.assertNotIn('id=', html)
 
     def test_repeating_widget_templates__take_key_as_keyword_only__when_shipped(self):
+        expected_constructor_body = (
+            "        super().__init__()\n"
+            "        self.context.data['key'] = key\n"
+        )
         for filename in ('widget__async__repeating.py.tmpl', 'widget__sync__repeating.py.tmpl'):
-            with open(os.path.join(TEMPLATES_DIR, filename), encoding='utf-8') as file:
-                widget_py = file.read()
+            widget_py = self.read_template(filename)
             with self.subTest(template=filename):
                 self.assertIn('def __init__(self, *, key):', widget_py)
-                self.assertIn("        super().__init__()\n        self.context.data['key'] = key\n", widget_py)
+                self.assertIn(expected_constructor_body, widget_py)
 
     def test_dialog_html_template__renders_only_a_template_with_the_dialog_attributes__when_shipped(self):
-        with open(os.path.join(TEMPLATES_DIR, 'dialog.html.tmpl'), encoding='utf-8') as file:
-            html = file.read()
+        html = self.read_template('dialog.html.tmpl')
 
-        self.assertTrue(html.startswith('<template id="__css_name__-template"'))
-        self.assertTrue(html.rstrip().endswith('</template>'))
+        starts_with_template = html.startswith('<template id="__css_name__-template"')
+        trimmed_html = html.rstrip()
+        ends_with_template = trimmed_html.endswith('</template>')
+        # Each show() copies the content, so an id inside would repeat.
+        id_count = html.count('id=')
+        self.assertTrue(starts_with_template)
+        self.assertTrue(ends_with_template)
         self.assertIn('data-dialog-class="__css_name__"', html)
         self.assertIn('data-dialog-label>{{ data.title }}', html)
         self.assertIn('data-dialog-close', html)
-        # Each show() copies the content, so an id inside would repeat.
-        self.assertEqual(html.count('id='), 1)
+        self.assertEqual(id_count, 1)
         self.assertNotIn('<script', html)
 
     def test_dialog_controller_template__opens_the_dialog_template__when_shipped(self):
-        with open(os.path.join(TEMPLATES_DIR, 'dialog_controller.ts.tmpl'), encoding='utf-8') as file:
-            controller_ts = file.read()
+        controller_ts = self.read_template('dialog_controller.ts.tmpl')
 
-        for expected in (
+        expected_lines = (
             'import { DialogController } from "django-website-widgets";',
             'export class __ClassName__Controller extends DialogController<void> {',
             'public static show(): Promise<void> {',
             'new __ClassName__Controller(),\n            "#__css_name__-template",',
             'protected answer(): void {}',
-        ):
+        )
+        for expected in expected_lines:
             with self.subTest(expected=expected):
                 self.assertIn(expected, controller_ts)
 
     def test_dialog_py_template__is_a_sync_widget__when_shipped(self):
-        with open(os.path.join(TEMPLATES_DIR, 'dialog.py.tmpl'), encoding='utf-8') as file:
-            dialog_py = file.read()
+        dialog_py = self.read_template('dialog.py.tmpl')
 
         self.assertIn('class __ClassName__(SyncWidget):', dialog_py)
         self.assertIn("self.context.data['title'] = '__ClassName__'", dialog_py)
@@ -102,7 +115,11 @@ class GeneratorTemplatesTestCase(SimpleTestCase):
 
     def test_starter_site__holds_no_nonce_or_gametabs_code__when_shipped(self):
         # The starter shows conventions, so it may fetch and keep state, but a CSP is the site's call.
-        for path, content in StarterSite('website').files().items():
+        starter_site = StarterSite('website')
+        starter_files = starter_site.files()
+
+        for path, content in starter_files.items():
+            lowered_content = content.lower()
             for opinion in ('nonce', 'gametabs'):
                 with self.subTest(path=path, opinion=opinion):
-                    self.assertNotIn(opinion, content.lower())
+                    self.assertNotIn(opinion, lowered_content)

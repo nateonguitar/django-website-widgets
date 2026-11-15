@@ -31,38 +31,61 @@ class WwDoctorTestCase(SimpleTestCase):
         self.app_folder = os.path.join(temp_dir.name, 'website')
         os.makedirs(self.app_folder)
         self.starter_site = StarterSite('website')
-        self.write(self.starter_site.file('package.json'), 'package.json')
-        for name in ('css-loader', 'mini-css-extract-plugin', 'sass', 'sass-loader', 'ts-loader', 'typescript', 'webpack', 'webpack-cli'):
-            os.makedirs(os.path.join(self.app_folder, 'node_modules', name))
-        self.install_npm_package(NpmPackage.range_minimum().as_text())
+        self.starter_package_json = self.starter_site.file('package.json')
+        self.write(self.starter_package_json, 'package.json')
+        build_tools = (
+            'css-loader',
+            'mini-css-extract-plugin',
+            'sass',
+            'sass-loader',
+            'ts-loader',
+            'typescript',
+            'webpack',
+            'webpack-cli',
+        )
+        for name in build_tools:
+            tool_folder = os.path.join(self.app_folder, 'node_modules', name)
+            os.makedirs(tool_folder)
+        range_minimum = NpmPackage.range_minimum()
+        self.install_npm_package(range_minimum.as_text())
 
+        app_config = SimpleNamespace(path=self.app_folder)
         self.mock_apps = self.enterContext(patch(f'{COMMAND_MODULE}.apps'))
-        self.mock_apps.get_app_config.return_value = SimpleNamespace(path=self.app_folder)
+        self.mock_apps.get_app_config.return_value = app_config
         self.check_messages = []
         self.enterContext(patch(f'{COMMAND_MODULE}.checks.run_checks', side_effect=lambda: self.check_messages))
         self.versions = {'node': 'v22.3.0', 'npm': '10.8.1'}
         self.enterContext(patch(f'{COMMAND_MODULE}.shutil.which', side_effect=self.which))
         self.enterContext(patch(f'{COMMAND_MODULE}.subprocess.run', side_effect=self.run_version))
         self.built_files = {'main.js', 'bundled-styles.css'}
-        self.enterContext(patch(
-            f'{COMMAND_MODULE}.finders.find',
-            side_effect=lambda filename: f'/static/{filename}' if filename in self.built_files else None))
+        self.enterContext(patch(f'{COMMAND_MODULE}.finders.find', side_effect=self.find_static))
 
     def which(self, command: str) -> str | None:
-        return f'/usr/bin/{command}' if command in self.versions else None
+        if command not in self.versions:
+            return None
+        return f'/usr/bin/{command}'
+
+    def find_static(self, filename: str) -> str | None:
+        if filename not in self.built_files:
+            return None
+        return f'/static/{filename}'
 
     def run_version(self, args: list[str], **kwargs) -> subprocess.CompletedProcess:
         command = os.path.basename(args[0])
-        return subprocess.CompletedProcess(args, 0, stdout=f'{self.versions[command]}\n')
+        version = self.versions[command]
+        return subprocess.CompletedProcess(args, 0, stdout=f'{version}\n')
 
     def write(self, content: str, *path_parts: str):
-        with open(os.path.join(self.app_folder, *path_parts), 'w', encoding='utf-8') as file:
+        file_path = os.path.join(self.app_folder, *path_parts)
+        with open(file_path, 'w', encoding='utf-8') as file:
             file.write(content)
 
     def install_npm_package(self, version: str):
         folder = os.path.join(self.app_folder, 'node_modules', NpmPackage.NAME)
         os.makedirs(folder, exist_ok=True)
-        self.write(json.dumps({'name': NpmPackage.NAME, 'version': version}), 'node_modules', NpmPackage.NAME, 'package.json')
+        package_json = {'name': NpmPackage.NAME, 'version': version}
+        package_json_text = json.dumps(package_json)
+        self.write(package_json_text, 'node_modules', NpmPackage.NAME, 'package.json')
 
     def run_doctor(self) -> str:
         """The checklist printed; the exit status is kept as `self.exit_code`."""
@@ -88,20 +111,19 @@ class WwDoctorTestCase(SimpleTestCase):
 
         output = self.run_doctor()
 
+        ends_with_the_count = output.endswith('1 problem found.\n')
         self.assertEqual(self.exit_code, 1)
-        self.assertTrue(output.endswith('1 problem found.\n'))
+        self.assertTrue(ends_with_the_count)
 
     def test_doctor__reports_the_error_and_goes_on__when_a_system_check_raises(self):
         self.mock_apps.get_app_config.side_effect = LookupError
-        self.enterContext(patch(
-            f'{COMMAND_MODULE}.checks.run_checks',
-            side_effect=ImproperlyConfigured("Add 'website' to INSTALLED_APPS.")))
+        check_error = ImproperlyConfigured("Add 'website' to INSTALLED_APPS.")
+        self.enterContext(patch(f'{COMMAND_MODULE}.checks.run_checks', side_effect=check_error))
 
         output = self.run_doctor()
 
-        self.assertIn(
-            "[✗] The system checks stopped on an error: ImproperlyConfigured: Add 'website' to INSTALLED_APPS.",
-            output)
+        expected_line = "[✗] The system checks stopped on an error: ImproperlyConfigured: Add 'website' to INSTALLED_APPS."
+        self.assertIn(expected_line, output)
         self.assertIn("[✗] No installed app is labelled 'website'", output)
         self.assertIn('[✓] node v22.3.0', output)
         self.assertIn('2 problems found.', output)
@@ -109,9 +131,8 @@ class WwDoctorTestCase(SimpleTestCase):
 
     def test_doctor__says_the_app_is_not_installed_once__when_e002_already_says_so(self):
         self.mock_apps.get_app_config.side_effect = LookupError
-        self.check_messages = [
-            checks.Error("'website' isn't in INSTALLED_APPS.", hint="Add 'website'.", id='website_widgets.E002'),
-        ]
+        not_installed_error = checks.Error("'website' isn't in INSTALLED_APPS.", hint="Add 'website'.", id='website_widgets.E002')
+        self.check_messages = [not_installed_error]
 
         output = self.run_doctor()
 
@@ -120,10 +141,9 @@ class WwDoctorTestCase(SimpleTestCase):
         self.assertIn('1 problem found.', output)
 
     def test_doctor__lists_each_failing_system_check_with_its_hint__when_one_fails(self):
-        self.check_messages = [
-            checks.Error('Not routed.', hint='Include the pages.', id='website_widgets.E003'),
-            checks.Error('Not ours.', id='admin.E001'),
-        ]
+        not_routed_error = checks.Error('Not routed.', hint='Include the pages.', id='website_widgets.E003')
+        other_app_error = checks.Error('Not ours.', id='admin.E001')
+        self.check_messages = [not_routed_error, other_app_error]
 
         output = self.run_doctor()
 
@@ -164,7 +184,8 @@ class WwDoctorTestCase(SimpleTestCase):
         self.assertIn('[✓] yarn 1.22.22, with no npm: start_npm_watch() runs npm', output)
 
     def test_doctor__prints_install_command__when_package_json_declares_a_tool_too_low(self):
-        self.write(self.starter_site.file('package.json').replace('"^5.110.2"', '"^5.97.1"'), 'package.json')
+        low_webpack_package_json = self.starter_package_json.replace('"^5.110.2"', '"^5.97.1"')
+        self.write(low_webpack_package_json, 'package.json')
 
         output = self.run_doctor()
 
@@ -172,7 +193,8 @@ class WwDoctorTestCase(SimpleTestCase):
         self.assertIn('npm install --save-dev webpack@^5.110.2', output)
 
     def test_doctor__says_to_run_npm_install__when_node_modules_lacks_a_tool(self):
-        os.rmdir(os.path.join(self.app_folder, 'node_modules', 'ts-loader'))
+        ts_loader_folder = os.path.join(self.app_folder, 'node_modules', 'ts-loader')
+        os.rmdir(ts_loader_folder)
 
         output = self.run_doctor()
 
@@ -184,8 +206,9 @@ class WwDoctorTestCase(SimpleTestCase):
 
         output = self.run_doctor()
 
+        install_command = NpmPackage.install_command()
         self.assertIn(f'is 0.9.0, outside {NpmPackage.RANGE}', output)
-        self.assertIn(NpmPackage.install_command(), output)
+        self.assertIn(install_command, output)
         self.assertEqual(self.exit_code, 1)
 
     def test_doctor__says_to_build__when_bundle_is_not_built(self):

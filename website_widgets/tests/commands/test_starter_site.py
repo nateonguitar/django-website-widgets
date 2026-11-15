@@ -32,9 +32,8 @@ class StarterSiteTestCase(SimpleTestCase):
         self.project_root = temp_dir.name
         self.app_label = f'starter_{uuid.uuid4().hex[:8]}'
         self.app_folder = os.path.join(self.project_root, self.app_label)
-        self.enterContext(patch(
-            'website_widgets.config._config_cache',
-            WebsiteWidgetsConfig(website_app_name=self.app_label)))
+        config = WebsiteWidgetsConfig(website_app_name=self.app_label)
+        self.enterContext(patch('website_widgets.config._config_cache', config))
 
         call_command(
             'ww_create_app',
@@ -47,12 +46,17 @@ class StarterSiteTestCase(SimpleTestCase):
         self.addCleanup(self.forget_app_modules)
         importlib.invalidate_caches()
         self.enterContext(patch.object(PageRoutes, '_routes', {}))
-        self.enterContext(override_settings(
-            INSTALLED_APPS=[*settings.INSTALLED_APPS, self.app_label],
-            STATIC_URL='/static/'))
+        installed_apps = [*settings.INSTALLED_APPS, self.app_label]
+        self.enterContext(override_settings(INSTALLED_APPS=installed_apps, STATIC_URL='/static/'))
         # Built once the app is installed, since the include imports its urls.py.
-        urlconf = ModuleType('starter_site_test_urlconf')
-        urlconf.urlpatterns = [path('', include(f'{self.app_label}.urls'))]
+        self.use_app_urlconf('starter_site_test_urlconf')
+
+    def use_app_urlconf(self, module_name: str):
+        """ROOT_URLCONF including the starter app's urls.py, imported now."""
+        app_urls = include(f'{self.app_label}.urls')
+        app_urls_include = path('', app_urls)
+        urlconf = ModuleType(module_name)
+        urlconf.urlpatterns = [app_urls_include]
         self.enterContext(override_settings(ROOT_URLCONF=urlconf))
 
     def forget_app_modules(self):
@@ -61,11 +65,13 @@ class StarterSiteTestCase(SimpleTestCase):
                 del sys.modules[module_name]
 
     def read(self, *path_parts: str) -> str:
-        with open(os.path.join(self.app_folder, *path_parts), encoding='utf-8') as file:
+        file_path = os.path.join(self.app_folder, *path_parts)
+        with open(file_path, encoding='utf-8') as file:
             return file.read()
 
     def write(self, content: str, *path_parts: str):
-        with open(os.path.join(self.app_folder, *path_parts), 'w', encoding='utf-8') as file:
+        file_path = os.path.join(self.app_folder, *path_parts)
+        with open(file_path, 'w', encoding='utf-8') as file:
             file.write(content)
 
     def run_upgrade(self) -> str:
@@ -76,8 +82,8 @@ class StarterSiteTestCase(SimpleTestCase):
     def test_starter_site__serves_home_page_with_its_urls_and_data_attribute__when_created(self):
         response = self.client.get('/')
 
-        self.assertEqual(response.status_code, 200)
         html = response.content.decode()
+        self.assertEqual(response.status_code, 200)
         self.assertIn('<title>Home | My Site</title>', html)
         self.assertIn('data-default-name="world"', html)
         self.assertIn("AppUrls.endpoint_greeting = '/api/greeting/{name}';", html)
@@ -89,8 +95,8 @@ class StarterSiteTestCase(SimpleTestCase):
     def test_starter_site__answers_403_with_forbidden_variant__when_page_always_raises(self):
         response = self.client.get('/forbidden-example')
 
-        self.assertEqual(response.status_code, 403)
         html = response.content.decode()
+        self.assertEqual(response.status_code, 403)
         self.assertIn('<title>Forbidden | My Site</title>', html)
         self.assertIn('ForbiddenExamplePage always raises ForbiddenException', html)
         self.assertNotIn('Nobody sees this template', html)
@@ -98,12 +104,16 @@ class StarterSiteTestCase(SimpleTestCase):
     def test_starter_site__answers_json__when_greeting_endpoint_is_called(self):
         response = self.client.get('/api/greeting/Ada')
 
+        body = response.json()
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json(), {'message': 'Hello, Ada!'})
+        self.assertEqual(body, {'message': 'Hello, Ada!'})
 
     def test_starter_site__passes_routing_checks__when_its_urls_are_included(self):
-        self.assertEqual(PageRoutes.check_pages_are_routed(), [])
-        self.assertEqual(PageRoutes.check_for_ties(), [])
+        routing_errors = PageRoutes.check_pages_are_routed()
+        tie_errors = PageRoutes.check_for_ties()
+
+        self.assertEqual(routing_errors, [])
+        self.assertEqual(tie_errors, [])
 
     def test_starter_site__takes_generated_page_and_widget__when_commands_run(self):
         call_command(
@@ -121,12 +131,13 @@ class StarterSiteTestCase(SimpleTestCase):
             stdout=io.StringIO())
 
         main_ts = self.read('ts', 'main.ts')
+        about_page_module = importlib.import_module(f'{self.app_label}.pages.about_page.about_page')
+        app_page_module = importlib.import_module(f'{self.app_label}.pages.app_page')
+        extends_app_page = issubclass(about_page_module.AboutPage, app_page_module.AppPage)
         self.assertIn("export { AboutPageController } from '../pages/about_page/about_page';", main_ts)
         self.assertIn("export { HomePageController } from '../pages/home_page/home_page';", main_ts)
         self.assertIn("import '../widgets/info_card/info_card.scss';", main_ts)
-        about_page_module = importlib.import_module(f'{self.app_label}.pages.about_page.about_page')
-        app_page_module = importlib.import_module(f'{self.app_label}.pages.app_page')
-        self.assertTrue(issubclass(about_page_module.AboutPage, app_page_module.AppPage))
+        self.assertTrue(extends_app_page)
 
     def test_starter_site__serves_generated_page_at_route_made_from_its_name__when_created(self):
         call_command(
@@ -138,14 +149,13 @@ class StarterSiteTestCase(SimpleTestCase):
         # The urlconf in setUp read the routes before the page existed.
         self.forget_app_modules()
         PageRoutes._routes.clear()
-        urlconf = ModuleType('starter_site_test_urlconf_with_about')
-        urlconf.urlpatterns = [path('', include(f'{self.app_label}.urls'))]
-        self.enterContext(override_settings(ROOT_URLCONF=urlconf))
+        self.use_app_urlconf('starter_site_test_urlconf_with_about')
 
         response = self.client.get('/about')
 
+        html = response.content.decode()
         self.assertEqual(response.status_code, 200)
-        self.assertIn('<h1>AboutPage</h1>', response.content.decode())
+        self.assertIn('<h1>AboutPage</h1>', html)
 
     def test_starter_site__upgrade_overwrites_docs_and_leaves_starter_files__when_both_were_edited(self):
         self.write('# edited\n', 'website_widgets_docs', 'routing.md')
@@ -153,17 +163,23 @@ class StarterSiteTestCase(SimpleTestCase):
 
         output = self.run_upgrade()
 
-        self.assertNotEqual(self.read('website_widgets_docs', 'routing.md'), '# edited\n')
-        self.assertEqual(self.read('pages', 'home_page', 'home_page.py'), '# mine\n')
+        routing_md = self.read('website_widgets_docs', 'routing.md')
+        home_page_py = self.read('pages', 'home_page', 'home_page.py')
+        self.assertNotEqual(routing_md, '# edited\n')
+        self.assertEqual(home_page_py, '# mine\n')
         self.assertIn('changed    routing.md', output)
 
     def test_starter_site__imports_the_framework_from_the_npm_package__when_created(self):
         main_ts = self.read('ts', 'main.ts')
-        package_json = json.loads(self.read('package.json'))
+        package_json_text = self.read('package.json')
+        package_json = json.loads(package_json_text)
 
+        npm_package_range = package_json['dependencies'][NpmPackage.NAME]
+        copied_framework_folder = os.path.join(self.app_folder, 'ts', 'website_widgets')
+        copied_framework_folder_exists = os.path.exists(copied_framework_folder)
         self.assertIn("export { App, Controller, Completer } from 'django-website-widgets';", main_ts)
-        self.assertEqual(package_json['dependencies'][NpmPackage.NAME], NpmPackage.RANGE)
-        self.assertFalse(os.path.exists(os.path.join(self.app_folder, 'ts', 'website_widgets')))
+        self.assertEqual(npm_package_range, NpmPackage.RANGE)
+        self.assertFalse(copied_framework_folder_exists)
 
     def test_starter_site__upgrade_says_nothing_about_build_files__when_they_are_unchanged(self):
         output = self.run_upgrade()

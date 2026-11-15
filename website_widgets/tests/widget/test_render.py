@@ -21,35 +21,47 @@ class RenderTestCase(WidgetTestCase):
         widget = SyncContextWidget()
         widget.template_filename = self.write_template('{{ data.word }}')
 
-        self.assertEqual(widget.render(), 'sync')
+        html = widget.render()
+
+        self.assertEqual(html, 'sync')
 
     def test_render__renders_chosen_template__when_template_filename_set(self):
         widget = DefaultTemplateWidget()
         widget.template_filename = self.write_template('chosen {{ data.word }}')
         widget.context.data['word'] = 'template'
 
-        self.assertEqual(widget.render(), 'chosen template')
+        html = widget.render()
+
+        self.assertEqual(html, 'chosen template')
 
     def test_render__renders_children__when_nested_and_listed(self):
-        widget = ParentWidget(self.write_template('{{ data.word }}'))
+        child_template_filename = self.write_template('{{ data.word }}')
+        widget = ParentWidget(child_template_filename)
         widget.template_filename = self.write_template(
             '{{ children.single }}|{% for child in children.many %}{{ child }},{% endfor %}|'
             '{{ children.absent|default_if_none:"none" }}')
 
-        self.assertEqual(widget.render(), 'one|two,three,|none')
+        html = widget.render()
+
+        self.assertEqual(html, 'one|two,three,|none')
 
     def test_render__shares_page_context_with_children__when_set_before_rendering(self):
-        widget = ParentWidget(self.write_template('{{ page.foo }}'))
+        child_template_filename = self.write_template('{{ page.foo }}')
+        widget = ParentWidget(child_template_filename)
         widget.template_filename = self.write_template('{{ children.single }}')
         widget.context.page['foo'] = 'abc'
 
-        self.assertEqual(widget.render(), 'abc')
+        html = widget.render()
+
+        self.assertEqual(html, 'abc')
 
     def test_render__runs_set_context_without_event_loop__when_called_from_sync_code(self):
         widget = LoopCheckingWidget()
         widget.template_filename = self.write_template('{{ data.loop }}')
 
-        self.assertEqual(widget.render(), 'none')
+        html = widget.render()
+
+        self.assertEqual(html, 'none')
 
     def test_render__fails_naming_widget__when_set_context_is_async(self):
         widget = AsyncContextWidget()
@@ -59,26 +71,31 @@ class RenderTestCase(WidgetTestCase):
             widget.render()
 
     def test_render__fails_naming_widget__when_child_set_context_is_async(self):
-        widget = AsyncChildParentWidget(self.write_template('{{ data.word }}'))
+        child_template_filename = self.write_template('{{ data.word }}')
+        widget = AsyncChildParentWidget(child_template_filename)
         widget.template_filename = self.write_template('{{ children.child }}')
 
         with self.assertRaisesMessage(TypeError, 'AsyncContextWidget'):
             widget.render()
 
     def test_render__renders_with_given_request__when_called(self):
-        request = RequestFactory().get('/somewhere/')
+        request_factory = RequestFactory()
+        request = request_factory.get('/somewhere/')
         request.user = AnonymousUser()
         widget = DefaultTemplateWidget()
         widget.template_filename = self.write_template('{{ request.path }}')
 
-        self.assertEqual(widget.render(request), '/somewhere/')
+        html = widget.render(request)
+
+        self.assertEqual(html, '/somewhere/')
 
     def test_render__renders__when_no_request_given_and_widget_needs_none(self):
         widget = DefaultTemplateWidget()
-        widget.template_filename = self.write_template(
-            '{{ request|default_if_none:"none" }}')
+        widget.template_filename = self.write_template('{{ request|default_if_none:"none" }}')
 
-        self.assertEqual(widget.render(), 'none')
+        html = widget.render()
+
+        self.assertEqual(html, 'none')
 
     def test_render__fails__when_no_request_given_and_widget_reads_request(self):
         widget = RequestReadingWidget()
@@ -91,8 +108,11 @@ class RenderTestCase(WidgetTestCase):
         widget = DefaultTemplateWidget()
         widget.template_filename = self.write_template('<b>{{ data.word }}</b>')
         widget.context.data['word'] = '<i>'
+        widget_html = widget.render()
+        django_template = Template('<div>{{ widget_html }}</div>')
+        django_context = Context({'widget_html': widget_html})
 
-        html = Template('<div>{{ widget_html }}</div>').render(Context({'widget_html': widget.render()}))
+        html = django_template.render(django_context)
 
         self.assertEqual(html, '<div><b>&lt;i&gt;</b></div>')
 
@@ -108,11 +128,15 @@ class RenderTestCase(WidgetTestCase):
         widget = DefaultTemplateWidget()
         widget.template_filename = self.write_template('{{ request.user.is_authenticated }}')
 
-        self.assertEqual(widget.render__test(), 'False')
+        html = widget.render__test()
+
+        self.assertEqual(html, 'False')
 
     def test_render__test__renders_as_user__when_user_given(self):
         user = SimpleNamespace(is_authenticated=True, username='riley')
         widget = DefaultTemplateWidget()
         widget.template_filename = self.write_template('{{ request.user.username }}')
 
-        self.assertEqual(widget.render__test(user=user), 'riley')
+        html = widget.render__test(user=user)
+
+        self.assertEqual(html, 'riley')

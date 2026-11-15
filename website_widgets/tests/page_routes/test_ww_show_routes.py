@@ -15,12 +15,23 @@ class WwShowRoutesTestCase(PageRoutesTestCase):
         call_command('ww_show_routes', *args, stdout=output, no_color=True, **options)
         return output.getvalue()
 
+    def use_page_routes_urlconf(self, *earlier_url_patterns):
+        """ROOT_URLCONF with the page routes included, after any patterns given."""
+        page_urls = PageRoutes.urls()
+        page_routes_include = path('', page_urls)
+        self.use_urlconf([*earlier_url_patterns, page_routes_include])
+
+    def hand_routed_profile_pattern(self):
+        """A route written in urls.py that takes every URL the page route below would."""
+        hand_routed_view = UnsetDocumentPage.as_view()
+        return path('profile/<str:username>', hand_routed_view, name='hand_routed_profile')
+
     def test_show_routes__shows_only_given_columns__when_columns_given(self):
         @register_url('forum/<int:post_id>', name='forum_post')
         class ForumPostPage(AsyncWebPage):
             pass
 
-        self.use_urlconf([path('', PageRoutes.urls())])
+        self.use_page_routes_urlconf()
 
         output = self.run_show_routes('--columns=url,name')
 
@@ -32,23 +43,22 @@ class WwShowRoutesTestCase(PageRoutesTestCase):
         class ProfilePage(AsyncWebPage):
             pass
 
-        self.use_urlconf([
-            path('profile/<str:username>', UnsetDocumentPage.as_view(), name='hand_routed_profile'),
-            path('', PageRoutes.urls()),
-        ])
+        hand_routed_profile = self.hand_routed_profile_pattern()
+        self.use_page_routes_urlconf(hand_routed_profile)
         output = io.StringIO()
 
         with self.assertRaises(CommandError):
             self.run_show_routes('--columns=url', output=output)
 
-        self.assertIn('/profile/a goes to hand_routed_profile instead', output.getvalue())
+        output_text = output.getvalue()
+        self.assertIn('/profile/a goes to hand_routed_profile instead', output_text)
 
     def test_show_routes__shows_converter_only__when_path_param_type_is_type(self):
         @register_url('forum/<int:post_id>', name='forum_post')
         class ForumPostPage(AsyncWebPage):
             pass
 
-        self.use_urlconf([path('', PageRoutes.urls())])
+        self.use_page_routes_urlconf()
 
         output = self.run_show_routes(path_param_type='type')
 
@@ -59,7 +69,7 @@ class WwShowRoutesTestCase(PageRoutesTestCase):
         class ForumPostPage(AsyncWebPage):
             pass
 
-        self.use_urlconf([path('', PageRoutes.urls())])
+        self.use_page_routes_urlconf()
 
         output = self.run_show_routes(path_param_type='example')
 
@@ -74,21 +84,21 @@ class WwShowRoutesTestCase(PageRoutesTestCase):
         class SettingsPage(AsyncWebPage):
             pass
 
-        self.use_urlconf([path('', PageRoutes.urls())])
+        self.use_page_routes_urlconf()
 
         output = self.run_show_routes()
 
-        self.assertLess(output.index('profile/settings'), output.index('profile/<str:username>'))
+        settings_position = output.index('profile/settings')
+        profile_position = output.index('profile/<str:username>')
+        self.assertLess(settings_position, profile_position)
 
     def test_show_routes__fails__when_earlier_urlconf_route_takes_its_url(self):
         @register_url('profile/<str:username>', name='profile')
         class ProfilePage(AsyncWebPage):
             pass
 
-        self.use_urlconf([
-            path('profile/<str:username>', UnsetDocumentPage.as_view(), name='hand_routed_profile'),
-            path('', PageRoutes.urls()),
-        ])
+        hand_routed_profile = self.hand_routed_profile_pattern()
+        self.use_page_routes_urlconf(hand_routed_profile)
 
         with self.assertRaises(CommandError):
             self.run_show_routes()

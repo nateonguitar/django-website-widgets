@@ -15,7 +15,11 @@ class CheckForTiesTestCase(PageRoutesTestCase):
 
         errors = PageRoutes.check_for_ties()
 
-        self.assertEqual([error.id for error in errors], ['website_widgets.E001'])
+        error_ids = [
+            error.id
+            for error in errors
+        ]
+        self.assertEqual(error_ids, ['website_widgets.E001'])
 
     def test_check_for_ties__succeeds__when_fixed_segment_and_int_parameter_share_position(self):
         @register_url('forum/create-post', name='forum_create_post')
@@ -26,7 +30,9 @@ class CheckForTiesTestCase(PageRoutesTestCase):
         class ForumPostPage(AsyncWebPage):
             pass
 
-        self.assertEqual(PageRoutes.check_for_ties(), [])
+        errors = PageRoutes.check_for_ties()
+
+        self.assertEqual(errors, [])
 
     def test_check_for_ties__succeeds__when_equally_specific_routes_differ_in_a_fixed_segment(self):
         @register_url('forum/<int:post_id>', name='forum_post')
@@ -37,4 +43,6 @@ class CheckForTiesTestCase(PageRoutesTestCase):
         class TabRequestPage(AsyncWebPage):
             pass
 
-        self.assertEqual(PageRoutes.check_for_ties(), [])
+        errors = PageRoutes.check_for_ties()
+
+        self.assertEqual(errors, [])

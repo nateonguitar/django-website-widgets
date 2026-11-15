@@ -7,16 +7,23 @@ from website_widgets.tests.sample_widgets import SAMPLE_WIDGETS_DIR, ClassLevelD
 
 class GetDocumentTemplatePathTestCase(SimpleTestCase):
     def test_get_document_template_path__fails__when_document_template_path_unset(self):
+        page = UnsetDocumentPage()
+
         with self.assertRaises(NotImplementedError):
-            UnsetDocumentPage().get_document_template_path()
+            page.get_document_template_path()
 
     def test_get_document_template_path__returns_path_beside_class__when_document_template_path_relative(self):
-        self.assertEqual(
-            ClassLevelDocumentPage().get_document_template_path(),
-            os.path.join(SAMPLE_WIDGETS_DIR, '../templates/document_template.html'))
+        page = ClassLevelDocumentPage()
+
+        path = page.get_document_template_path()
+
+        expected_path = os.path.join(SAMPLE_WIDGETS_DIR, '../templates/document_template.html')
+        self.assertEqual(path, expected_path)
 
     def test_get_document_template_path__returns_path_unchanged__when_document_template_path_absolute(self):
         page = UnsetDocumentPage()
         page.document_template_path = '/srv/templates/document_template.html'
 
-        self.assertEqual(page.get_document_template_path(), '/srv/templates/document_template.html')
+        path = page.get_document_template_path()
+
+        self.assertEqual(path, '/srv/templates/document_template.html')

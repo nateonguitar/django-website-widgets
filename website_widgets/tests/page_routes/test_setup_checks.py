@@ -20,7 +20,8 @@ class CheckWebsiteAppIsInstalledTestCase(PageRoutesTestCase):
     def write_app_folder(self):
         app_folder = os.path.join(self.base_dir, 'website')
         os.makedirs(app_folder)
-        with open(os.path.join(app_folder, 'apps.py'), 'w', encoding='utf-8') as file:
+        apps_py_path = os.path.join(app_folder, 'apps.py')
+        with open(apps_py_path, 'w', encoding='utf-8') as file:
             file.write('')
 
     def uninstall_website_app(self):
@@ -32,18 +33,26 @@ class CheckWebsiteAppIsInstalledTestCase(PageRoutesTestCase):
 
         errors = PageRoutes.check_website_app_is_installed()
 
-        self.assertEqual([error.id for error in errors], ['website_widgets.E002'])
+        error_ids = [
+            error.id
+            for error in errors
+        ]
+        self.assertEqual(error_ids, ['website_widgets.E002'])
         self.assertIn("Add 'website' to INSTALLED_APPS", errors[0].hint)
 
     def test_check_website_app_is_installed__passes__when_there_is_no_app_folder(self):
         self.uninstall_website_app()
 
-        self.assertEqual(PageRoutes.check_website_app_is_installed(), [])
+        errors = PageRoutes.check_website_app_is_installed()
+
+        self.assertEqual(errors, [])
 
     def test_check_website_app_is_installed__passes__when_app_is_installed(self):
         self.write_app_folder()
 
-        self.assertEqual(PageRoutes.check_website_app_is_installed(), [])
+        errors = PageRoutes.check_website_app_is_installed()
+
+        self.assertEqual(errors, [])
 
 
 class CheckPagesAreRoutedTestCase(PageRoutesTestCase):
@@ -56,7 +65,11 @@ class CheckPagesAreRoutedTestCase(PageRoutesTestCase):
 
         errors = PageRoutes.check_pages_are_routed()
 
-        self.assertEqual([error.id for error in errors], ['website_widgets.E003'])
+        error_ids = [
+            error.id
+            for error in errors
+        ]
+        self.assertEqual(error_ids, ['website_widgets.E003'])
         self.assertIn("include('website.urls')", errors[0].hint)
 
     def test_check_pages_are_routed__passes__when_urls_include_the_pages(self):
@@ -64,11 +77,17 @@ class CheckPagesAreRoutedTestCase(PageRoutesTestCase):
         class AboutPage(AsyncWebPage):
             pass
 
-        self.use_urlconf([path('', PageRoutes.urls())])
+        page_urls = PageRoutes.urls()
+        page_routes_include = path('', page_urls)
+        self.use_urlconf([page_routes_include])
 
-        self.assertEqual(PageRoutes.check_pages_are_routed(), [])
+        errors = PageRoutes.check_pages_are_routed()
+
+        self.assertEqual(errors, [])
 
     def test_check_pages_are_routed__passes__when_there_are_no_pages(self):
         self.use_urlconf([])
 
-        self.assertEqual(PageRoutes.check_pages_are_routed(), [])
+        errors = PageRoutes.check_pages_are_routed()
+
+        self.assertEqual(errors, [])

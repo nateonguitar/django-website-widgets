@@ -19,35 +19,48 @@ class ARenderTestCase(WidgetTestCase):
         widget = SyncContextWidget()
         widget.template_filename = self.write_template('{{ data.word }}')
 
-        self.assertEqual(await widget.arender(), 'sync')
+        html = await widget.arender()
+
+        self.assertEqual(html, 'sync')
 
     async def test_arender__runs_set_context__when_set_context_is_async(self):
         widget = AsyncContextWidget()
         widget.template_filename = self.write_template('{{ data.word }}')
 
-        self.assertEqual(await widget.arender(), 'async')
+        html = await widget.arender()
+
+        self.assertEqual(html, 'async')
 
     async def test_arender__renders_async_child__when_parent_is_sync(self):
-        widget = AsyncChildParentWidget(self.write_template('{{ data.word }}'))
+        child_template_filename = self.write_template('{{ data.word }}')
+        widget = AsyncChildParentWidget(child_template_filename)
         widget.template_filename = self.write_template('{{ children.child }}')
 
-        self.assertEqual(await widget.arender(), 'async')
+        html = await widget.arender()
+
+        self.assertEqual(html, 'async')
 
     async def test_arender__renders_children__when_nested_and_listed(self):
-        widget = ParentWidget(self.write_template('{{ data.word }}'))
+        child_template_filename = self.write_template('{{ data.word }}')
+        widget = ParentWidget(child_template_filename)
         widget.template_filename = self.write_template(
             '{{ children.single }}|{% for child in children.many %}{{ child }},{% endfor %}|'
             '{{ children.absent|default_if_none:"none" }}')
 
-        self.assertEqual(await widget.arender(), 'one|two,three,|none')
+        html = await widget.arender()
+
+        self.assertEqual(html, 'one|two,three,|none')
 
     async def test_arender__renders_with_given_request__when_called(self):
-        request = RequestFactory().get('/somewhere/')
+        request_factory = RequestFactory()
+        request = request_factory.get('/somewhere/')
         request.user = AnonymousUser()
         widget = DefaultTemplateWidget()
         widget.template_filename = self.write_template('{{ request.path }}')
 
-        self.assertEqual(await widget.arender(request), '/somewhere/')
+        html = await widget.arender(request)
+
+        self.assertEqual(html, '/somewhere/')
 
     async def test_arender__fails__when_no_request_given_and_widget_reads_request(self):
         widget = RequestReadingWidget()
@@ -69,4 +82,6 @@ class ARenderTestCase(WidgetTestCase):
         widget = AsyncContextWidget()
         widget.template_filename = self.write_template('{{ request.user.username }} {{ data.word }}')
 
-        self.assertEqual(await widget.arender__test(user=user), 'riley async')
+        html = await widget.arender__test(user=user)
+
+        self.assertEqual(html, 'riley async')

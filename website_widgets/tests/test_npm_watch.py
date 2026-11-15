@@ -20,8 +20,9 @@ class NpmWatchTestCase(SimpleTestCase):
         self.other_folder = os.path.join(temp_dir.name, 'other')
         os.makedirs(self.other_folder)
 
+        app_config = SimpleNamespace(path=self.app_folder)
         mock_apps = self.enterContext(patch('django.apps.apps'))
-        mock_apps.get_app_config.return_value = SimpleNamespace(path=self.app_folder)
+        mock_apps.get_app_config.return_value = app_config
         self.mock_popen = self.enterContext(patch('website_widgets.npm_watch.subprocess.Popen'))
         self.mock_process_iter = self.enterContext(patch('website_widgets.npm_watch.psutil.process_iter'))
         self.mock_process_iter.return_value = []
@@ -29,7 +30,8 @@ class NpmWatchTestCase(SimpleTestCase):
         os.environ.pop('RUN_MAIN', None)
 
     def running_process(self, cmdline: list[str] | None, cwd: str | None) -> SimpleNamespace:
-        return SimpleNamespace(info={'cmdline': cmdline, 'cwd': cwd})
+        process_info = {'cmdline': cmdline, 'cwd': cwd}
+        return SimpleNamespace(info=process_info)
 
     def run_start(self, *argv: str):
         with patch.object(sys, 'argv', ['manage.py', *argv]):
@@ -55,19 +57,21 @@ class NpmWatchTestCase(SimpleTestCase):
         self.mock_popen.assert_not_called()
 
     def test_start_npm_watch__starts_nothing__when_watch_already_running_in_app_folder(self):
-        self.mock_process_iter.return_value = [
-            self.running_process(['npm', 'run', 'watch'], self.app_folder),
-        ]
+        watch_in_app_folder = self.running_process(['npm', 'run', 'watch'], self.app_folder)
+        self.mock_process_iter.return_value = [watch_in_app_folder]
 
         self.run_start('runserver')
 
         self.mock_popen.assert_not_called()
 
     def test_start_npm_watch__starts_watch__when_watch_running_only_in_another_folder(self):
+        watch_in_other_folder = self.running_process(['npm', 'run', 'watch'], self.other_folder)
+        uninspectable_process = self.running_process(None, None)
+        watch_in_unknown_folder = self.running_process(['npm', 'run', 'watch'], None)
         self.mock_process_iter.return_value = [
-            self.running_process(['npm', 'run', 'watch'], self.other_folder),
-            self.running_process(None, None),
-            self.running_process(['npm', 'run', 'watch'], None),
+            watch_in_other_folder,
+            uninspectable_process,
+            watch_in_unknown_folder,
         ]
 
         self.run_start('runserver')
@@ -80,7 +84,10 @@ class NpmWatchTestCase(SimpleTestCase):
 
         self.run_start('runserver')
 
-        self.assertIn('npm was not found', stderr.getvalue())
+        error_output = stderr.getvalue()
+        self.assertIn('npm was not found', error_output)
 
     def test_start__is_start_npm_watch__when_imported(self):
-        self.assertEqual(start_npm_watch, NpmWatch.start)
+        start = NpmWatch.start
+
+        self.assertEqual(start_npm_watch, start)

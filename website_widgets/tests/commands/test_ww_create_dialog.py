@@ -15,15 +15,23 @@ class WwCreateDialogTestCase(ComponentTestCase):
         self.create_dialog('confirm_dialog', '--stylesheet')
 
         folder = os.path.join(self.app_folder, 'widgets', 'confirm_dialog')
-        self.assertEqual(
-            sorted(os.listdir(folder)),
-            ['__init__.py', 'confirm_dialog.html', 'confirm_dialog.py', 'confirm_dialog.scss', 'confirm_dialog.ts'])
-        self.assertIn('from .confirm_dialog import ConfirmDialog', self.read(folder, '__init__.py'))
-        self.assertIn('class ConfirmDialog(SyncWidget):', self.read(folder, 'confirm_dialog.py'))
+        filenames = sorted(os.listdir(folder))
+        init_py = self.read(folder, '__init__.py')
+        dialog_py = self.read(folder, 'confirm_dialog.py')
         html = self.read(folder, 'confirm_dialog.html')
+        controller_ts = self.read(folder, 'confirm_dialog.ts')
+        expected_filenames = [
+            '__init__.py',
+            'confirm_dialog.html',
+            'confirm_dialog.py',
+            'confirm_dialog.scss',
+            'confirm_dialog.ts',
+        ]
+        self.assertEqual(filenames, expected_filenames)
+        self.assertIn('from .confirm_dialog import ConfirmDialog', init_py)
+        self.assertIn('class ConfirmDialog(SyncWidget):', dialog_py)
         self.assertIn('<template id="confirm-dialog-template"', html)
         self.assertIn('data-dialog-class="confirm-dialog"', html)
-        controller_ts = self.read(folder, 'confirm_dialog.ts')
         self.assertIn('export class ConfirmDialogController extends DialogController<void>', controller_ts)
         self.assertIn('"#confirm-dialog-template"', controller_ts)
 
@@ -31,24 +39,31 @@ class WwCreateDialogTestCase(ComponentTestCase):
         self.create_dialog('confirm_dialog', '--stylesheet')
 
         main_ts = self.read(self.app_folder, 'ts', 'main.ts')
-        self.assertIn(
+        expected_styles = (
             "// {{ WIDGET STYLES START }}\n"
             "import '../widgets/confirm_dialog/confirm_dialog.scss';\n"
-            "import '../widgets/zebra/zebra.scss';\n",
-            main_ts)
-        self.assertIn(
+            "import '../widgets/zebra/zebra.scss';\n"
+        )
+        expected_controllers = (
             "// {{ WIDGET CONTROLLERS START }}\n"
-            "export { ConfirmDialogController } from '../widgets/confirm_dialog/confirm_dialog';\n",
-            main_ts)
+            "export { ConfirmDialogController } from '../widgets/confirm_dialog/confirm_dialog';\n"
+        )
+        self.assertIn(expected_styles, main_ts)
+        self.assertIn(expected_controllers, main_ts)
 
     def test_create_dialog__writes_controller_and_no_stylesheet__when_stylesheet_declined(self):
         self.create_dialog('confirm_dialog', '--no-stylesheet')
 
         folder = os.path.join(self.app_folder, 'widgets', 'confirm_dialog')
-        self.assertEqual(
-            sorted(os.listdir(folder)),
-            ['__init__.py', 'confirm_dialog.html', 'confirm_dialog.py', 'confirm_dialog.ts'])
+        filenames = sorted(os.listdir(folder))
         main_ts = self.read(self.app_folder, 'ts', 'main.ts')
+        expected_filenames = [
+            '__init__.py',
+            'confirm_dialog.html',
+            'confirm_dialog.py',
+            'confirm_dialog.ts',
+        ]
+        self.assertEqual(filenames, expected_filenames)
         self.assertNotIn('confirm_dialog.scss', main_ts)
         self.assertIn("export { ConfirmDialogController } from '../widgets/confirm_dialog/confirm_dialog';", main_ts)
 
@@ -56,17 +71,20 @@ class WwCreateDialogTestCase(ComponentTestCase):
         with patch('builtins.input', side_effect=['n']) as mock_input:
             self.create_dialog('confirm_dialog')
 
-        mock_input.assert_called_once_with('Generate a stylesheet? [Y/n] ')
         folder = os.path.join(self.app_folder, 'widgets', 'confirm_dialog')
-        self.assertNotIn('confirm_dialog.scss', os.listdir(folder))
+        filenames = os.listdir(folder)
+        mock_input.assert_called_once_with('Generate a stylesheet? [Y/n] ')
+        self.assertNotIn('confirm_dialog.scss', filenames)
 
     def test_create_dialog__renders_a_template_with_its_title__when_rendered(self):
         self.create_dialog('confirm_dialog', '--no-stylesheet')
-        confirm_dialog_class = importlib.import_module('website.widgets.confirm_dialog').ConfirmDialog
+        confirm_dialog_module = importlib.import_module('website.widgets.confirm_dialog')
+        confirm_dialog = confirm_dialog_module.ConfirmDialog()
 
-        html = confirm_dialog_class().render__test()
+        html = confirm_dialog.render__test()
 
-        self.assertTrue(html.startswith('<template id="confirm-dialog-template"'))
+        starts_with_template = html.startswith('<template id="confirm-dialog-template"')
+        self.assertTrue(starts_with_template)
         self.assertIn('data-dialog-label>ConfirmDialog</h2>', html)
         self.assertIn('data-dialog-close>', html)
 
@@ -74,28 +92,32 @@ class WwCreateDialogTestCase(ComponentTestCase):
         output = self.create_dialog('dialogs/login_dialog', '--no-stylesheet')
 
         folder = os.path.join(self.app_folder, 'widgets', 'dialogs', 'login_dialog')
-        self.assertIn('<template id="login-dialog-template"', self.read(folder, 'login_dialog.html'))
-        self.assertEqual(self.read(self.app_folder, 'widgets', 'dialogs', '__init__.py'), '')
+        html = self.read(folder, 'login_dialog.html')
+        dialogs_init_py = self.read(self.app_folder, 'widgets', 'dialogs', '__init__.py')
+        main_ts = self.read(self.app_folder, 'ts', 'main.ts')
+        self.assertIn('<template id="login-dialog-template"', html)
+        self.assertEqual(dialogs_init_py, '')
         self.assertIn('website/widgets/dialogs/__init__.py, so its folder imports as a package.', output)
-        self.assertIn(
-            "export { LoginDialogController } from '../widgets/dialogs/login_dialog/login_dialog';",
-            self.read(self.app_folder, 'ts', 'main.ts'))
+        self.assertIn("export { LoginDialogController } from '../widgets/dialogs/login_dialog/login_dialog';", main_ts)
 
     def test_create_dialog__uses_project_template__when_templates_dir_has_one(self):
-        self.write('<template id="__css_name__-template" data-dialog-class="dialog __css_name__"></template>\n',
-                   self.templates_dir, 'dialog.html.tmpl')
+        project_template = '<template id="__css_name__-template" data-dialog-class="dialog __css_name__"></template>\n'
+        self.write(project_template, self.templates_dir, 'dialog.html.tmpl')
 
         self.create_dialog('confirm_dialog', '--no-stylesheet')
 
         folder = os.path.join(self.app_folder, 'widgets', 'confirm_dialog')
-        self.assertEqual(
-            self.read(folder, 'confirm_dialog.html'),
-            '<template id="confirm-dialog-template" data-dialog-class="dialog confirm-dialog"></template>\n')
-        self.assertIn('class ConfirmDialog(SyncWidget):', self.read(folder, 'confirm_dialog.py'))
-        self.assertIn('extends DialogController<void>', self.read(folder, 'confirm_dialog.ts'))
+        html = self.read(folder, 'confirm_dialog.html')
+        dialog_py = self.read(folder, 'confirm_dialog.py')
+        controller_ts = self.read(folder, 'confirm_dialog.ts')
+        expected_html = '<template id="confirm-dialog-template" data-dialog-class="dialog confirm-dialog"></template>\n'
+        self.assertEqual(html, expected_html)
+        self.assertIn('class ConfirmDialog(SyncWidget):', dialog_py)
+        self.assertIn('extends DialogController<void>', controller_ts)
 
     def test_create_dialog__fails__when_folder_exists(self):
-        os.makedirs(os.path.join(self.app_folder, 'widgets', 'confirm_dialog'))
+        existing_folder = os.path.join(self.app_folder, 'widgets', 'confirm_dialog')
+        os.makedirs(existing_folder)
 
         with self.assertRaisesMessage(CommandError, 'already exists'):
             self.create_dialog('confirm_dialog', '--stylesheet')
@@ -106,28 +128,34 @@ class WwCreateDialogTestCase(ComponentTestCase):
                 with self.assertRaisesMessage(CommandError, "can't be a component name"):
                     self.create_dialog(name, '--stylesheet')
 
-        self.assertFalse(os.path.exists(os.path.join(self.app_folder, 'widgets')))
-        self.assertEqual(self.read(self.app_folder, 'ts', 'main.ts'), MAIN_TS)
+        widgets_folder = os.path.join(self.app_folder, 'widgets')
+        widgets_folder_exists = os.path.exists(widgets_folder)
+        main_ts = self.read(self.app_folder, 'ts', 'main.ts')
+        self.assertFalse(widgets_folder_exists)
+        self.assertEqual(main_ts, MAIN_TS)
 
     def test_create_dialog__lists_each_file_and_how_to_open_it__when_created(self):
         output = self.create_dialog('dialogs/login_dialog', '--stylesheet')
 
         dialog_folder = os.path.join(self.app_folder, 'widgets', 'dialogs', 'login_dialog')
-        self.assertIn(
+        expected_file_list = (
             f'Created the dialog LoginDialog in {dialog_folder}/:\n'
             '  __init__.py\n'
             '  login_dialog.py     class LoginDialog(SyncWidget)\n'
             '  login_dialog.html   template #login-dialog-template\n'
             '  login_dialog.ts     LoginDialogController, exported from ts/main.ts\n'
-            '  login_dialog.scss   imported in ts/main.ts\n',
-            output)
-        self.assertIn(
+            '  login_dialog.scss   imported in ts/main.ts\n'
+        )
+        expected_next_step = (
             'Place LoginDialog() as a child of the page or widget it opens from, and open it with '
-            '`await LoginDialogController.show()`.',
-            output)
+            '`await LoginDialogController.show()`.'
+        )
+        self.assertIn(expected_file_list, output)
+        self.assertIn(expected_next_step, output)
 
     def test_create_dialog__lists_files_without_main_ts_notes__when_main_ts_is_missing(self):
-        os.remove(os.path.join(self.app_folder, 'ts', 'main.ts'))
+        main_ts_path = os.path.join(self.app_folder, 'ts', 'main.ts')
+        os.remove(main_ts_path)
 
         output = self.create_dialog('confirm_dialog', '--stylesheet')
 
