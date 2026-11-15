@@ -9,7 +9,7 @@ Primary code, the npm package `django-website-widgets`, which the app's `package
 on and its controllers import from (`import { Controller } from "django-website-widgets"`). Its
 sources ship beside the compiled code, in the app's `node_modules/django-website-widgets/src/`:
 - `controller.ts` — `Controller`
-- `app.ts` — `App`: `initController()`, `registerSingleton()`, `getSingleton()`
+- `app.ts` — `App`: `initController()`, `registerSingleton()`, `getSingleton()`, `clearSingletons()`
 - `completer.ts` — `Completer`
 
 ## The code belongs to the package
@@ -102,6 +102,11 @@ with `static readonly singleton = true`, which `App.initController()` reads and 
 the other fetches it with `App.getSingleton(ChildController)`, which returns `null` when none is
 registered. It's on the class, not an option at each call, since the code that relies on it is
 elsewhere: a template that forgot the option would leave every `getSingleton()` call `null`.
+
+**`App.clearSingletons()` empties the registry, for tests.** A test runner such as Vitest loads
+a module once per test file, so a singleton registered in one test is still there in the next,
+bound to DOM that test replaced; a JS test calls `App.clearSingletons()` in `beforeEach`. A page
+never needs it.
 
 **The registry is keyed on the class itself, not its name.** Production builds minify class
 names (`class u extends c`), so two controllers can share a `constructor.name`. Nothing in the

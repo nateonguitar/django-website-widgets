@@ -1,6 +1,6 @@
 # django-website-widgets docs
 
-Copied from django-website-widgets 1.0.0rc6 by `python manage.py ww_upgrade` or `ww_create_app`.
+Copied from django-website-widgets 1.0.0rc7 by `python manage.py ww_upgrade` or `ww_create_app`.
 
 **This folder is managed by the package: don't edit the files it wrote here** (listed below).
 They're the package's docs for the version installed, kept beside your code so they always
@@ -17,6 +17,7 @@ them:
 
 <!-- website_widgets:files -->
 - `AGENTS.md`
+- `browser_testing.md`
 - `checking_the_setup.md`
 - `creating_and_upgrading_an_app.md`
 - `creating_pages_and_widgets.md`
@@ -34,6 +35,8 @@ them:
 - `routing.md`
 - `starter_site.md`
 - `templates.md`
+- `testing_controllers.md`
+- `testing_widgets.md`
 - `widgets_in_plain_django.md`
 - `README.md`
 <!-- /website_widgets:files -->
