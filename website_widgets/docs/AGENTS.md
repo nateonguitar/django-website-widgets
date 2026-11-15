@@ -34,6 +34,7 @@ in the doc.
 - `rendering_pipeline.md` — what runs between a request and HTML: async vs sync pages, one page instance per request, the passes of `build_response()`, constructor vs `set_context()`, the user and the async ORM trap
 - `rendering_a_widget_alone.md` — `render()` and `arender()` outside a page: sync vs async, no request, a whole document (email) as a widget, inserting a fragment so its scripts run
 - `templates.md` — what a template sees (the four keys, the silent missing-`data.` trap), how its file is found, variant templates, `template_string` in the class, no `{% include %}`
+- `choosing_a_test.md` — which kind of test to write: page, widget, endpoint, controller (Vitest) or browser (Playwright, from the movie manager's example base), the fastest that can see what's checked, and splitting a browser test that checks cheaper things
 - `testing_widgets.md` — `WidgetDocumentTestMixin`: one widget rendered into a test-controlled document, its children and page context, sync vs async, a project's own document, where tests live
 - `testing_controllers.md` — Vitest and happy-dom against HTML Python rendered: fixtures from tagged tests and `globalSetup`, mounting, `App.clearSingletons()` and other static state, stubbing `fetch`, `ww_test`
 - `running_tests.md` — `WebsiteWidgetsTestRunner`: the build before browser tests and how it's decided, `TestingConfig`, `patches()` for what no test may do for real, `--parallel` workers and `tblib`, the `W003` check, the pytest gap

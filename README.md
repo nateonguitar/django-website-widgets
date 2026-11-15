@@ -38,9 +38,11 @@ inside the package, indexed by
 - [`rendering_pipeline.md`](https://github.com/nateonguitar/django-website-widgets/blob/main/website_widgets/docs/rendering_pipeline.md): how a request becomes HTML
 - [`rendering_a_widget_alone.md`](https://github.com/nateonguitar/django-website-widgets/blob/main/website_widgets/docs/rendering_a_widget_alone.md): `render()` and `arender()` outside a page
 - [`templates.md`](https://github.com/nateonguitar/django-website-widgets/blob/main/website_widgets/docs/templates.md): what a template sees, how its file is found, variant templates
+- [`choosing_a_test.md`](https://github.com/nateonguitar/django-website-widgets/blob/main/website_widgets/docs/choosing_a_test.md): which kind of test to write, from a page test to a browser test
 - [`testing_widgets.md`](https://github.com/nateonguitar/django-website-widgets/blob/main/website_widgets/docs/testing_widgets.md): testing one widget inside a document the test controls, with `WidgetDocumentTestMixin`
 - [`testing_controllers.md`](https://github.com/nateonguitar/django-website-widgets/blob/main/website_widgets/docs/testing_controllers.md): controller tests in Vitest, on HTML the Python side rendered
 - [`browser_testing.md`](https://github.com/nateonguitar/django-website-widgets/blob/main/website_widgets/docs/browser_testing.md): browser tests with no server, Chromium's requests answered by the test client (an example to copy, not package API)
+- [`running_tests.md`](https://github.com/nateonguitar/django-website-widgets/blob/main/website_widgets/docs/running_tests.md): `WebsiteWidgetsTestRunner`, the build before browser tests, `patches()` and `--parallel`
 - [`routing.md`](https://github.com/nateonguitar/django-website-widgets/blob/main/website_widgets/docs/routing.md): `@register_url`, route discovery and ordering
 - [`frontend_controllers.md`](https://github.com/nateonguitar/django-website-widgets/blob/main/website_widgets/docs/frontend_controllers.md): the TypeScript `Controller`, `App` and `Completer`
 - [`dialogs.md`](https://github.com/nateonguitar/django-website-widgets/blob/main/website_widgets/docs/dialogs.md): a dialog its caller awaits, on `DialogController`

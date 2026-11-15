@@ -75,9 +75,14 @@ a project's own static state needs the same, such as a singleton's readiness `Co
 test's `instance()` resolves at once to a controller that isn't registered yet.
 
 **happy-dom has what controllers use most:** `<dialog>` with `showModal()` and `close()`,
-`<template>`, `localStorage`, `history.replaceState()`, `matchMedia()`. It does no layout, so a
-controller measuring elements (`getBoundingClientRect()`, `IntersectionObserver`,
-`ResizeObserver`) is a browser test's job (`browser_testing.md`).
+`<template>`, `localStorage`, `history.replaceState()`, `matchMedia()`. It does no layout, so
+checking what a measured box looks like (`getBoundingClientRect()`, `IntersectionObserver`,
+`ResizeObserver`) is a browser test's job (`browser_testing.md`). **A controller that turns
+pointer coordinates into rows or cells still tests here:** every box sits at 0,0 with no size,
+so a hit test falls back on whatever cell size the controller defaults to when its measurement
+reads zero, and a test dispatches `new PointerEvent('pointerdown', { clientX, clientY })` at a
+cell's coordinates to drive the controller's own gesture code. A property can come back with
+the wrong type, such as a textarea's `rows` as a string, so compare through `Number()`.
 
 ## Stubbing the server
 

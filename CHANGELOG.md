@@ -172,7 +172,8 @@ These change a project's controllers.
   with no `test` script, and fails when there is one but no `npm`. A wrong setup fails before
   anything runs, in one line saying what to change: the system checks first, then a missing
   `node_modules/`. Each half's output starts under a heading naming its command.
-- **Testing docs:** `testing_widgets.md` for `WidgetDocumentTestMixin`, `testing_controllers.md`
+- **Testing docs:** `choosing_a_test.md` for which kind of test to write,
+  `testing_widgets.md` for `WidgetDocumentTestMixin`, `testing_controllers.md`
   for controller tests in Vitest on HTML the Python side rendered (with the npm package's new
   `App.clearSingletons()`), and `browser_testing.md` for browser tests with no server. The
   movie manager example has all three tiers working, its Playwright base an example to copy

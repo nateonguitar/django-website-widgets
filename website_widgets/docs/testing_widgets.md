@@ -4,7 +4,7 @@ A test of one widget renders that widget into a small HTML document the test con
 of the whole page that would hold it. The test gets the widget, the chrome it asks for and
 nothing else, and can put the widget in states no page happens to produce. Read this before
 writing a widget test; a page is still tested through Django's test client, with its real
-document.
+document. `choosing_a_test.md` says when a widget test is the right one.
 
 Primary code:
 - `website_widgets.testing` — `WidgetDocumentTestMixin`: `document_template`, `document_children()`,
