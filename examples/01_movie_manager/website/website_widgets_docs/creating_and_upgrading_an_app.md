@@ -51,13 +51,16 @@ leaves to the developer, since it never edits a file it didn't create:
    endpoint;
 3. `start_npm_watch()` in `manage.py` (`npm_watch.md`);
 4. `npm install` in the app's folder, for the npm package and the build tools;
-5. `runserver`, and the home page.
+5. `TEST_RUNNER = 'website_widgets.testing.WebsiteWidgetsTestRunner'` in settings
+   (`running_tests.md`);
+6. `runserver`, and the home page.
 
 It ends with the package's other commands, one line each: `ww_create_page`, `ww_create_widget`,
 `ww_create_dialog`, `ww_show_routes`, `ww_doctor`, `ww_test` and `ww_upgrade`.
 
 A skipped first or second step fails a system check at the next command, rather than showing up
-as a 404, and `ww_doctor` reports the rest; see `checking_the_setup.md`.
+as a 404, a skipped fifth warns there, and `ww_doctor` reports the rest; see
+`checking_the_setup.md`.
 
 ## `ww_upgrade`
 

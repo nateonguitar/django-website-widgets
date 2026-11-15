@@ -35,7 +35,8 @@ in the doc.
 - `rendering_a_widget_alone.md` — `render()` and `arender()` outside a page: sync vs async, no request, a whole document (email) as a widget, inserting a fragment so its scripts run
 - `templates.md` — what a template sees (the four keys, the silent missing-`data.` trap), how its file is found, variant templates, `template_string` in the class, no `{% include %}`
 - `testing_widgets.md` — `WidgetDocumentTestMixin`: one widget rendered into a test-controlled document, its children and page context, sync vs async, a project's own document, where tests live
-- `testing_controllers.md` — Vitest and happy-dom against HTML Python rendered: fixtures from tagged tests and `globalSetup`, mounting, `App.clearSingletons()` and other static state, stubbing `fetch`, `ww_test` and its `test_build_command`
+- `testing_controllers.md` — Vitest and happy-dom against HTML Python rendered: fixtures from tagged tests and `globalSetup`, mounting, `App.clearSingletons()` and other static state, stubbing `fetch`, `ww_test`
+- `running_tests.md` — `WebsiteWidgetsTestRunner`: the build before browser tests and how it's decided, `TestingConfig`, `patches()` for what no test may do for real, `--parallel` workers and `tblib`, the `W003` check, the pytest gap
 - `browser_testing.md` — browser tests with no server (an example, not package API): requests answered by the test client in the test's transaction, static files, redirects, and the three workarounds Playwright's event loop needs
 - `routing.md` — `@register_url` or by hand: discovery under `pages/`, names and the namespace, most-specific-first order, the tie check, `ww_show_routes`
 - `frontend_controllers.md` — the framework TypeScript: a controller's lifecycle, selector and shape (`Elements`, `findIn()`, `setState()`), singletons and `Completer`, what it leaves to the project

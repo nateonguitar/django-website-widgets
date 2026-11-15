@@ -48,26 +48,20 @@ reaches the JS tests instead of a hand-copied fragment drifting from it. In the 
 and **`manage.py ww_test` runs everything** in the website app's folder, found through
 `website_app_name`:
 
-1. **The build,** `WEBSITE_WIDGETS.test_build_command`: a list of arguments run without a
-   shell, `['npm', 'run', 'build']` by default, any other command in its place
-   (`['npm', 'run', 'build:production']`, `['pnpm', 'build']`), `None` for none. The browser
-   tests serve the built bundle, so without it they test whatever was last built. A failed
-   build stops the run; `--no-build` skips it for one run.
-2. **The Python tests,** with every other argument passed to `test`
-   (`ww_test --exclude-tag=playwright`).
-3. **`npm test`,** even when the Python tests failed.
+1. **The Python tests,** `manage.py test` with every argument passed on
+   (`ww_test --exclude-tag=playwright --parallel=4`). The build browser tests need is the test
+   runner's (`running_tests.md`), so `--no-build` goes to `test` too.
+2. **`npm test`,** even when the Python tests failed.
 
 A heading line before each step names the command and folder, so its output is easy to find,
-and a line for each step at the end says how it went, the exit code non-zero when any failed.
+and a line for each step at the end says how it went, the exit code non-zero when either failed.
 **A wrong setup fails before anything runs, in one line saying what to change:** the system
 checks run first, as for any Django command (a website app that isn't installed is caught
-there); a `package.json` with no `node_modules/` says to run `npm install`; an `npm run <script>`
-build whose script isn't in `package.json` names `test_build_command`. `--traceback` shows the
-full traceback instead. An app with no `package.json` skips the build and the JS half, saying
-so, as does one with no `test` script for the JS half; a `test` script with no `npm` on the path
-fails the run. The fixture writers
-run twice under `ww_test`, once in each half, a few seconds traded for each half staying
-complete on its own.
+there), and a `package.json` with no `node_modules/` says to run `npm install`. `--traceback`
+shows the full traceback instead. An app with no `package.json`, or none with a `test` script,
+skips the JS half, saying so; a `test` script with no `npm` on the path fails the run. The
+fixture writers run twice under `ww_test`, once in each half, a few seconds traded for each
+half staying complete on its own.
 
 ## Mounting and resetting
 
