@@ -1,7 +1,11 @@
+from unittest.mock import patch
+
+from django.conf import settings
 from django.core import mail
 from django.test import TestCase
 
 from api.models import Copy, Movie, Rental, User
+from api.text_messages import TextMessages
 
 
 class ReportCopyTestCase(TestCase):
@@ -44,6 +48,24 @@ class ReportCopyTestCase(TestCase):
         after = Movie.objects.with_availability().get(id=self.copy.movie_id)
         self.assertEqual(after.total_copies, before.total_copies - 1)
         self.assertEqual(after.available_copies, before.available_copies)
+
+    def test_report_copy__texts_the_shelf_keeper__when_unrecoverable(self):
+        self.client.force_login(User.objects.get(username='jordan'))
+        send_text = self.enterContext(patch.object(TextMessages, 'send'))
+
+        self.report(self.copy.label, kind='lost', unrecoverable=True)
+
+        movie_title = self.copy.movie.title
+        expected_body = f'jordan took copy {self.copy.label} of {movie_title} out of rotation: Lost.'
+        send_text.assert_called_once_with(settings.SHELF_KEEPER_PHONE_NUMBER, expected_body)
+
+    def test_report_copy__texts_nobody__when_the_copy_stays_in_rotation(self):
+        self.client.force_login(User.objects.get(username='jordan'))
+        send_text = self.enterContext(patch.object(TextMessages, 'send'))
+
+        self.report(self.copy.label)
+
+        send_text.assert_not_called()
 
     def test_report_copy__fails_with_field_errors__when_the_form_is_incomplete(self):
         self.client.force_login(User.objects.get(username='jordan'))

@@ -55,11 +55,17 @@ poetry install --with playwright
 poetry run playwright install chromium
 ```
 
-**One command runs everything:** `poetry run python manage.py ww_test` builds the frontend
-(`npm run build`), runs the Python tests, browser tests included, then `npm test`, and ends
-with a line for each. Arguments go to `test` (`ww_test --exclude-tag=playwright`), and
-`--no-build` skips the build. A bare `manage.py test` doesn't build, so after a TypeScript or
-SCSS change its browser tests would run the last bundle built.
+**One command runs everything:** `poetry run python manage.py ww_test --parallel=4` runs the
+Python tests, browser tests included, in four processes, then `npm test`, and ends with a line
+for each. Arguments go to `test` (`ww_test --exclude-tag=playwright`).
+
+**The test runner builds the frontend** (`npm run build`) before any run holding a browser test,
+so one never runs an old bundle; `--no-build` skips that for a run with no TypeScript or SCSS
+change. It's the package's `WebsiteWidgetsTestRunner`, subclassed in
+`movie_manager/test_runner.py` so that no test ever sends a text: `api/text_messages.py` stands
+in for a paid SMS provider, and the subclass's `patches()` reach the `--parallel` workers too.
+`tblib`, a dev dependency, lets a failing test in a worker report its traceback. The package's
+`running_tests.md` explains both.
 
 Without Playwright installed, each browser test module reports itself as skipped and the rest
 of the suite runs as usual, which is how CI runs it. `--exclude-tag=playwright` leaves them out
@@ -121,7 +127,9 @@ grew what this site needs.
   doesn't close it (`closesOnBackdropClick = false`), Escape and Cancel are held off while it
   sends (`saving`), each field's error from a 400 shows beside its field, and it answers the
   saved report, or `null` when cancelled. A report marked unrecoverable retires the copy
-  (`Copy.retired_at`), which then counts in no availability and can't be checked out.
+  (`Copy.retired_at`), which then counts in no availability and can't be checked out, and texts
+  the shelf keeper (`SHELF_KEEPER_PHONE_NUMBER`) through `api/text_messages.py`, a stand-in
+  that prints the text to runserver's console.
 - **Labels nobody has.** `Copy.objects.create_copies()` generates a batch of labels, asks the
   database which are taken in one query and regenerates those, since a field's `default` can't
   query from the async code that builds copies.

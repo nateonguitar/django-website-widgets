@@ -142,3 +142,15 @@ DEFAULT_FROM_EMAIL = 'Movie Manager <shelf@example.com>'
 # Where an email's links point. An email has no request to take a host from, so its links are
 # this plus a path.
 SITE_URL = 'http://localhost:8000'
+
+
+# Text messages (api/text_messages.py, a stand-in that prints them)
+
+# Who hears that a copy is gone for good.
+SHELF_KEEPER_PHONE_NUMBER = '+1 555 0100'
+
+
+# Tests
+
+# Builds the frontend before a run holding browser tests, and patches out text messages.
+TEST_RUNNER = 'movie_manager.test_runner.TestRunner'

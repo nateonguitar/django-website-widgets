@@ -71,7 +71,9 @@ jobs:
       - run: pip install poetry
       - run: poetry install --no-interaction
       - run: poetry run python manage.py migrate --noinput
-      - run: poetry run python manage.py test
+      # In parallel, so a test runner's patches are proven to reach the worker processes (the
+      # movie manager's test_text_messages.py).
+      - run: poetry run python manage.py test --parallel=2
       # An example with a build (a package.json in its website app) has TypeScript and SCSS that
       # its Python tests never compile, so a type error or a broken stylesheet would pass them.
       # The no-build examples skip these steps.

@@ -77,6 +77,8 @@ step when one is added.
   It depends on `frontend/` by path, and npm builds that with `frontend/`'s own TypeScript.
 - **CI runs every example's tests**, finding each folder with a `manage.py`, so a new example needs
   no workflow edit. An example that a package change breaks fails the build like a package test.
+  They run with `--parallel=2`, so the movie manager's `test_text_messages.py` proves its test
+  runner's patches reach the worker processes.
   An example with a `package.json` in its website app also gets `npm ci`, a type-check and a
   production build, since its Python tests never compile its TypeScript or SCSS; commit its
   `package-lock.json`, which `npm ci` installs from. One with a `test` script there gets

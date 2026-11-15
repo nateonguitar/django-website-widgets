@@ -8,7 +8,8 @@ from ninja.security import django_auth
 
 from api.endpoints.copies import copies_router
 from api.endpoints.error_responses import FieldErrorsResponseDto, MessageErrorResponseDto
-from api.models import Copy, CopyReport, CopyReportKind, Rental, User
+from api.models import Copy, CopyReport, CopyReportKind, Movie, Rental, User
+from api.text_messages import TextMessages
 
 
 # Loose types, checked in the endpoint, as create_movie's are: a person fills this form in, so
@@ -80,4 +81,9 @@ def _record_report(copy: Copy, user: User, kind: str, notes: str, unrecoverable:
             copy.save(update_fields=['retired_at'])
             # A lost disc can't come back, so its rental ends here, with no return receipt.
             Rental.objects.filter(copy=copy, returned_at__isnull=True).update(returned_at=now)
+    if unrecoverable:
+        # After the transaction, so a report that failed to save never sends a text.
+        movie_title = Movie.objects.values_list('title', flat=True).get(id=copy.movie_id)
+        TextMessages.send_to_shelf_keeper(
+            f'{user.username} took copy {copy.label} of {movie_title} out of rotation: {report.get_kind_display()}.')
     return report
