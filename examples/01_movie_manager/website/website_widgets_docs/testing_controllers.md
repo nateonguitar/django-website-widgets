@@ -3,7 +3,7 @@
 Testing a controller's TypeScript without a browser or a build: Vitest runs it in Node against
 a fake DOM (happy-dom), on HTML the project's Python rendered. The package ships `App.clearSingletons()`
 for this and nothing else; the movie manager example has the setup worked through
-(`website/vitest.config.ts`, `website/tests/fixtures.ts`, the `*.test.ts` files). Read this
+(`website/vitest.config.mts`, `website/tests/fixtures.ts`, the `*.test.ts` files). Read this
 before writing a controller test.
 
 Primary code:
@@ -13,7 +13,9 @@ Primary code:
 
 - **Vitest and happy-dom are dev dependencies of the website app**, with `"test": "vitest run"`
   in its `package.json`. Vitest compiles TypeScript itself, so no webpack build is needed, and
-  webpack never bundles a `.test.ts`, since nothing `main.ts` imports reaches one.
+  webpack never bundles a `.test.ts`, since nothing `main.ts` imports reaches one. The config is
+  `vitest.config.mts`: the starter's `package.json` has no `"type": "module"` (webpack's config
+  is CommonJS), and Vite warns about an ES-module config in a `.ts` file there.
 - **`environment: 'happy-dom'`, with script evaluation and file loading switched off**
   (`disableJavaScriptEvaluation`, `disableJavaScriptFileLoading`, `disableCSSFileLoading`,
   `handleDisabledFileLoadingAsSuccess`). A widget's `<script>` imports the built `main.js`; in
