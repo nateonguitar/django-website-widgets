@@ -124,8 +124,8 @@ These change a project's controllers.
 
 ### Added
 
-- **Dialogs a caller awaits,** from the npm package's `DialogController` (npm 1.0.0-rc.2, the
-  range this release requires): a dialog's widget renders a `<template>` of its content, and
+- **Dialogs a caller awaits,** from the npm package's `DialogController` (npm 1.0.0-rc.2 on;
+  this release requires `^1.0.0-rc.3`, for `App.clearSingletons()`): a dialog's widget renders a `<template>` of its content, and
   `const answer = await MyDialogController.show(...)` opens a `<dialog>` around a copy of it.
   `dialogs.md` has the pattern.
 - **`ww_create_dialog <name>`** writes a dialog into `widgets/`: a `SyncWidget` rendering its
