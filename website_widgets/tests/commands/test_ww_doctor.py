@@ -69,7 +69,7 @@ class WwDoctorTestCase(SimpleTestCase):
         output = io.StringIO()
         self.exit_code = 0
         try:
-            call_command('ww_doctor', stdout=output)
+            call_command('ww_doctor', stdout=output, no_color=True)
         except SystemExit as system_exit:
             self.exit_code = system_exit.code
         return output.getvalue()

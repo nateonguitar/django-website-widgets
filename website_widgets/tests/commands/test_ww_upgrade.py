@@ -46,7 +46,7 @@ class WwUpgradeTestCase(SimpleTestCase):
         """`answers` are typed in turn; `EOFError` stands for a closed stdin, as in a script."""
         output = io.StringIO()
         with patch('builtins.input', side_effect=answers or []) as mock_input:
-            call_command('ww_upgrade', '--project-root', self.project_root, *args, stdout=output)
+            call_command('ww_upgrade', '--project-root', self.project_root, *args, stdout=output, no_color=True)
         self.questions = [call.args[0] for call in mock_input.call_args_list]
         return output.getvalue()
 

@@ -24,7 +24,7 @@ class WwCreateAppTestCase(SimpleTestCase):
     def run_create_app(self, *args, answers: list[str] | None = None) -> str:
         output = io.StringIO()
         with patch('builtins.input', side_effect=answers or []) as mock_input:
-            call_command('ww_create_app', '--project-root', self.project_root, *args, stdout=output)
+            call_command('ww_create_app', '--project-root', self.project_root, *args, stdout=output, no_color=True)
         self.questions = [call.args[0] for call in mock_input.call_args_list]
         return output.getvalue()
 

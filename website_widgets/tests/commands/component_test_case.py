@@ -82,7 +82,9 @@ class ComponentTestCase(SimpleTestCase):
 
     def run_command(self, command: str, *args: str) -> str:
         output = io.StringIO()
-        call_command(command, *args, stdout=output, stderr=output)
+        # Django colors a command's styled lines whenever the real terminal supports it, even
+        # into this StringIO, so a run from a terminal would wrap them in escape codes.
+        call_command(command, *args, stdout=output, stderr=output, no_color=True)
         return output.getvalue()
 
     def read(self, *path_parts: str) -> str:
