@@ -196,3 +196,51 @@ class PageWritingPage(AsyncWebPage):
         child = DefaultTemplateWidget()
         child.template_filename = self.child_template_filename
         self.context.children['child'] = child
+
+
+class StringTemplateWidget(SyncWidget):
+    template_string = 'string {{ data.word }}'
+
+    def set_context(self):
+        self.context.data['word'] = 'template'
+
+
+class VariantSwitchingStringWidget(StringTemplateWidget):
+    """Assigns `template_filename` in set_context() when given one, as a page refusing a request does."""
+
+    def __init__(self, variant_filename: str | None):
+        super().__init__()
+        self.variant_filename = variant_filename
+
+    def set_context(self):
+        super().set_context()
+        if self.variant_filename is not None:
+            self.template_filename = self.variant_filename
+
+
+class FileOverStringWidget(StringTemplateWidget):
+    # An existing file stands in for a template, as in ClassLevelTemplateWidget.
+    template_filename = 'sample_widgets.py'
+
+
+class FileTemplateBaseWidget(SyncWidget):
+    template_filename = 'sample_widgets.py'
+
+
+class StringOverFileWidget(FileTemplateBaseWidget):
+    template_string = 'subclass string'
+
+
+class StringInheritingWidget(StringTemplateWidget):
+    pass
+
+
+class StringTemplatePage(AsyncWebPage):
+    template_string = 'page {{ data.word }}'
+
+    def __init__(self, document_template_filename: str):
+        super().__init__()
+        self.document_template_path = document_template_filename
+
+    async def set_context(self):
+        self.context.data['word'] = 'body'

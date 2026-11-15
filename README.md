@@ -502,6 +502,18 @@ shared by every page, so it lives beside the shared page base class rather than 
 
 Override `get_template_path()` when the choice needs more than an attribute.
 
+**A template of a few lines can live in the class** as `template_string` instead of a file:
+
+```python
+class PriceTag(SyncWidget):
+    template_string = '<span class="price-tag">{{ data.price }}</span>'
+```
+
+A variant assigned to `template_filename` in `set_context()` still wins over it, and setting both
+on one class raises. See
+[`docs/templates.md`](https://github.com/nateonguitar/django-website-widgets/blob/main/website_widgets/docs/templates.md)
+for the rules and what a string gives up (no file or line in errors, no editor highlighting).
+
 ```html
 <div class="my-widget">
     <h1>{{ data.title }}</h1>

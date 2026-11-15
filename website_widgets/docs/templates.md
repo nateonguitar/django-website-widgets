@@ -6,13 +6,13 @@ things a Django developer expects are absent. Read this before writing a templat
 widget renders but its content is missing.
 
 Primary code:
-- `website_widgets.widget` — `get_template_path()`, `_context_dict()`, `_render_template()`
+- `website_widgets.widget` — `get_template()`, `get_template_path()`, `_context_dict()`, `_render_template()`
 
 ## The context is four keys
 
-`_render_template()` opens the template file with `open()`, builds a `Template` from the string
-and renders it against a bare `Context`, so **no template context processors run.** The context
-is exactly:
+`_render_template()` takes the `Template` from `get_template()`, built from the file's text or
+from `template_string`, and renders it against a bare `Context`, so **no template context
+processors run.** The context is exactly:
 
 | Key | Value |
 |---|---|
@@ -54,6 +54,32 @@ folder holding the file. A base class's variant, kept beside the base class's mo
 every subclass; a subclass with a file of the same name shadows it. A name found nowhere raises
 `FileNotFoundError` listing the folders searched. The module-named default is always beside the
 concrete class.
+
+## A template in the class
+
+**`template_string` holds the template itself,** for a widget whose template is a few lines,
+the way an Angular component can keep its template inline:
+
+```python
+class PriceTag(SyncWidget):
+    template_string = '<span class="price-tag">{{ data.price }}</span>'
+```
+
+A page may set it for its own body; the document template is always a file.
+
+**The nearest declaration wins**, decided in `get_template()`: first the instance (a
+`template_filename` assigned in `set_context()`, i.e. a variant, or a `template_string` assigned
+there), then each class in MRO order, where `template_filename` or an overridden
+`get_template_path()` declares a file and `template_string` a string. So a variant file still
+replaces a class's string, which is how a page with an inline template switches to
+`<module>__not_found.html`, and a subclass's choice beats its base's in either direction.
+**Setting both on one class raises `TypeError`** when the class is defined, so a set path is
+never silently ignored.
+
+A class's string is compiled once and reused across renders; a file is read on every render.
+What a string costs: an error in it names no file or line, an editor gives it no HTML
+highlighting or formatting, and `{% load static %}` is still needed for `{% static %}`.
+`ww_create_widget` always writes a file; move a small one into the class by hand.
 
 **`{% include %}` of another component's template is not part of the model,** since files are
 opened directly rather than resolved through `TEMPLATES` dirs. Compose with child widgets.

@@ -15,6 +15,9 @@ class _Widget:
     """
 
     template_filename: str | None = None
+    # The template itself, for a widget small enough to keep it in its class. See `get_template()`
+    # for how it and `template_filename` decide between them.
+    template_string: str | None = None
     # Shown beside the class name in the debug tree, to tell instances apart: TabCard(42).
     debug_label: object | None = None
     # Library base classes, whose folders hold no application templates.
@@ -29,6 +32,11 @@ class _Widget:
         super().__init_subclass__(**kwargs)
         if cls.__module__ in cls._LIBRARY_MODULES:
             return
+        if cls.__dict__.get('template_string') is not None and cls.__dict__.get('template_filename') is not None:
+            raise TypeError(
+                f'{cls.__name__} sets both template_string and template_filename; set one. A '
+                f'variant chosen at runtime is assigned to template_filename in set_context(), '
+                f'and wins over template_string there.')
         async_name, sync_name = cls._KIND_NAMES
         if cls._renders_async is None:
             raise TypeError(
@@ -319,9 +327,55 @@ class _Widget:
 
         return "\n".join(lines)
 
+    def get_template(self) -> Template:
+        """
+        Return this widget's compiled template, from `template_string` or from the file
+        `get_template_path()` names.
+
+        The nearest declaration wins: a `template_filename` or `template_string` assigned on the
+        instance (a variant chosen in `set_context()`), then each class in MRO order, where a
+        class declares a file by setting `template_filename` or overriding `get_template_path()`,
+        and a string by setting `template_string`. So a variant file wins over the class's string,
+        and a subclass's declaration wins over its base's either way. With no declaration at all,
+        the module-named file is used.
+
+        A class's `template_string` is compiled once and reused; a file is read on every render.
+        """
+        if self.__dict__.get('template_filename') is not None:
+            return self._compile_file(self.get_template_path())
+        if self.__dict__.get('template_string') is not None:
+            return Template(self.__dict__['template_string'])
+        for cls in type(self).__mro__:
+            if cls.__module__ in self._LIBRARY_MODULES or not issubclass(cls, _Widget):
+                continue
+            declares_file = (
+                cls.__dict__.get('template_filename') is not None
+                or 'get_template_path' in cls.__dict__)
+            if declares_file:
+                break
+            if cls.__dict__.get('template_string') is not None:
+                return self._compiled_class_template_string(cls)
+        return self._compile_file(self.get_template_path())
+
+    @staticmethod
+    def _compiled_class_template_string(declaring_class: type) -> Template:
+        compiled = declaring_class.__dict__.get('_compiled_template_string')
+        if compiled is None:
+            compiled = Template(declaring_class.__dict__['template_string'])
+            # Kept on the declaring class itself, read back through its own `__dict__`, so a
+            # subclass declaring its own string never picks up this one.
+            setattr(declaring_class, '_compiled_template_string', compiled)
+        return compiled
+
+    @staticmethod
+    def _compile_file(filepath: str) -> Template:
+        with open(filepath, 'r') as file:
+            return Template(file.read())
+
     def get_template_path(self) -> str:
         """
-        Return the path to this widget's template file.
+        Return the path to this widget's template file. Not used when `template_string` is the
+        nearest declaration; see `get_template()`.
 
         With `template_filename` unset, the template is named after the class's module: a widget
         class defined in `cookie_banner.py` renders `cookie_banner.html` in the same directory.
@@ -389,15 +443,16 @@ class _Widget:
 
         Args:
             template_path: Full path to the template file, for a page's document template. If
-                None, uses `get_template_path()`.
+                None, uses `get_template()`.
             extra_context: Merged over the widget's context, for a page's document template.
         """
         context = self._context_dict()
         if extra_context:
             context.update(extra_context)
-        filepath = self.get_template_path() if template_path is None else template_path
-        with open(filepath, 'r') as file:
-            template = Template(file.read())
+        if template_path is None:
+            template = self.get_template()
+        else:
+            template = self._compile_file(template_path)
         return template.render(Context(context))
 
 

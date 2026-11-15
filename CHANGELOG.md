@@ -133,6 +133,11 @@ These change a project's controllers.
   `main.ts`, with the stylesheet asked about or `--stylesheet`. Its templates are
   `dialog.py.tmpl`, `dialog.html.tmpl` and `dialog_controller.ts.tmpl`, overridable in
   `templates_dir` like the others.
+- **`template_string`,** a widget's or page's template kept in its class instead of a file beside
+  it, for a template of a few lines. `get_template()` returns the compiled template and is where
+  the choice is made: the nearest declaration wins, so a variant assigned to `template_filename`
+  in `set_context()` still replaces it. Setting both on one class raises when the class is
+  defined. `templates.md` has the rules.
 - **`SyncWebPage`,** for a page with no async work: its `set_context()` is `def`, it runs with no
   event loop, so the ORM works as in any Django view, and every widget in it is a `SyncWidget`.
   `AsyncWebPage` remains the one to use.

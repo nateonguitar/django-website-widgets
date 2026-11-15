@@ -33,7 +33,7 @@ in the doc.
 
 - `rendering_pipeline.md` — what runs between a request and HTML: async vs sync pages, one page instance per request, the passes of `build_response()`, constructor vs `set_context()`, the user and the async ORM trap
 - `rendering_a_widget_alone.md` — `render()` and `arender()` outside a page: sync vs async, no request, a whole document (email) as a widget, inserting a fragment so its scripts run
-- `templates.md` — what a template sees (the four keys, the silent missing-`data.` trap), how its file is found, variant templates, no `{% include %}`
+- `templates.md` — what a template sees (the four keys, the silent missing-`data.` trap), how its file is found, variant templates, `template_string` in the class, no `{% include %}`
 - `routing.md` — `@register_url` or by hand: discovery under `pages/`, names and the namespace, most-specific-first order, the tie check, `ww_show_routes`
 - `frontend_controllers.md` — the framework TypeScript: a controller's lifecycle, selector and shape (`Elements`, `findIn()`, `setState()`), singletons and `Completer`, what it leaves to the project
 - `dialogs.md` — a dialog its caller awaits: the widget's `<template>`, `DialogController`'s `show()` and `answer()`, the `data-dialog-*` attributes, dismissal
