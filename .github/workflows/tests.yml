@@ -36,6 +36,8 @@ jobs:
           node-version: '24'
       - run: npm ci --no-audit --no-fund
       - run: npm run typecheck
+      # Vitest in a fake DOM (happy-dom): no browser to download.
+      - run: npm test
       - run: npm pack --dry-run
 
   # Every folder under examples/ holding a manage.py is a project, so a new example needs no edit here.

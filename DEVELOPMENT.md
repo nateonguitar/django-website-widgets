@@ -128,8 +128,8 @@ Run these in `frontend/`, with Node and npm on the host.
 1. Bump `version` in `frontend/package.json`, following semantic versioning; a release candidate
    is `1.0.0-rc.1`, npm's spelling of Python's `1.0.0rc1`.
 2. Add the version's entry at the top of `frontend/CHANGELOG.md`.
-3. Run `npm run typecheck`, and check that CI's example builds, which install this folder, are
-   green.
+3. Run `npm run typecheck` and `npm test`, and check that CI's example builds, which install
+   this folder, are green.
 4. Check what would ship with `npm pack --dry-run`: `dist/` (built by the `prepare` script),
    `src/`, `README.md`, `CHANGELOG.md`, `LICENSE` and `package.json`, nothing else.
 5. Publish with `npm publish`, adding `--tag next` for a release candidate so it doesn't become
@@ -141,7 +141,12 @@ Run these in `frontend/`, with Node and npm on the host.
    package.
 
 `npm run build` writes `frontend/dist/`, and `npm install` writes `frontend/node_modules/`; both
-are git-ignored. `frontend/package-lock.json` is committed, pinning the TypeScript that builds it.
+are git-ignored. `frontend/package-lock.json` is committed, pinning the TypeScript that builds it
+and the test tools.
+
+**The npm package's tests are Vitest, in `frontend/tests/`**, run with `npm test` in a fake DOM
+(happy-dom), so no browser is downloaded; CI's `frontend` job runs them. They sit outside `src/`
+so they never ship, and `npm run typecheck` checks them through `tsconfig.test.json`.
 
 ## Package structure
 
@@ -153,7 +158,8 @@ django-website-widgets/
 ├── .github/workflows/          # The test matrix and the examples' tests
 ├── examples/                   # Runnable example projects, not shipped; see "Examples"
 ├── frontend/                   # The npm package: src/ (App, Controller, Completer, index.ts),
-│                               # its own package.json, README and CHANGELOG; see "Releasing"
+│                               # tests/ (Vitest, not shipped), its own package.json, README and
+│                               # CHANGELOG; see "Releasing"
 ├── README.md                   # The introduction (shows on PyPI), linking to the docs
 ├── CHANGELOG.md                # Each release from 1.0.0, with how to upgrade; not shipped
 ├── DEVELOPMENT.md              # This file

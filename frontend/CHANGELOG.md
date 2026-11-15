@@ -4,6 +4,11 @@ Each release of the npm package, newest first. Versions follow
 [semantic versioning](https://semver.org/). The Python package keeps its own changelog, in the
 repository root, and declares which range of this package it works with.
 
+## Unreleased
+
+- **`App.clearSingletons()`,** for tests: forgets every registered singleton, so a test runner that keeps
+  one module instance per file (Vitest) can start each test without the last one's controllers.
+
 ## 1.0.0-rc.2
 
 - **`DialogController<R>`, a dialog its caller awaits,** as Flutter's `showDialog` is:

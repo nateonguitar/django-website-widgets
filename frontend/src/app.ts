@@ -16,6 +16,16 @@ export class App {
     }
 
     /**
+     * Forgets every registered singleton. For tests: a test runner such as Vitest keeps one
+     * module instance for every test in a file, so without this `getSingleton()` in the next test
+     * returns a controller bound to the previous test's discarded DOM. Call it in `beforeEach`.
+     * A page never needs it, since a page load starts the module afresh.
+     */
+    static clearSingletons(): void {
+        App.singletons.clear();
+    }
+
+    /**
      * Starts a controller: binds it to the element `selector` matches, runs `initState()`,
      * registers it when its class says `static readonly singleton = true`, then runs `setState()`
      * and `afterFirstSetState()`.
