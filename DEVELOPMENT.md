@@ -178,15 +178,16 @@ django-website-widgets/
     │                           # WidgetContext, PageRoutes, register_url, reverse_template,
     │                           # start_npm_watch
     ├── apps.py
-    ├── config.py               # WebsiteWidgetsConfig, GenerateComponentConfig, get_config()
+    ├── config.py               # WebsiteWidgetsConfig, GenerateComponentConfig, TestingConfig,
+    │                           # get_config()
     ├── py.typed                # Says the package's type hints are its public types (PEP 561)
     ├── widget.py               # AsyncWidget and SyncWidget, over their private _Widget
     ├── web_page.py             # AsyncWebPage and SyncWebPage, over their private _WebPage
     ├── page_routes.py          # @register_url, route discovery, the routing system checks
     ├── url_templates.py        # reverse_template()
     ├── npm_watch.py            # start_npm_watch(), for manage.py
-    ├── testing.py              # WidgetDocumentTestMixin, for a project's tests; not exported
-    │                           # from __init__
+    ├── testing.py              # WidgetDocumentTestMixin and WebsiteWidgetsTestRunner, for a
+    │                           # project's tests; not exported from __init__
     ├── widget_context.py
     ├── tests/                  # One test class per file, not shipped; see "Tests" above
     └── management/
@@ -200,6 +201,9 @@ django-website-widgets/
         ├── build_files.py      # BuildFiles: ww_upgrade's handling of the build configs and package.json
         ├── package_json_check.py  # PackageJsonCheck: package.json against the starter's, for
         │                       # ww_upgrade and ww_doctor
+        ├── website_app.py      # WebsiteApp: the website app's folder and scripts, for ww_test
+        │                       # and the test runner's build
+        ├── test_runner_check.py  # TestRunnerCheck: the W003 check on TEST_RUNNER
         └── commands/           # ww_create_app, ww_upgrade, ww_create_page, ww_create_widget,
                                 # ww_create_dialog, ww_show_routes, ww_doctor, ww_test
 ```
