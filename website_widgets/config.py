@@ -27,29 +27,45 @@ class GenerateComponentConfig:
         return f'{website_app_name}.pages.app_page.AppPage'
 
 
-class WebsiteWidgetsConfig:
-    # The starter site's dev build, which package.json defines as `build`.
-    DEFAULT_TEST_BUILD_COMMAND = ('npm', 'run', 'build')
+class TestingConfig:
+    """
+    Settings read only by `WebsiteWidgetsTestRunner`, passed to `WebsiteWidgetsConfig` as
+    `testing`. All have defaults, so a project keeping the starter site's `package.json` needs none.
+    """
 
+    # The starter site's dev build, which package.json defines as `build`.
+    DEFAULT_BUILD_COMMAND = ('npm', 'run', 'build')
+
+    def __init__(
+        self,
+        build_command: Sequence[str] | None = DEFAULT_BUILD_COMMAND,
+        browser_test_tag: str = 'playwright',
+    ):
+        # What the runner runs in the website app's folder before a run holding browser tests,
+        # so they serve the current bundle. A list of arguments, run without a shell. None: no build.
+        if isinstance(build_command, str):
+            raise TypeError(
+                f'build_command is a list of arguments, run without a shell: write '
+                f'{build_command.split()!r}, not {build_command!r}.')
+        self.build_command = list(build_command) if build_command is not None else None
+        # The Django test tag (`@tag(...)`) marking a test that serves the built bundle.
+        self.browser_test_tag = browser_test_tag
+
+
+class WebsiteWidgetsConfig:
     def __init__(
         self,
         show_debug_tree: bool = False,
         website_app_name: str = 'website',
         generate_component: GenerateComponentConfig | None = None,
-        test_build_command: Sequence[str] | None = DEFAULT_TEST_BUILD_COMMAND,
+        testing: TestingConfig | None = None,
     ):
         self.show_debug_tree = show_debug_tree
         # An app label, resolved through the app registry, so nothing depends on the working
         # directory.
         self.website_app_name = website_app_name
         self.generate_component = generate_component or GenerateComponentConfig()
-        # What `ww_test` runs in the website app's folder before the tests, so a browser test
-        # serves the current bundle. A list of arguments, run without a shell. None: no build.
-        if isinstance(test_build_command, str):
-            raise TypeError(
-                f'test_build_command is a list of arguments, run without a shell: write '
-                f'{test_build_command.split()!r}, not {test_build_command!r}.')
-        self.test_build_command = list(test_build_command) if test_build_command is not None else None
+        self.testing = testing or TestingConfig()
 
 
 _config_cache: WebsiteWidgetsConfig | None = None

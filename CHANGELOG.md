@@ -144,15 +144,34 @@ These change a project's controllers.
   widget whose template is `document_template` and whose children are `document_children()` plus
   the widget under `children.widget`; `page_context(user)` fills `context.page`.
   `testing_widgets.md` has the pattern, and the movie manager example a project's own base.
-- **`ww_test`** runs everything: the new `WebsiteWidgetsConfig(test_build_command=...)` in the
-  website app's folder (`['npm', 'run', 'build']` by default, `None` for no build), then the
-  Python tests, every other argument passed to `test`, then `npm test` there, both even when
-  the first fails, with a line for each step and a non-zero exit when any failed. A failed
-  build stops the run, and `--no-build` skips it. It runs the Python half alone, saying so, for
-  an app with no `test` script, and fails when there is one but no `npm`. A wrong setup fails
-  before anything runs, in one line saying what to change: the system checks first, then a
-  missing `node_modules/` or a build script `package.json` doesn't have. Each step's output
-  starts under a heading naming its command.
+- **`WebsiteWidgetsTestRunner`** in `website_widgets.testing`, for
+  `TEST_RUNNER = 'website_widgets.testing.WebsiteWidgetsTestRunner'`: Django's runner, which
+  also builds the frontend once before a run holding browser tests, so they never serve a stale
+  bundle, and builds nothing for a run without them (`--exclude-tag=playwright`, a module with
+  none). `--no-build` skips the build for one run, and a setup that can't build, or a failed
+  build, stops the run in one line saying what to change. A subclass lists what no test may do
+  for real in `patches()`, which the runner starts in the main process and in each `--parallel`
+  worker (`WebsiteWidgetsParallelTestSuite`); without `tblib` installed a parallel run warns
+  that a worker's failure would lose its traceback. `running_tests.md` explains it, and the
+  movie manager subclasses it to patch out its text messages.
+- **`TestingConfig`**, passed as `WebsiteWidgetsConfig(testing=...)`: `build_command`, a list of
+  arguments run without a shell in the website app's folder (`['npm', 'run', 'build']` by
+  default, `None` for no build), and `browser_test_tag` (`'playwright'` by default).
+- **The starter's `webpack.config.js` reports type errors only from files in the bundle**
+  (`ts-loader` with `onlyCompileBundledFiles: true`), so a `*.test.ts` whose test helpers a
+  production build leaves out no longer fails it; `tsc --noEmit` still checks the tests.
+  `ww_upgrade` offers the new file; a project keeping its own changes `use: 'ts-loader'` to
+  `loader: 'ts-loader', options: { onlyCompileBundledFiles: true }`.
+- **System check `website_widgets.W003`** warns when the website app has a `package.json` and
+  `TEST_RUNNER` is neither the package's runner nor a subclass; a project that builds another way
+  silences it with `SILENCED_SYSTEM_CHECKS`. `ww_create_app` lists setting `TEST_RUNNER` among
+  its next steps.
+- **`ww_test`** runs everything: the Python tests, every argument passed to `test`, then
+  `npm test` in the website app's folder, both even when the first fails, with a line for each
+  and a non-zero exit when either failed. It runs the Python half alone, saying so, for an app
+  with no `test` script, and fails when there is one but no `npm`. A wrong setup fails before
+  anything runs, in one line saying what to change: the system checks first, then a missing
+  `node_modules/`. Each half's output starts under a heading naming its command.
 - **Testing docs:** `testing_widgets.md` for `WidgetDocumentTestMixin`, `testing_controllers.md`
   for controller tests in Vitest on HTML the Python side rendered (with the npm package's new
   `App.clearSingletons()`), and `browser_testing.md` for browser tests with no server. The

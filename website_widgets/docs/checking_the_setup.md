@@ -7,6 +7,7 @@ a page 404s that shouldn't, a controller doesn't run, or a check's id appears in
 Primary code:
 - `website_widgets.page_routes.PageRoutes` — the routing checks
 - `website_widgets.management.framework_folder.FrameworkFolder.check_version_stamp` — the out-of-date check
+- `website_widgets.management.test_runner_check.TestRunnerCheck` — the test runner check
 - `website_widgets.management.commands.ww_doctor` — the checklist
 - `website_widgets.management.package_json_check.PackageJsonCheck` — the `package.json` check `ww_doctor` and `ww_upgrade` share
 
@@ -22,6 +23,7 @@ subprocesses, no network.
 | `website_widgets.E003` | the website app has pages with `@register_url`, but no URL pattern includes `PageRoutes.urls()`, so all of them would 404 | `path('', include('<app>.urls'))`, or `path('', PageRoutes.urls())` |
 | `website_widgets.W001` | the managed folder, `website_widgets_docs/`, is from another package version than the installed one | `ww_upgrade`, see `creating_and_upgrading_an_app.md` |
 | `website_widgets.W002` | the npm package in the app's `node_modules/` is outside `NpmPackage.RANGE`, the range the installed Python package works with | `npm install django-website-widgets@"<range>"` in the app's folder |
+| `website_widgets.W003` | the website app has a `package.json`, and `TEST_RUNNER` is neither `WebsiteWidgetsTestRunner` nor a subclass, so `manage.py test` never builds before browser tests | set `TEST_RUNNER`, see `running_tests.md`; or add the id to `SILENCED_SYSTEM_CHECKS` when the project builds another way |
 
 E002 and E003 catch the next steps `ww_create_app` prints and leaves to the developer, so a
 skipped one fails with its fix instead of as a 404. Both stay quiet for a project using only the

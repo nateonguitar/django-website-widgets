@@ -1,6 +1,6 @@
 from django.test import SimpleTestCase
 
-from website_widgets.config import GenerateComponentConfig, WebsiteWidgetsConfig
+from website_widgets.config import GenerateComponentConfig, TestingConfig, WebsiteWidgetsConfig
 
 
 class WebsiteWidgetsConfigTestCase(SimpleTestCase):
@@ -21,21 +21,24 @@ class WebsiteWidgetsConfigTestCase(SimpleTestCase):
         self.assertEqual(app_page_class, 'mysite.pages.base.BasePage')
         self.assertEqual(config.generate_component.templates_dir, '/srv/generator_templates')
 
-    def test_test_build_command__returns_npm_run_build__when_not_given(self):
+    def test_testing__defaults_to_npm_run_build_and_the_playwright_tag__when_not_given(self):
         config = WebsiteWidgetsConfig()
 
-        self.assertEqual(config.test_build_command, ['npm', 'run', 'build'])
+        self.assertEqual(config.testing.build_command, ['npm', 'run', 'build'])
+        self.assertEqual(config.testing.browser_test_tag, 'playwright')
 
-    def test_test_build_command__returns_given_command_or_none__when_given(self):
-        pnpm_config = WebsiteWidgetsConfig(test_build_command=('pnpm', 'build'))
-        no_build_config = WebsiteWidgetsConfig(test_build_command=None)
+    def test_testing__returns_given_settings__when_given(self):
+        pnpm_testing = TestingConfig(build_command=('pnpm', 'build'), browser_test_tag='browser')
+        pnpm_config = WebsiteWidgetsConfig(testing=pnpm_testing)
+        no_build_testing = TestingConfig(build_command=None)
 
-        self.assertEqual(pnpm_config.test_build_command, ['pnpm', 'build'])
-        self.assertIsNone(no_build_config.test_build_command)
+        self.assertEqual(pnpm_config.testing.build_command, ['pnpm', 'build'])
+        self.assertEqual(pnpm_config.testing.browser_test_tag, 'browser')
+        self.assertIsNone(no_build_testing.build_command)
 
-    def test_test_build_command__fails_naming_the_list__when_given_a_string(self):
+    def test_testing_build_command__fails_naming_the_list__when_given_a_string(self):
         with self.assertRaises(TypeError) as caught:
-            WebsiteWidgetsConfig(test_build_command='npm run build')
+            TestingConfig(build_command='npm run build')
 
         message = str(caught.exception)
         self.assertIn("['npm', 'run', 'build']", message)

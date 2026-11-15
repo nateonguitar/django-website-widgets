@@ -128,7 +128,9 @@ class Command(BaseCommand):
             'you edit them.\n'
             f'  4. In {shown_folder}/, run npm install, for the npm package django-website-widgets, '
             f'webpack and the rest of the build.\n'
-            '  5. Run python manage.py runserver and open the home page.\n'
+            "  5. In settings.py, set TEST_RUNNER = 'website_widgets.testing.WebsiteWidgetsTestRunner', "
+            'so manage.py test builds the frontend before browser tests.\n'
+            '  6. Run python manage.py runserver and open the home page.\n'
             'Other helpful management commands:\n'
             '  ww_create_page <name>     write a new page\'s files and add it to ts/main.ts\n'
             '  ww_create_widget <name>   write a new widget\'s files and add it to ts/main.ts\n'

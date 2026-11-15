@@ -26,8 +26,9 @@ The base routes every request (`context.route('**/*', ...)`):
   so a session cookie an endpoint sets arrives with the browser's next request.
 - **`STATIC_URL`** is read from wherever the staticfiles finders find the file, so there is no
   `collectstatic`, but **the frontend must be built first**: a missing `main.js` is a 404, and
-  every controller silently never starts, and a stale one runs old code. `manage.py ww_test`
-  builds first (`test_build_command`, `testing_controllers.md`); a bare `manage.py test` doesn't.
+  every controller silently never starts, and a stale one runs old code.
+  `WebsiteWidgetsTestRunner` builds before any run holding a browser test, tagged `playwright`
+  by default (`running_tests.md`); under another runner, nothing does.
 - **Every other host is aborted**, so a test never reaches a font CDN, analytics or a sign-in
   script. A test needing one changes the base where it aborts; there is no allowlist.
 - **A redirect is made by the base.** When a route answers with a 3xx, Chromium follows it

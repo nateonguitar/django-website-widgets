@@ -559,7 +559,7 @@ for the full render order.
 Configure django-website-widgets in your `settings.py`:
 
 ```python
-from website_widgets.config import GenerateComponentConfig, WebsiteWidgetsConfig
+from website_widgets.config import GenerateComponentConfig, TestingConfig, WebsiteWidgetsConfig
 
 WEBSITE_WIDGETS = WebsiteWidgetsConfig(
     show_debug_tree=True,  # Show widget tree visualization on pages (default: False)
@@ -570,9 +570,13 @@ WEBSITE_WIDGETS = WebsiteWidgetsConfig(
         # Your own generator templates, each replacing the package's of the same name (default: None)
         templates_dir=BASE_DIR / 'website' / 'generator_templates',
     ),
-    # What ww_test runs in the website app's folder before the tests, as a list of arguments
-    # (default: ['npm', 'run', 'build']; None: no build)
-    test_build_command=['npm', 'run', 'build:production'],
+    testing=TestingConfig(
+        # What WebsiteWidgetsTestRunner runs in the website app's folder before a run holding
+        # browser tests, as a list of arguments (default: ['npm', 'run', 'build']; None: no build)
+        build_command=['npm', 'run', 'build:production'],
+        # The Django test tag marking a browser test (default: 'playwright')
+        browser_test_tag='playwright',
+    ),
 )
 ```
 
@@ -632,7 +636,7 @@ and the webpack build. Its `package.json` depends on the npm package `django-web
 the framework's TypeScript (`App`, `Controller`, `Completer`), and it holds one folder the
 package manages, its docs in `website_widgets_docs/`. It prints the next steps,
 each a one-line change: the app in `INSTALLED_APPS`, its URLs in `urls.py`, `start_npm_watch()`
-in `manage.py`, and `npm install`. See
+in `manage.py`, `npm install`, and the package's `TEST_RUNNER`. See
 [`docs/starter_site.md`](https://github.com/nateonguitar/django-website-widgets/blob/main/website_widgets/docs/starter_site.md).
 
 **The starter site's files are yours, the build files included.** `webpack.config.js` and
@@ -692,17 +696,22 @@ python manage.py ww_show_routes
 python manage.py ww_show_routes --columns=url,name,page,reaches_page --path-param-type=type
 ```
 
-Run everything: build the frontend (`test_build_command`, `npm run build` unless configured),
-then the Python tests, with every argument going to `test`, then `npm test` in the website
-app's folder. A failed build stops the run; otherwise both halves run even when the first
-fails, and it ends with a line for each step, exiting non-zero when any failed. With no `test`
-script in the app's `package.json` it runs the Python tests alone and says so; with one but no
-`npm`, it fails rather than pass half a run. `--no-build` skips the build for one run:
+Set the package's test runner, so `manage.py test` builds the frontend before a run holding
+browser tests, and a subclass's `patches()` cover every test, in `--parallel` workers too:
+```python
+TEST_RUNNER = 'website_widgets.testing.WebsiteWidgetsTestRunner'
+```
+See [`docs/running_tests.md`](https://github.com/nateonguitar/django-website-widgets/blob/main/website_widgets/docs/running_tests.md).
+
+Run everything: the Python tests, with every argument going to `test`, then `npm test` in the
+website app's folder, both even when the first fails, ending with a line for each and exiting
+non-zero when either failed. With no `test` script in the app's `package.json` it runs the
+Python tests alone and says so; with one but no `npm`, it fails rather than pass half a run:
 ```bash
 python manage.py ww_test
-python manage.py ww_test --no-build --exclude-tag=playwright
+python manage.py ww_test --exclude-tag=playwright --parallel=4
 ```
-`manage.py test` and `npm test` still run each half alone, with no build. See
+`manage.py test` and `npm test` still run each half alone. See
 [`docs/testing_controllers.md`](https://github.com/nateonguitar/django-website-widgets/blob/main/website_widgets/docs/testing_controllers.md).
 
 ## License

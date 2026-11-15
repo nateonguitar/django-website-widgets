@@ -37,7 +37,11 @@ module.exports = {
     rules: [
       {
         test: /\.ts$/,
-        use: 'ts-loader',
+        // Type errors only from files in the bundle. tsconfig.json includes every .ts file, the
+        // *.test.ts ones too, which a production build may not have the test helpers of;
+        // `tsc --noEmit` checks them.
+        loader: 'ts-loader',
+        options: { onlyCompileBundledFiles: true },
       },
       {
         test: /\.scss$/,
