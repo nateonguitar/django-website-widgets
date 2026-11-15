@@ -37,6 +37,34 @@ at all, into a small document from `website/tests/app_widget_test_case.py`: the 
 puts it. So a card can be tested signed in, signed out and as a "choose" card without finding a
 page that shows each.
 
+**Controller tests** (`*.test.ts`) run the TypeScript in Vitest, in Node with a fake DOM, no
+browser and no build: `npm test` in `website/`. They mount each controller on HTML this site's
+Python rendered, written into the git-ignored `website/vitest_fixtures/` by the tests tagged
+`vitest_fixtures` (`website/tests/test_vitest_fixtures.py`), which `npm test` runs first through
+`poetry run python` (set `PYTHON` to run them another way). The package's
+`testing_controllers.md` explains the setup.
+
+**Browser tests** (`test_*_browser.py`) run Chromium with no server: every request it makes is
+answered by Django's test client inside the test's transaction, so a test clicks through the
+cart and then checks the `Rental` rows it made. Their base, `website/tests/playwright_test_case.py`,
+is an example to copy rather than part of the package; the package's `browser_testing.md` says
+how it works. They need Playwright, an optional dependency group, installed once:
+
+```bash
+poetry install --with playwright
+poetry run playwright install chromium
+```
+
+**One command runs everything:** `poetry run python manage.py ww_test` builds the frontend
+(`npm run build`), runs the Python tests, browser tests included, then `npm test`, and ends
+with a line for each. Arguments go to `test` (`ww_test --exclude-tag=playwright`), and
+`--no-build` skips the build. A bare `manage.py test` doesn't build, so after a TypeScript or
+SCSS change its browser tests would run the last bundle built.
+
+Without Playwright installed, each browser test module reports itself as skipped and the rest
+of the suite runs as usual, which is how CI runs it. `--exclude-tag=playwright` leaves them out
+when it is installed. Screenshots from `screenshot()` land in the git-ignored `test_screenshots/`.
+
 ## How it was made
 
 `django-admin startproject movie_manager .`, `python manage.py startapp api`, then

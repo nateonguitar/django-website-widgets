@@ -20,6 +20,25 @@ class WebsiteWidgetsConfigTestCase(SimpleTestCase):
         self.assertEqual(config.generate_component.get_app_page_class('website'), 'mysite.pages.base.BasePage')
         self.assertEqual(config.generate_component.templates_dir, '/srv/generator_templates')
 
+    def test_test_build_command__returns_npm_run_build__when_not_given(self):
+        config = WebsiteWidgetsConfig()
+
+        self.assertEqual(config.test_build_command, ['npm', 'run', 'build'])
+
+    def test_test_build_command__returns_given_command_or_none__when_given(self):
+        pnpm_config = WebsiteWidgetsConfig(test_build_command=('pnpm', 'build'))
+        no_build_config = WebsiteWidgetsConfig(test_build_command=None)
+
+        self.assertEqual(pnpm_config.test_build_command, ['pnpm', 'build'])
+        self.assertIsNone(no_build_config.test_build_command)
+
+    def test_test_build_command__fails_naming_the_list__when_given_a_string(self):
+        with self.assertRaises(TypeError) as caught:
+            WebsiteWidgetsConfig(test_build_command='npm run build')
+
+        message = str(caught.exception)
+        self.assertIn("['npm', 'run', 'build']", message)
+
     def test_website_app_name__returns_website__when_not_given(self):
         self.assertEqual(WebsiteWidgetsConfig().website_app_name, 'website')
 

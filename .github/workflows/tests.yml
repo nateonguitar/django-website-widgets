@@ -96,3 +96,12 @@ jobs:
               npm run build:production
             )
           done
+      # Vitest, for an example whose website app has a test script. Its globalSetup runs the
+      # Python tests that write its HTML fixtures through `poetry run python`, installed above.
+      # No browser is downloaded; the Playwright tests skip themselves in the Python step.
+      - name: Frontend tests
+        if: hashFiles(format('{0}/*/package.json', matrix.example)) != ''
+        run: |
+          for package_json in */package.json; do
+            (cd "$(dirname "$package_json")" && npm run test --if-present)
+          done

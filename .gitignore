@@ -24,6 +24,10 @@ env/
 .pytest_cache/
 .coverage
 htmlcov/
+# The movie manager's browser tests write their screenshots here.
+test_screenshots/
+# The movie manager's Python tests write the HTML its Vitest tests load here.
+vitest_fixtures/
 
 # Django
 *.log

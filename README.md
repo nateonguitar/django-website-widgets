@@ -39,6 +39,8 @@ inside the package, indexed by
 - [`rendering_a_widget_alone.md`](https://github.com/nateonguitar/django-website-widgets/blob/main/website_widgets/docs/rendering_a_widget_alone.md): `render()` and `arender()` outside a page
 - [`templates.md`](https://github.com/nateonguitar/django-website-widgets/blob/main/website_widgets/docs/templates.md): what a template sees, how its file is found, variant templates
 - [`testing_widgets.md`](https://github.com/nateonguitar/django-website-widgets/blob/main/website_widgets/docs/testing_widgets.md): testing one widget inside a document the test controls, with `WidgetDocumentTestMixin`
+- [`testing_controllers.md`](https://github.com/nateonguitar/django-website-widgets/blob/main/website_widgets/docs/testing_controllers.md): controller tests in Vitest, on HTML the Python side rendered
+- [`browser_testing.md`](https://github.com/nateonguitar/django-website-widgets/blob/main/website_widgets/docs/browser_testing.md): browser tests with no server, Chromium's requests answered by the test client (an example to copy, not package API)
 - [`routing.md`](https://github.com/nateonguitar/django-website-widgets/blob/main/website_widgets/docs/routing.md): `@register_url`, route discovery and ordering
 - [`frontend_controllers.md`](https://github.com/nateonguitar/django-website-widgets/blob/main/website_widgets/docs/frontend_controllers.md): the TypeScript `Controller`, `App` and `Completer`
 - [`dialogs.md`](https://github.com/nateonguitar/django-website-widgets/blob/main/website_widgets/docs/dialogs.md): a dialog its caller awaits, on `DialogController`
@@ -568,6 +570,9 @@ WEBSITE_WIDGETS = WebsiteWidgetsConfig(
         # Your own generator templates, each replacing the package's of the same name (default: None)
         templates_dir=BASE_DIR / 'website' / 'generator_templates',
     ),
+    # What ww_test runs in the website app's folder before the tests, as a list of arguments
+    # (default: ['npm', 'run', 'build']; None: no build)
+    test_build_command=['npm', 'run', 'build:production'],
 )
 ```
 
@@ -686,6 +691,19 @@ List the `@register_url` routes in the order they are tried, and check each reac
 python manage.py ww_show_routes
 python manage.py ww_show_routes --columns=url,name,page,reaches_page --path-param-type=type
 ```
+
+Run everything: build the frontend (`test_build_command`, `npm run build` unless configured),
+then the Python tests, with every argument going to `test`, then `npm test` in the website
+app's folder. A failed build stops the run; otherwise both halves run even when the first
+fails, and it ends with a line for each step, exiting non-zero when any failed. With no `test`
+script in the app's `package.json` it runs the Python tests alone and says so; with one but no
+`npm`, it fails rather than pass half a run. `--no-build` skips the build for one run:
+```bash
+python manage.py ww_test
+python manage.py ww_test --no-build --exclude-tag=playwright
+```
+`manage.py test` and `npm test` still run each half alone, with no build. See
+[`docs/testing_controllers.md`](https://github.com/nateonguitar/django-website-widgets/blob/main/website_widgets/docs/testing_controllers.md).
 
 ## License
 

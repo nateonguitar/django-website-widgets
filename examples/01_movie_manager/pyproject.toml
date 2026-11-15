@@ -19,3 +19,11 @@ django-website-widgets = {path = "../..", develop = true}
 # The tests find what they check with CSS selectors, the way a controller does, instead of
 # matching strings of HTML.
 beautifulsoup4 = ">=4.12"
+
+# The browser tests (website/tests/playwright_test_case.py), which skip themselves without it.
+# Opt in with `poetry install --with playwright`, then `poetry run playwright install chromium`.
+[tool.poetry.group.playwright]
+optional = true
+
+[tool.poetry.group.playwright.dependencies]
+playwright = ">=1.49"

@@ -135,5 +135,6 @@ class Command(BaseCommand):
             '  ww_create_dialog <name>   write a new dialog\'s files and add it to ts/main.ts\n'
             '  ww_show_routes            list every page\'s URL, in the order Django tries them\n'
             '  ww_doctor                 check the setup and print a fix for each problem\n'
+            '  ww_test                   build the frontend, run the Python tests, then npm test\n'
             f'  ww_upgrade                update {shown_folder}/website_widgets_docs/ and the npm '
             f'package\'s range in package.json after upgrading the package')

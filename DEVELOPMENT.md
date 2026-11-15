@@ -79,7 +79,10 @@ step when one is added.
   no workflow edit. An example that a package change breaks fails the build like a package test.
   An example with a `package.json` in its website app also gets `npm ci`, a type-check and a
   production build, since its Python tests never compile its TypeScript or SCSS; commit its
-  `package-lock.json`, which `npm ci` installs from.
+  `package-lock.json`, which `npm ci` installs from. One with a `test` script there gets
+  `npm test` too (the movie manager's Vitest). **CI never installs Playwright or a browser:** the
+  movie manager's browser tests are an example, not supported API, and skip themselves without
+  it, so CI shows them as skipped and never checks them.
 - **They never ship.** `exclude` in `[tool.poetry]` keeps `examples/` out of the wheel and the
   source archive.
 
@@ -196,7 +199,7 @@ django-website-widgets/
         ├── package_json_check.py  # PackageJsonCheck: package.json against the starter's, for
         │                       # ww_upgrade and ww_doctor
         └── commands/           # ww_create_app, ww_upgrade, ww_create_page, ww_create_widget,
-                                # ww_create_dialog, ww_show_routes, ww_doctor
+                                # ww_create_dialog, ww_show_routes, ww_doctor, ww_test
 ```
 
 ## Docs

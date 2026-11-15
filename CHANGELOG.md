@@ -144,6 +144,20 @@ These change a project's controllers.
   widget whose template is `document_template` and whose children are `document_children()` plus
   the widget under `children.widget`; `page_context(user)` fills `context.page`.
   `testing_widgets.md` has the pattern, and the movie manager example a project's own base.
+- **`ww_test`** runs everything: the new `WebsiteWidgetsConfig(test_build_command=...)` in the
+  website app's folder (`['npm', 'run', 'build']` by default, `None` for no build), then the
+  Python tests, every other argument passed to `test`, then `npm test` there, both even when
+  the first fails, with a line for each step and a non-zero exit when any failed. A failed
+  build stops the run, and `--no-build` skips it. It runs the Python half alone, saying so, for
+  an app with no `test` script, and fails when there is one but no `npm`. A wrong setup fails
+  before anything runs, in one line saying what to change: the system checks first, then a
+  missing `node_modules/` or a build script `package.json` doesn't have. Each step's output
+  starts under a heading naming its command.
+- **Testing docs:** `testing_widgets.md` for `WidgetDocumentTestMixin`, `testing_controllers.md`
+  for controller tests in Vitest on HTML the Python side rendered (with the npm package's new
+  `App.clearSingletons()`), and `browser_testing.md` for browser tests with no server. The
+  movie manager example has all three tiers working, its Playwright base an example to copy
+  rather than API.
 - **`SyncWebPage`,** for a page with no async work: its `set_context()` is `def`, it runs with no
   event loop, so the ORM works as in any Django view, and every widget in it is a `SyncWidget`.
   `AsyncWebPage` remains the one to use.

@@ -4,15 +4,19 @@
   "scripts": {
     "build": "webpack",
     "build:production": "webpack --node-env production",
-    "watch": "webpack --watch"
+    "watch": "webpack --watch",
+    "test": "vitest run"
   },
   "devDependencies": {
+    "@types/node": "^24.19.2",
     "css-loader": "^7.1.2",
+    "happy-dom": "^21.0.4",
     "mini-css-extract-plugin": "^2.9.2",
     "sass": "^1.83.4",
     "sass-loader": "^16.0.4",
     "ts-loader": "^9.6.2",
     "typescript": "^5.7.3",
+    "vitest": "^5.1.0",
     "webpack": "^5.110.2",
     "webpack-cli": "^6.0.1"
   },
