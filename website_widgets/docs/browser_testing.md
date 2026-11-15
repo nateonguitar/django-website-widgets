@@ -75,10 +75,12 @@ every test and its setup would be `async`.
 
 Playwright is an optional dependency group in the movie manager, and its browser is a separate
 download (`playwright install chromium`), so neither CI nor a plain `poetry install` gets them.
-Django imports every test module before applying `--exclude-tag`, so each browser test module
-starts with a guard that raises `unittest.SkipTest` when `playwright` can't be imported, which
-unittest reports as one skipped test; the base is also tagged `playwright`, for
-`--exclude-tag=playwright` where it is installed. The example's README has the commands.
+Django imports every test module before applying `--exclude-tag`, so the base imports
+Playwright inside a `try` and is decorated `@unittest.skipIf` it's missing, which every browser
+test inherits; the base is also tagged `playwright`, for `--exclude-tag=playwright` where it is
+installed. **A module never raises `unittest.SkipTest` itself:** unittest stands in a test class
+made on the spot for such a module, which `--parallel` can't pickle to send to a worker, so the
+whole run crashes. The example's README has the commands.
 
 Because CI never runs them, the recipe can fall behind Playwright or Django; a copy is the
 project's to keep working.

@@ -223,7 +223,7 @@ class WebsiteWidgetsTestRunner(DiscoverRunner):
 
     @staticmethod
     def has_browser_tests(suite: unittest.TestSuite) -> bool:
-        """Whether the suite, after --tag and --exclude-tag, holds a test carrying the browser tag."""
+        """Whether the suite, after --tag and --exclude-tag, holds a test carrying the browser tag that isn't skipped."""
         browser_test_tag = get_config().testing.browser_test_tag
         # A parallel suite keeps its tests in subsuites, one per test case class.
         suites = suite.subsuites if isinstance(suite, ParallelTestSuite) else [suite]
@@ -234,6 +234,11 @@ class WebsiteWidgetsTestRunner(DiscoverRunner):
                 pending.extend(item)
                 continue
             test_method = getattr(item, getattr(item, '_testMethodName', ''), None)
+            # `@skip` and `@skipIf` on the class or the method, such as a browser base skipped
+            # where Playwright isn't installed: a test that won't run needs no build.
+            is_skipped = getattr(item, '__unittest_skip__', False) or getattr(test_method, '__unittest_skip__', False)
+            if is_skipped:
+                continue
             tags = set(getattr(item, 'tags', ())) | set(getattr(test_method, 'tags', ()))
             if browser_test_tag in tags:
                 return True

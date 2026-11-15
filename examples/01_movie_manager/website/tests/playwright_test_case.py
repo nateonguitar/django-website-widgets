@@ -4,15 +4,18 @@ the test's own database transaction. An example to copy and own, not part of the
 package's `browser_testing.md` explains why it is built this way.
 
 Needs Playwright (`poetry install --with playwright`, then `poetry run playwright install
-chromium`) and a built frontend (`manage.py ww_test` builds it first), since static files are served
-from where the staticfiles finders find them, and a test module importing this one skips itself
-when Playwright isn't installed.
+chromium`) and a built frontend, which the test runner builds first, since static files are
+served from where the staticfiles finders find them. Without Playwright, every test on this base
+is skipped.
 """
+
+from __future__ import annotations
 
 import json
 import mimetypes
 import os
 import threading
+import unittest
 from pathlib import Path
 from urllib.parse import urlsplit
 
@@ -22,11 +25,18 @@ from django.contrib.staticfiles import finders
 from django.db import connections
 from django.http import HttpResponse
 from django.test import tag
-from playwright.sync_api import Browser, Page, Playwright, Route, sync_playwright
 
 from website.tests.app_widget_test_case import AppWidgetTestCase
 
+try:
+    from playwright.sync_api import Browser, Page, Playwright, Route, sync_playwright
+except ImportError:
+    # Skipped by the class decorator below rather than by raising SkipTest here, which would
+    # make each importing module a test `--parallel` can't send to a worker.
+    sync_playwright = None
 
+
+@unittest.skipIf(sync_playwright is None, 'Playwright is not installed; see the README to run the browser tests')
 @tag('playwright')
 class PlaywrightTestCase(AppWidgetTestCase):
     """

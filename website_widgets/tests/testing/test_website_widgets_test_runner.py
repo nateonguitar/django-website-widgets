@@ -12,15 +12,10 @@ from django.test.runner import ParallelTestSuite
 
 from website_widgets.config import TestingConfig, WebsiteWidgetsConfig
 from website_widgets.testing import WebsiteWidgetsParallelTestSuite, WebsiteWidgetsTestRunner
+# Through the module, never imported by name: a test case class in this module's namespace would
+# be discovered and run as one of its tests.
 from website_widgets.tests.testing import sample_suites
-from website_widgets.tests.testing.sample_suites import (
-    BrowserTests,
-    OneBrowserTestTests,
-    OtherTagBrowserTests,
-    ServerTests,
-    SwitchedOff,
-    SwitchingRunner,
-)
+from website_widgets.tests.testing.sample_suites import SwitchedOff, SwitchingRunner
 
 
 class WebsiteWidgetsTestRunnerTestCase(SimpleTestCase):
@@ -56,16 +51,16 @@ class WebsiteWidgetsTestRunnerTestCase(SimpleTestCase):
             node_modules_path = os.path.join(self.app_folder, 'node_modules')
             os.makedirs(node_modules_path)
 
-    def build_suite(self, *test_case_classes, runner_class=WebsiteWidgetsTestRunner, **runner_kwargs):
-        """The runner's suite for these test case classes, as `manage.py test` would build it from their labels."""
+    def build_suite(self, *test_case_names: str, runner_class=WebsiteWidgetsTestRunner, **runner_kwargs):
+        """The runner's suite for these classes in `sample_suites`, built from their labels as `manage.py test` would."""
         runner = runner_class(verbosity=0, **runner_kwargs)
-        test_labels = [f'{sample_suites.__name__}.{test_case_class.__name__}' for test_case_class in test_case_classes]
+        test_labels = [f'{sample_suites.__name__}.{test_case_name}' for test_case_name in test_case_names]
         return runner.build_suite(test_labels)
 
     def test_build_suite__builds_the_frontend_in_the_app_folder__when_a_browser_test_is_selected(self):
         self.write_package_json()
 
-        self.build_suite(ServerTests, BrowserTests)
+        self.build_suite('ServerTests', 'BrowserTests')
 
         expected_calls = [
             call(['/usr/bin/npm', 'run', 'build'], cwd=self.app_folder),
@@ -75,22 +70,29 @@ class WebsiteWidgetsTestRunnerTestCase(SimpleTestCase):
     def test_build_suite__builds_the_frontend__when_one_test_method_carries_the_tag(self):
         self.write_package_json()
 
-        self.build_suite(OneBrowserTestTests)
+        self.build_suite('OneBrowserTestTests')
 
         self.mock_run.assert_called_once()
 
     def test_build_suite__builds_nothing__when_no_browser_test_is_selected(self):
         self.write_package_json()
 
-        self.build_suite(ServerTests)
-        self.build_suite(BrowserTests, exclude_tags=['playwright'])
+        self.build_suite('ServerTests')
+        self.build_suite('BrowserTests', exclude_tags=['playwright'])
+
+        self.mock_run.assert_not_called()
+
+    def test_build_suite__builds_nothing__when_every_browser_test_is_skipped(self):
+        self.write_package_json()
+
+        self.build_suite('ServerTests', 'SkippedBrowserTests')
 
         self.mock_run.assert_not_called()
 
     def test_build_suite__builds_once__when_the_suite_is_split_among_parallel_workers(self):
         self.write_package_json()
 
-        suite = self.build_suite(ServerTests, BrowserTests, parallel=2)
+        suite = self.build_suite('ServerTests', 'BrowserTests', parallel=2)
 
         self.assertIsInstance(suite, ParallelTestSuite)
         self.mock_run.assert_called_once()
@@ -99,9 +101,9 @@ class WebsiteWidgetsTestRunnerTestCase(SimpleTestCase):
         self.config = WebsiteWidgetsConfig(testing=TestingConfig(browser_test_tag='browser'))
         self.write_package_json()
 
-        self.build_suite(BrowserTests, OneBrowserTestTests)
+        self.build_suite('BrowserTests', 'OneBrowserTestTests')
         calls_for_playwright_tests = self.mock_run.call_count
-        self.build_suite(OtherTagBrowserTests)
+        self.build_suite('OtherTagBrowserTests')
 
         self.assertEqual(calls_for_playwright_tests, 0)
         self.mock_run.assert_called_once()
@@ -111,7 +113,7 @@ class WebsiteWidgetsTestRunnerTestCase(SimpleTestCase):
         self.config = WebsiteWidgetsConfig(testing=testing)
         self.write_package_json()
 
-        self.build_suite(BrowserTests)
+        self.build_suite('BrowserTests')
 
         expected_call = call(['/usr/bin/pnpm', 'build:production'], cwd=self.app_folder)
         self.assertEqual(self.mock_run.call_args, expected_call)
@@ -119,7 +121,7 @@ class WebsiteWidgetsTestRunnerTestCase(SimpleTestCase):
     def test_build_suite__builds_nothing__when_no_build_is_given(self):
         self.write_package_json()
 
-        self.build_suite(BrowserTests, no_build=True)
+        self.build_suite('BrowserTests', no_build=True)
 
         self.mock_run.assert_not_called()
 
@@ -127,12 +129,12 @@ class WebsiteWidgetsTestRunnerTestCase(SimpleTestCase):
         self.config = WebsiteWidgetsConfig(testing=TestingConfig(build_command=None))
         self.write_package_json()
 
-        self.build_suite(BrowserTests)
+        self.build_suite('BrowserTests')
 
         self.mock_run.assert_not_called()
 
     def test_build_suite__builds_nothing__when_the_app_has_no_package_json(self):
-        self.build_suite(BrowserTests)
+        self.build_suite('BrowserTests')
 
         self.mock_run.assert_not_called()
 
@@ -141,7 +143,7 @@ class WebsiteWidgetsTestRunnerTestCase(SimpleTestCase):
         self.mock_run.return_value = SimpleNamespace(returncode=1)
 
         with self.assertRaises(CommandError) as caught:
-            self.build_suite(BrowserTests)
+            self.build_suite('BrowserTests')
 
         message = str(caught.exception)
         self.assertIn('The frontend build, npm run build, failed, so no test ran', message)
@@ -151,7 +153,7 @@ class WebsiteWidgetsTestRunnerTestCase(SimpleTestCase):
         self.write_package_json(node_modules=False)
 
         with self.assertRaises(CommandError) as caught:
-            self.build_suite(BrowserTests)
+            self.build_suite('BrowserTests')
 
         shown_folder = os.path.relpath(self.app_folder) + os.sep
         message = str(caught.exception)
@@ -162,7 +164,7 @@ class WebsiteWidgetsTestRunnerTestCase(SimpleTestCase):
         self.write_package_json(scripts={'test': 'vitest run'})
 
         with self.assertRaises(CommandError) as caught:
-            self.build_suite(BrowserTests)
+            self.build_suite('BrowserTests')
 
         message = str(caught.exception)
         self.mock_run.assert_not_called()
@@ -173,14 +175,14 @@ class WebsiteWidgetsTestRunnerTestCase(SimpleTestCase):
         self.mock_which.side_effect = lambda name: None
 
         with self.assertRaises(CommandError) as caught:
-            self.build_suite(BrowserTests)
+            self.build_suite('BrowserTests')
 
         message = str(caught.exception)
         self.mock_run.assert_not_called()
         self.assertIn('npm was not found', message)
 
     def test_build_suite__names_the_runner_for_the_workers__when_parallel(self):
-        suite = self.build_suite(ServerTests, BrowserTests, runner_class=SwitchingRunner, parallel=2)
+        suite = self.build_suite('ServerTests', 'BrowserTests', runner_class=SwitchingRunner, parallel=2)
 
         expected_runner_path = f'{sample_suites.__name__}.SwitchingRunner'
         self.assertIsInstance(suite, WebsiteWidgetsParallelTestSuite)
@@ -191,7 +193,7 @@ class WebsiteWidgetsTestRunnerTestCase(SimpleTestCase):
         logger = logging.getLogger('website_widgets.tests.runner')
 
         with self.assertLogs(logger, level=logging.WARNING) as logs:
-            self.build_suite(ServerTests, BrowserTests, parallel=2, logger=logger)
+            self.build_suite('ServerTests', 'BrowserTests', parallel=2, logger=logger)
 
         warning = logs.output[0]
         self.assertIn('tblib is not installed', warning)

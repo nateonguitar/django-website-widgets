@@ -148,7 +148,7 @@ These change a project's controllers.
   `TEST_RUNNER = 'website_widgets.testing.WebsiteWidgetsTestRunner'`: Django's runner, which
   also builds the frontend once before a run holding browser tests, so they never serve a stale
   bundle, and builds nothing for a run without them (`--exclude-tag=playwright`, a module with
-  none). `--no-build` skips the build for one run, and a setup that can't build, or a failed
+  none, browser tests all skipped). `--no-build` skips the build for one run, and a setup that can't build, or a failed
   build, stops the run in one line saying what to change. A subclass lists what no test may do
   for real in `patches()`, which the runner starts in the main process and in each `--parallel`
   worker (`WebsiteWidgetsParallelTestSuite`); without `tblib` installed a parallel run warns

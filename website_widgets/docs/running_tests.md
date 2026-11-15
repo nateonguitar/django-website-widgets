@@ -58,6 +58,9 @@ carrying `browser_test_tag`, on its class or its method. When there is one, it r
 
 - `manage.py test`, a browser test module, or `--tag=playwright` builds;
 - `--exclude-tag=playwright`, or a module with no browser test, builds nothing;
+- a browser test that will be skipped (`@skip` or `@skipIf` on its class or method, such as a
+  base skipped where Playwright isn't installed) needs no build, so a run whose browser tests
+  are all skipped builds nothing;
 - `--no-build` runs the browser tests against the last build, for a run repeated with no
   frontend change;
 - an app with no `package.json` has no frontend, so nothing is built.
@@ -124,6 +127,13 @@ dependencies.
 
 A test that fails only under `--parallel` is usually state the serial run shared by accident:
 a patch started outside `patches()`, or a test depending on another class's having run first.
+**A test module that raises `unittest.SkipTest` on import crashes a parallel run**
+(`Can't pickle <class 'unittest.loader.ModuleSkipped'>`): unittest stands in a class made on the
+spot for it, which can't be sent to a worker. Skip with `@skipIf` on the class instead.
+
+**SQLite gives each worker a copy of the test database**, `default_1.sqlite3` and so on, in the
+folder the run started from, deleted at the end; a killed run leaves them, so they belong in
+`.gitignore` (`*_[0-9]*.sqlite3`).
 
 ## `ww_test`
 

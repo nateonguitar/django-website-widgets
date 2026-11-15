@@ -67,8 +67,8 @@ in for a paid SMS provider, and the subclass's `patches()` reach the `--parallel
 `tblib`, a dev dependency, lets a failing test in a worker report its traceback. The package's
 `running_tests.md` explains both.
 
-Without Playwright installed, each browser test module reports itself as skipped and the rest
-of the suite runs as usual, which is how CI runs it. `--exclude-tag=playwright` leaves them out
+Without Playwright installed, each browser test is skipped, nothing is built for them, and the
+rest of the suite runs as usual, which is how CI runs it. `--exclude-tag=playwright` leaves them out
 when it is installed. Screenshots from `screenshot()` land in the git-ignored `test_screenshots/`.
 
 ## How it was made

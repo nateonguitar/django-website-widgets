@@ -32,4 +32,7 @@ vitest_fixtures/
 # Django
 *.log
 db.sqlite3
+# Each --parallel worker's copy of an SQLite test database (default_1.sqlite3), which Django
+# deletes at the end of the run but a killed run leaves behind.
+*_[0-9]*.sqlite3
 media/

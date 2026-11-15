@@ -31,6 +31,13 @@ class OneBrowserTestTests(unittest.TestCase):
         pass
 
 
+@unittest.skip('the browser is not installed')
+@tag('playwright')
+class SkippedBrowserTests(unittest.TestCase):
+    def test_browser__clicks(self):
+        pass
+
+
 @tag('browser')
 class OtherTagBrowserTests(unittest.TestCase):
     def test_browser__clicks(self):

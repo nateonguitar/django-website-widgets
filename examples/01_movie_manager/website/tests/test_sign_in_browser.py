@@ -1,10 +1,3 @@
-import unittest
-
-try:
-    import playwright  # noqa: F401
-except ImportError:
-    raise unittest.SkipTest('Playwright is not installed; see the README to run the browser tests')
-
 from api.models import User
 from website.tests.playwright_test_case import PlaywrightTestCase
 

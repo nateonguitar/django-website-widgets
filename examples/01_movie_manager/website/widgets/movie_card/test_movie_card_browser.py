@@ -1,12 +1,3 @@
-import unittest
-
-try:
-    import playwright  # noqa: F401
-except ImportError:
-    # Django imports a test module before it applies --exclude-tag, so a guard here, not a tag,
-    # keeps a run without Playwright installed (CI's) passing. Unittest reports it as one skip.
-    raise unittest.SkipTest('Playwright is not installed; see the README to run the browser tests')
-
 from api.models import Copy, Genre, Movie, MovieRating, User
 from website.tests.playwright_test_case import PlaywrightTestCase
 from website.widgets.movie_card import MovieCard
