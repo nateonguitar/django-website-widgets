@@ -138,6 +138,12 @@ These change a project's controllers.
   the choice is made: the nearest declaration wins, so a variant assigned to `template_filename`
   in `set_context()` still replaces it. Setting both on one class raises when the class is
   defined. `templates.md` has the rules.
+- **`WidgetDocumentTestMixin`** in `website_widgets.testing`, for tests: combined with a Django test
+  class, `render_document(widget, user=None, document_children=None, page_context=None)` and
+  `await arender_document(...)` render one widget into a document the test controls, itself a
+  widget whose template is `document_template` and whose children are `document_children()` plus
+  the widget under `children.widget`; `page_context(user)` fills `context.page`.
+  `testing_widgets.md` has the pattern, and the movie manager example a project's own base.
 - **`SyncWebPage`,** for a page with no async work: its `set_context()` is `def`, it runs with no
   event loop, so the ORM works as in any Django view, and every widget in it is a `SyncWidget`.
   `AsyncWebPage` remains the one to use.

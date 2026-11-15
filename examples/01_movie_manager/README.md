@@ -29,6 +29,14 @@ the same class names the SCSS and controllers use (`.movie-card__title`, `#accou
 rather than matching strings of HTML. Lines of JavaScript, such as a controller's
 `App.initController()` call, are still checked as text.
 
+Pages are tested through Django's test client in `website/tests/`. A test of one widget sits
+beside the widget (`website/widgets/movie_card/test_movie_card.py`) and renders it with no page
+at all, into a small document from `website/tests/app_widget_test_case.py`: the package's
+`WidgetDocumentTestMixin` with this site's stylesheet, `AppState`, the widgets
+`AppPage.document_widgets()` puts around every page, and the user in `context.page` as `AppPage`
+puts it. So a card can be tested signed in, signed out and as a "choose" card without finding a
+page that shows each.
+
 ## How it was made
 
 `django-admin startproject movie_manager .`, `python manage.py startapp api`, then

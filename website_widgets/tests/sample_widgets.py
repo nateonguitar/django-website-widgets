@@ -235,6 +235,34 @@ class StringInheritingWidget(StringTemplateWidget):
     pass
 
 
+class PageReadingWidget(SyncWidget):
+    """Reads `page.word`, and holds a child reading it too, to show page context reaches every depth."""
+
+    template_string = '{{ page.word }}[{{ children.inner }}]'
+
+    def set_context(self):
+        self.context.children['inner'] = InnerPageReadingWidget()
+
+
+class InnerPageReadingWidget(SyncWidget):
+    template_string = 'inner {{ page.word }}'
+
+
+class UserReadingWidget(SyncWidget):
+    template_string = '{{ data.username }}'
+
+    def set_context(self):
+        self.context.data['username'] = self.request.user.username
+
+
+class AsyncStringWidget(AsyncWidget):
+    template_string = 'async {{ data.word }}'
+
+    async def set_context(self):
+        await asyncio.sleep(0)
+        self.context.data['word'] = 'widget'
+
+
 class StringTemplatePage(AsyncWebPage):
     template_string = 'page {{ data.word }}'
 

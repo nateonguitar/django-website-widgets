@@ -21,7 +21,8 @@ every descendant), then rendered once:
 
 Each runs the widget's own `set_context()`, then the tree's passes 1 and 3
 (`rendering_pipeline.md`), then the widget's template. There is no debug tree and no document
-template.
+template; a test that wants the widget inside one uses `WidgetDocumentTestMixin`
+(`testing_widgets.md`).
 
 **`render()` never touches an event loop.** It calls each plain `def set_context()` directly, so
 the sync ORM works there, and raises `TypeError` naming the widget when it meets an

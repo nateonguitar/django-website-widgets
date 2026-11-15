@@ -38,6 +38,7 @@ inside the package, indexed by
 - [`rendering_pipeline.md`](https://github.com/nateonguitar/django-website-widgets/blob/main/website_widgets/docs/rendering_pipeline.md): how a request becomes HTML
 - [`rendering_a_widget_alone.md`](https://github.com/nateonguitar/django-website-widgets/blob/main/website_widgets/docs/rendering_a_widget_alone.md): `render()` and `arender()` outside a page
 - [`templates.md`](https://github.com/nateonguitar/django-website-widgets/blob/main/website_widgets/docs/templates.md): what a template sees, how its file is found, variant templates
+- [`testing_widgets.md`](https://github.com/nateonguitar/django-website-widgets/blob/main/website_widgets/docs/testing_widgets.md): testing one widget inside a document the test controls, with `WidgetDocumentTestMixin`
 - [`routing.md`](https://github.com/nateonguitar/django-website-widgets/blob/main/website_widgets/docs/routing.md): `@register_url`, route discovery and ordering
 - [`frontend_controllers.md`](https://github.com/nateonguitar/django-website-widgets/blob/main/website_widgets/docs/frontend_controllers.md): the TypeScript `Controller`, `App` and `Completer`
 - [`dialogs.md`](https://github.com/nateonguitar/django-website-widgets/blob/main/website_widgets/docs/dialogs.md): a dialog its caller awaits, on `DialogController`
@@ -349,8 +350,11 @@ def project_list(request):
 `render()` runs with no event loop, so its widgets use plain `def set_context()` and the sync
 ORM; it raises on an `async def set_context()`. The request is optional: an email body or an
 admin hook has none, and a widget that reads `self.request` without one raises rather than
-getting a fake. The `03_widgets_in_plain_django` [example](#examples) has all three: a
-traditional view and template, emails and an admin tool.
+getting a fake. The lessons
+[`widgets_in_plain_django.md`](https://github.com/nateonguitar/django-website-widgets/blob/main/website_widgets/docs/widgets_in_plain_django.md)
+(a traditional view and template, an admin tool) and
+[`html_emails.md`](https://github.com/nateonguitar/django-website-widgets/blob/main/website_widgets/docs/html_emails.md)
+show all three.
 
 In async code, such as an endpoint returning HTML fragments for an infinite scroller, await
 `arender()` instead. It runs sync and async `set_context()`s alike, as a page does:
@@ -375,6 +379,23 @@ html = await ProjectListTile(project=project).arender__test(user=user)   # async
 
 Each runs the widget's `set_context()` and every descendant's, then the templates. No document
 template wraps the result.
+
+To test a widget inside a document, with the chrome and `context.page` values a page would give
+it, combine `WidgetDocumentTestMixin` with the test class:
+
+```python
+from website_widgets.testing import WidgetDocumentTestMixin
+
+
+class ProjectListTileTests(WidgetDocumentTestMixin, TestCase):
+    async def test_tile__shows_the_name__when_rendered(self):
+        project_list_tile = ProjectListTile(project=project)
+        html = await self.arender_document(project_list_tile, user=user)
+```
+
+A project overrides `document_template`, `document_children()` and `page_context(user)` once,
+in its own base. See
+[`docs/testing_widgets.md`](https://github.com/nateonguitar/django-website-widgets/blob/main/website_widgets/docs/testing_widgets.md).
 
 ### Routing pages with `@register_url`
 

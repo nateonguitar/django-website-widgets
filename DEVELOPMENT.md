@@ -180,6 +180,8 @@ django-website-widgets/
     ├── page_routes.py          # @register_url, route discovery, the routing system checks
     ├── url_templates.py        # reverse_template()
     ├── npm_watch.py            # start_npm_watch(), for manage.py
+    ├── testing.py              # WidgetDocumentTestMixin, for a project's tests; not exported
+    │                           # from __init__
     ├── widget_context.py
     ├── tests/                  # One test class per file, not shipped; see "Tests" above
     └── management/

@@ -74,11 +74,21 @@ class AppPage(AsyncWebPage):
         self.context.page['title'] = self.full_title()
         # The document template hands it to AppState, for every controller.
         self.context.page['site_name'] = self.SITE_NAME
-        # Rendered by the document template, so every page has them.
-        self.context.children['app_urls'] = AppUrls()
-        self.context.children['appbar'] = Appbar()
-        self.context.children['confirm_dialog'] = ConfirmDialog()
+        self.context.children.update(self.document_widgets())
         return await self.build_response()
+
+    @staticmethod
+    def document_widgets() -> dict:
+        """
+        The widgets the document template renders around every page, by the key it reads each
+        from. A static method, so a widget test's document (`website/tests/app_widget_test_case.py`)
+        holds the same ones.
+        """
+        return {
+            'app_urls': AppUrls(),
+            'appbar': Appbar(),
+            'confirm_dialog': ConfirmDialog(),
+        }
 
     def full_title(self) -> str:
         if self.page_title is None:
