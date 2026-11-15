@@ -5,12 +5,22 @@
 The library needs only Python 3.12+ and Poetry. From the repository root:
 
 ```bash
-poetry install --no-root
+poetry install
 ```
 
-This creates a virtualenv with Django, at the version pinned in `poetry.lock`. The lock file pins
-the development environment only; a project installing the package gets any Django that
-`pyproject.toml` allows.
+This creates a virtualenv with Django, at the version pinned in `poetry.lock`, and installs the
+package into it in develop mode. Not `--no-root`: the package reads its own installed version
+(the docs folder's stamp, the npm range checks), so 130 tests fail without its metadata. The
+lock file pins the development environment only; a project installing the package gets any
+Django that `pyproject.toml` allows.
+
+**The virtualenv is `.venv/` beside the code,** set by the committed `poetry.toml`
+(`in-project = true`), here and in each example, so each of the three projects has its own,
+git-ignored. It is built on the `python3` the machine has. A venv only points at that
+interpreter, so when an OS upgrade removes it (Fedora replacing 3.14 with 3.15, say), every
+venv stops working: rebuild each with `rm -rf .venv && poetry install`. Install Poetry itself
+from the OS's package manager (`dnf install poetry`), which upgrades it with the system Python,
+rather than with `pip install --user`, which an upgrade strands in the old version's folder.
 
 ## Tests
 

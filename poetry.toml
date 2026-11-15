@@ -1,0 +1,4 @@
+# The virtualenv lives in .venv/ beside the code (git-ignored), not in Poetry's cache, so it is
+# easy to find, and after an OS Python upgrade `rm -rf .venv && poetry install` rebuilds it.
+[virtualenvs]
+in-project = true
